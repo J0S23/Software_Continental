@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Datos Continental</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Gestor de Datos Continental</h1>
+            <p class="subtitle">Gestion de maquinas, clientes y datos operacionales</p>
+        </header>
+
+        <main>
+            <div class="content-wrapper">
+                <aside class="sidebar">
+                    <h2>Tipos de Datos</h2>
+                    <div class="tipo-list" id="tipoList"></div>
+                </aside>
+
+                <section class="main-panel">
+                    <div class="selector-section">
+                        <label for="tipoSelector">Tipo de dato</label>
+                        <select id="tipoSelector">
+                            <option value="">Selecciona</option>
+                        </select>
+                    </div>
+
+                    <div class="form-section" id="formSection" hidden>
+                        <h3>Agregar Registro</h3>
+                        <form id="formDatos">
+                            <div id="formFields"></div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-success">Agregar</button>
+                                <button type="button" class="btn btn-secondary" id="limpiarBtn">Limpiar</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="data-table-section" id="dataTableSection" hidden>
+                        <h3>Registros</h3>
+                        <div class="table-responsive">
+                            <table id="datosTable">
+                                <thead id="tableHead"></thead>
+                                <tbody id="tableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="messageArea" aria-live="polite"></div>
+                </section>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2026 Continental - Sistema de Gestion de Datos</p>
+        </footer>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
