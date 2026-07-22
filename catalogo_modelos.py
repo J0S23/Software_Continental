@@ -1,11 +1,11 @@
 from fastapi import HTTPException
 
 from Variables.Clientes import Clientes
-from Variables.enums import EstadoCliente, TipoCliente
+from Variables.Costos import Costos
+from Variables.enums import EstadoCliente, TipoCliente, TipoCosto
 from Variables.Equipos import Equipos
 from Variables.Impuestos import Impuesto
 from Variables.Insumos import Insumo
-from Variables.Mano_obra import ManoObra
 from Variables.Modelos import Modelo
 from Variables.Poliza import Poliza
 from Variables.Repuestos import Repuesto
@@ -97,13 +97,27 @@ CATALOGO_DATOS = {
             campo("telilla", "Telilla"),
         ],
     },
-    "mano_obra": {
-        "etiqueta": "Mano de Obra",
-        "modelo": ManoObra,
+    "costos": {
+        "etiqueta": "Costos",
+        "modelo": Costos,
         "campos": [
-            campo("nombre", "Nombre"),
-            campo("pago", "Pago", "number"),
+            campo("fecha_costo", "Fecha del costo", "date"),
+            campo("periodo", "Periodo"),
+            campo("cliente_id", "Cliente", "number"),
+            campo("contrato_id", "Contrato", "number"),
+            campo("equipo_id", "Equipo", "number"),
+            campo("tipo_costo", "Tipo de costo", "select", opciones_enum(TipoCosto)),
+            campo("descripcion", "Descripcion"),
+            campo("cantidad", "Cantidad", "number"),
+            campo("valor_unitario", "Valor unitario", "number"),
+            campo("valor_total", "Valor total", "number", requerido=False),
+            campo("responsable", "Responsable"),
+            campo("soporte", "Soporte o documento asociado", requerido=False),
+            campo("observaciones", "Observaciones", requerido=False),
         ],
+        "enumeraciones": {
+            "tipo_costo": TipoCosto,
+        },
     },
     "impuestos": {
         "etiqueta": "Impuestos",
