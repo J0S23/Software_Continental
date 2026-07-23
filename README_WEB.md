@@ -101,8 +101,7 @@ Continental.py/
     |-- Poliza.py
     |-- Repuestos.py
     |-- Costos.py
-    |-- Impuestos.py
-    |-- Valor_facturado.py
+    |-- Facturacion.py
     `-- enums.py
 ```
 

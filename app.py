@@ -8,12 +8,10 @@ from fastapi.staticfiles import StaticFiles
 
 from Variables.Clientes import Clientes
 from Variables.enums import EstadoCliente, TipoCliente
-from Variables.Impuestos import Maquinas as Impuestos
 from Variables.Insumos import Maquinas as Insumos
 from Variables.Modelos import Maquinas as Modelos
 from Variables.Poliza import Maquinas as Polizas
 from Variables.Repuestos import Maquinas as Repuestos
-from Variables.Valor_facturado import Maquinas as ValorFacturado
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -63,18 +61,6 @@ MODELOS = {
             "sleeven_fusor",
             "telilla",
         ],
-    },
-    "impuestos": {
-        "label": "Impuestos",
-        "model": Impuestos,
-        "fields": ["municipal", "departamental", "pro_deporte"],
-        "numbers": {"municipal", "departamental", "pro_deporte"},
-    },
-    "valor_facturado": {
-        "label": "Valor Facturado",
-        "model": ValorFacturado,
-        "fields": ["facturado"],
-        "numbers": {"facturado"},
     },
 }
 
