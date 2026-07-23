@@ -2,14 +2,13 @@ from fastapi import HTTPException
 
 from Variables.Clientes import Clientes
 from Variables.Costos import Costos
-from Variables.enums import EstadoCliente, TipoCliente, TipoCosto
+from Variables.enums import EstadoCliente, TipoCliente, TipoCosto, EstadoFactura
 from Variables.Equipos import Equipos
-from Variables.Impuestos import Impuesto
+from Variables.Facturacion import Facturacion
 from Variables.Insumos import Insumo
 from Variables.Modelos import Modelo
 from Variables.Poliza import Poliza
 from Variables.Repuestos import Repuesto
-from Variables.Valor_facturado import ValorFacturado
 
 
 def campo(nombre, etiqueta, tipo="text", opciones=None, requerido=True):
@@ -119,21 +118,38 @@ CATALOGO_DATOS = {
             "tipo_costo": TipoCosto,
         },
     },
-    "impuestos": {
-        "etiqueta": "Impuestos",
-        "modelo": Impuesto,
+    "facturacion": {
+        "etiqueta": "Facturacion",
+        "modelo": Facturacion,
         "campos": [
-            campo("municipal", "Municipal", "number"),
-            campo("departamental", "Departamental", "number"),
-            campo("pro_deporte", "Pro Deporte", "number"),
+            campo("periodo", "Periodo"),
+            campo("cliente_id", "Cliente", "number"),
+            campo("contrato_id", "Contrato", "number"),
+            campo("numero_factura", "Numero de factura"),
+            campo("fecha_factura", "Fecha de factura", "date"),
+            campo("fecha_vencimiento", "Fecha de vencimiento", "date", requerido=False),
+            campo("valor_mensual_base", "Valor mensual base", "number"),
+            campo("valor_adicionales_bn", "Adicionales blanco y negro", "number", requerido=False),
+            campo("valor_adicionales_color", "Adicionales color", "number", requerido=False),
+            campo("valor_adicionales_escaneo", "Adicionales escaneo", "number", requerido=False),
+            campo("otros_cargos", "Otros cargos", "number", requerido=False),
+            campo("subtotal", "Subtotal", "number", requerido=False),
+            campo("incluye_iva", "Los valores ya incluyen IVA (1=si, 0=no)", "number", requerido=False),
+            campo("porcentaje_iva", "Porcentaje de IVA", "number", requerido=False),
+            campo("valor_iva", "Valor IVA", "number", requerido=False),
+            campo("impuesto_municipal", "Impuesto municipal", "number", requerido=False),
+            campo("impuesto_departamental", "Impuesto departamental", "number", requerido=False),
+            campo("impuesto_pro_deporte", "Impuesto pro deporte", "number", requerido=False),
+            campo("retenciones", "Retenciones", "number", requerido=False),
+            campo("total_facturado", "Total facturado", "number", requerido=False),
+            campo("estado_factura", "Estado de la factura", "select", opciones_enum(EstadoFactura)),
+            campo("fecha_envio", "Fecha de envio al cliente", "date", requerido=False),
+            campo("medio_envio", "Medio de envio", requerido=False),
+            campo("observaciones", "Observaciones", requerido=False),
         ],
-    },
-    "valor_facturado": {
-        "etiqueta": "Valor Facturado",
-        "modelo": ValorFacturado,
-        "campos": [
-            campo("facturado", "Valor facturado", "number"),
-        ],
+        "enumeraciones": {
+            "estado_factura": EstadoFactura,
+        },
     },
 }
 
