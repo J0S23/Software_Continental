@@ -1,15 +1,16 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, Enum as SQLEnum
 from datetime import datetime
 from base_de_datos import Base, SessionLocal, engine
+from Variables.enums import RolUsuario
 
 
 class Usuarios(Base):
     __tablename__ = "usuarios"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     nombre_usuario = Column(String)
     email = Column(String)
-    rol = Column(String)
+    rol = Column(SQLEnum(RolUsuario))
     estado = Column(String)
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
     
