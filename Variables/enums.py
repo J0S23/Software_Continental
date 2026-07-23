@@ -33,3 +33,27 @@ class TipoCosto(str, Enum):
     ACCESORIO = "accesorio"
     DEPRECIACION = "depreciacion"
     OTRO = "otro"
+
+
+class EstadoFactura(str, Enum):
+    """Estados posibles de una factura (seccion 9 del documento)"""
+    PENDIENTE = "pendiente"
+    ENVIADA = "enviada"
+    PAGADA = "pagada"
+    VENCIDA = "vencida"
+    ANULADA = "anulada"
+    EN_RECLAMACION = "en_reclamacion"
+
+
+class RolUsuario(str, Enum):
+    """Roles de usuario del sistema (seccion 20.1 del documento)"""
+    ADMINISTRADOR_GENERAL = "Administrador general"
+    GERENCIA = "Gerencia"
+    SUBGERENCIA_FINANCIERA = "Subgerencia financiera"
+    COORDINACION_RENTA = "Coordinación de renta"
+    EJECUTIVO_COMERCIAL = "Ejecutivo comercial"
+    SERVICIO_TECNICO = "Servicio técnico"
+    LOGISTICA_ALMACEN = "Logística / almacén"
+    FACTURACION = "Facturación"
+    CARTERA = "Cartera"
+    CONSULTA_LIMITADA = "Consulta limitada"
