@@ -100,7 +100,7 @@ Continental.py/
     |-- Insumos.py
     |-- Poliza.py
     |-- Repuestos.py
-    |-- Mano_obra.py
+    |-- Costos.py
     |-- Impuestos.py
     |-- Valor_facturado.py
     `-- enums.py
