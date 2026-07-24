@@ -2,6 +2,7 @@ from fastapi import HTTPException
 
 from Modulos.Clientes import Clientes
 from Modulos.Contratos import Contratos
+from Modulos.CambiosRetiro import CambioRetiro
 from Modulos.Costos import Costos
 from Modulos.enums import (
     EstadoCliente,
@@ -188,6 +189,22 @@ CATALOGO_DATOS = {
             "estado_factura": EstadoFactura,
         },
     },
+    "cambios_retiros": {
+    "etiqueta": "Cambios y Retiros",
+    "modelo": CambioRetiro,
+    "campos": [
+        campo("equipo_id", "Equipo", "number"),
+        campo("tipo_evento", "Tipo de evento", "select", ["cambio", "retiro"]),
+        campo("equipo_reemplazo_id", "Equipo de reemplazo", "number", requerido=False),
+        campo("cliente_id", "Cliente", "number", requerido=False),
+        campo("contrato_id", "Contrato", "number", requerido=False),
+        campo("contador_final", "Contador final", "number", requerido=False),
+        campo("motivo", "Motivo"),
+        campo("tecnico_responsable", "Tecnico responsable"),
+        campo("persona_recibe", "Persona que recibe", requerido=False),
+        campo("observaciones", "Observaciones", requerido=False),
+    ],
+},
     "equipos_respaldo": {
     "etiqueta": "Equipos de Respaldo",
     "modelo": EquipoRespaldo,
