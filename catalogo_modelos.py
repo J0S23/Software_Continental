@@ -2,7 +2,7 @@ from fastapi import HTTPException
 
 from Modulos.Clientes import Clientes
 from Modulos.Costos import Costos
-from Modulos.enums import EstadoCliente, TipoCliente, TipoCosto, EstadoFactura, RolUsuario
+from Modulos.enums import EstadoCliente, TipoCliente, TipoCosto, EstadoFactura, EmpresaFacturadora, RolUsuario
 from Modulos.Equipos import Equipos
 from Modulos.Facturacion import Facturacion
 from Modulos.Insumos import Insumo
@@ -119,6 +119,7 @@ CATALOGO_DATOS = {
             campo("periodo", "Periodo"),
             campo("cliente_id", "Cliente", "number"),
             campo("contrato_id", "Contrato", "number"),
+            campo("empresa_factura", "Empresa facturadora", "select", opciones_enum(EmpresaFacturadora)),
             campo("numero_factura", "Numero de factura"),
             campo("fecha_factura", "Fecha de factura", "date"),
             campo("fecha_vencimiento", "Fecha de vencimiento", "date", requerido=False),
@@ -142,6 +143,7 @@ CATALOGO_DATOS = {
             campo("observaciones", "Observaciones", requerido=False),
         ],
         "enumeraciones": {
+            "empresa_factura": EmpresaFacturadora,
             "estado_factura": EstadoFactura,
         },
     },
