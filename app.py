@@ -7,10 +7,11 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from Modulos.Clientes import Clientes
+from Modulos.Equipos import Equipos
 from Modulos.enums import EstadoCliente, TipoCliente
 from Modulos.Insumos import Maquinas as Insumos
-from Modulos.Modelos import Maquinas as Modelos
 from Modulos.Repuestos import Maquinas as Repuestos
+from Modulos.Servicio import Servicio as Servicios
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -33,11 +34,40 @@ MODELOS = {
             "estado_cliente": EstadoCliente,
         },
     },
-    "modelos": {
-        "label": "Modelos",
-        "model": Modelos,
-        "fields": ["modelo", "toner", "rend_orig", "rend_gen"],
+    "equipos": {
+        "label": "Equipos",
+        "model": Equipos,
+        "fields": [
+            "numero_serie",
+            "tipo_equipo",
+            "tecnologia",
+            "color",
+            "estado_equipo",
+            "estado_tecnico",
+            "recomendacion_tecnica",
+            "modelo",
+            "toner",
+            "rend_orig",
+            "rend_gen",
+        ],
         "numbers": {"rend_orig", "rend_gen"},
+    },
+    "servicios": {
+        "label": "Servicios",
+        "model": Servicios,
+        "fields": [
+            "nombre_servicio",
+            "descripcion",
+            "precio",
+            "mantenimiento",
+            "descripcion_mantenimiento",
+            "repuestos_incluidos",
+            "toner_incluido",
+            "toner_respaldo_sitio",
+            "equipo_respaldo_incluido",
+            "estado",
+        ],
+        "numbers": {"precio"},
     },
     "insumos": {
         "label": "Insumos",
