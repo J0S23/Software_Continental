@@ -74,3 +74,9 @@ class EstadoEquipo(str, enum.Enum):
     RETIRADO = "retirado"
     DADO_DE_BAJA = "dado_de_baja"
 
+
+class EmpresaFacturadora(str, Enum):
+    CONTINENTAL_LTDA = "Continental Ltda."
+    ASESORIAS_CONTINENTAL = "Asesorías y Servicios Continental"
+    OTRA = "Otra"
+

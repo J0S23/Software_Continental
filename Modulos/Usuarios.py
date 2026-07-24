@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, DateTime, Enum as SQLEnum
 from datetime import datetime
 from base_de_datos import Base, SessionLocal, engine
-from Variables.enums import RolUsuario
+from Modulos.enums import RolUsuario
 
 
 class Usuarios(Base):

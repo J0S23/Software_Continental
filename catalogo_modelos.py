@@ -1,15 +1,14 @@
 from fastapi import HTTPException
 
-from Variables.Clientes import Clientes
-from Variables.Costos import Costos
-from Variables.enums import EstadoCliente, TipoCliente, TipoCosto, EstadoFactura, RolUsuario
-from Variables.Equipos import Equipos
-from Variables.Facturacion import Facturacion
-from Variables.Insumos import Insumo
-from Variables.Modelos import Modelo
-from Variables.Poliza import Poliza
-from Variables.Repuestos import Repuesto
-from Variables.Usuarios import Usuarios
+from Modulos.Clientes import Clientes
+from Modulos.Costos import Costos
+from Modulos.enums import EstadoCliente, TipoCliente, TipoCosto, EstadoFactura, EmpresaFacturadora, RolUsuario
+from Modulos.Equipos import Equipos
+from Modulos.Facturacion import Facturacion
+from Modulos.Insumos import Insumo
+from Modulos.Modelos import Modelo
+from Modulos.Repuestos import Repuesto
+from Modulos.Usuarios import Usuarios
 
 
 def campo(nombre, etiqueta, tipo="text", opciones=None, requerido=True):
@@ -74,15 +73,9 @@ CATALOGO_DATOS = {
         "etiqueta": "Insumos",
         "modelo": Insumo,
         "campos": [
-            campo("toner", "Toner"),
-        ],
-    },
-    "polizas": {
-        "etiqueta": "Polizas",
-        "modelo": Poliza,
-        "campos": [
-            campo("seriedad", "Seriedad"),
-            campo("contrato", "Contrato"),
+            campo("tipo_insumo", "Tipo de insumo"),
+            campo("color", "Color", requerido=False),
+            campo("estado", "Estado", requerido=False),
         ],
     },
     "repuestos": {
@@ -126,6 +119,7 @@ CATALOGO_DATOS = {
             campo("periodo", "Periodo"),
             campo("cliente_id", "Cliente", "number"),
             campo("contrato_id", "Contrato", "number"),
+            campo("empresa_factura", "Empresa facturadora", "select", opciones_enum(EmpresaFacturadora)),
             campo("numero_factura", "Numero de factura"),
             campo("fecha_factura", "Fecha de factura", "date"),
             campo("fecha_vencimiento", "Fecha de vencimiento", "date", requerido=False),
@@ -149,6 +143,7 @@ CATALOGO_DATOS = {
             campo("observaciones", "Observaciones", requerido=False),
         ],
         "enumeraciones": {
+            "empresa_factura": EmpresaFacturadora,
             "estado_factura": EstadoFactura,
         },
     },

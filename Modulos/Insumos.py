@@ -7,7 +7,9 @@ class Insumo(Base):
     __tablename__ = "insumos"
     
     id = Column(Integer, primary_key=True, index=True)
-    toner = Column(String)
+    tipo_insumo = Column(String)
+    color = Column(String, nullable=True)
+    estado = Column(String, nullable=True)
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
     
     @staticmethod
@@ -15,10 +17,10 @@ class Insumo(Base):
         Base.metadata.create_all(bind=engine)
     
     @staticmethod
-    def agregar(toner):
+    def agregar(tipo_insumo, color="", estado=""):
         """Agrega un insumo a la BD"""
         db = SessionLocal()
-        nuevo_insumo = Insumo(toner=toner)
+        nuevo_insumo = Insumo(tipo_insumo=tipo_insumo, color=color, estado=estado)
         db.add(nuevo_insumo)
         db.commit()
         db.refresh(nuevo_insumo)

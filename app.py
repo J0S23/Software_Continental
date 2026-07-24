@@ -6,12 +6,11 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from Variables.Clientes import Clientes
-from Variables.enums import EstadoCliente, TipoCliente
-from Variables.Insumos import Maquinas as Insumos
-from Variables.Modelos import Maquinas as Modelos
-from Variables.Poliza import Maquinas as Polizas
-from Variables.Repuestos import Maquinas as Repuestos
+from Modulos.Clientes import Clientes
+from Modulos.enums import EstadoCliente, TipoCliente
+from Modulos.Insumos import Maquinas as Insumos
+from Modulos.Modelos import Maquinas as Modelos
+from Modulos.Repuestos import Maquinas as Repuestos
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -43,12 +42,7 @@ MODELOS = {
     "insumos": {
         "label": "Insumos",
         "model": Insumos,
-        "fields": ["toner"],
-    },
-    "polizas": {
-        "label": "Polizas",
-        "model": Polizas,
-        "fields": ["seriedad", "contrato"],
+        "fields": ["tipo_insumo", "color", "estado"],
     },
     "repuestos": {
         "label": "Repuestos",

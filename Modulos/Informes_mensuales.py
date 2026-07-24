@@ -33,17 +33,17 @@ comentario en el punto donde se generan; no se inventan ni se aproximan):
 from datetime import datetime, timedelta
 
 from base_de_datos import SessionLocal
-from Variables.Cartera import Cartera
-from Variables.Clientes import Clientes
-from Variables.Contratos import Contratos
-from Variables.Costos import Costos
-from Variables.enums import EstadoFactura, TipoCosto
-from Variables.Equipos import Equipos
-from Variables.Facturacion import Facturacion
-from Variables.Lecturas import Lecturas
-from Variables.Mantenimiento_correctivo import MantenimientoCorrectivo
-from Variables.Mantenimiento_preventivo import MantenimientoPreventivo
-from Variables.Rentabilidad import Rentabilidad
+from Modulos.Cartera import Cartera
+from Modulos.Clientes import Clientes
+from Modulos.Contratos import Contratos
+from Modulos.Costos import Costos
+from Modulos.enums import EstadoFactura, TipoCosto
+from Modulos.Equipos import Equipos
+from Modulos.Facturacion import Facturacion
+from Modulos.Lecturas import Lecturas
+from Modulos.Mantenimiento_correctivo import MantenimientoCorrectivo
+from Modulos.Mantenimiento_preventivo import MantenimientoPreventivo
+from Modulos.Rentabilidad import Rentabilidad
 
 # A partir de cuantos correctivos en el mismo periodo se considera que un
 # equipo tiene fallas recurrentes.
