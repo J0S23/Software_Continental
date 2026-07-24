@@ -125,7 +125,6 @@ CATALOGO_DATOS = {
             campo("nombre_servicio", "Nombre del servicio"),
             campo("descripcion", "Descripción", requerido=False),
             campo("precio", "Precio", "number"),
-            campo("mantenimiento", "Mantenimiento", "select", opciones_enum(TipoMantenimiento), requerido=False),
             campo("descripcion_mantenimiento", "Descripción del mantenimiento", requerido=False),
             campo("repuestos_incluidos", "Repuestos incluidos", requerido=False),
             campo("toner_incluido", "Toner incluido", requerido=False),
