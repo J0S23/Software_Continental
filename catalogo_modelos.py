@@ -2,13 +2,14 @@ from fastapi import HTTPException
 
 from Variables.Clientes import Clientes
 from Variables.Costos import Costos
-from Variables.enums import EstadoCliente, TipoCliente, TipoCosto, EstadoFactura
+from Variables.enums import EstadoCliente, TipoCliente, TipoCosto, EstadoFactura, RolUsuario
 from Variables.Equipos import Equipos
 from Variables.Facturacion import Facturacion
 from Variables.Insumos import Insumo
 from Variables.Modelos import Modelo
 from Variables.Poliza import Poliza
 from Variables.Repuestos import Repuesto
+from Variables.Usuarios import Usuarios
 
 
 def campo(nombre, etiqueta, tipo="text", opciones=None, requerido=True):
@@ -149,6 +150,19 @@ CATALOGO_DATOS = {
         ],
         "enumeraciones": {
             "estado_factura": EstadoFactura,
+        },
+    },
+    "usuarios": {
+        "etiqueta": "Usuarios",
+        "modelo": Usuarios,
+        "campos": [
+            campo("nombre_usuario", "Nombre de usuario"),
+            campo("email", "Email"),
+            campo("rol", "Rol", "select", opciones_enum(RolUsuario)),
+            campo("estado", "Estado"),
+        ],
+        "enumeraciones": {
+            "rol": RolUsuario,
         },
     },
 }
