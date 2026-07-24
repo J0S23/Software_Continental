@@ -1,8 +1,17 @@
 from fastapi import HTTPException
 
 from Modulos.Clientes import Clientes
+from Modulos.Contratos import Contratos
 from Modulos.Costos import Costos
-from Modulos.enums import EstadoCliente, TipoCliente, TipoCosto, EstadoFactura, EmpresaFacturadora, RolUsuario
+from Modulos.enums import (
+    EstadoCliente,
+    TipoCliente,
+    TipoCosto,
+    EstadoFactura,
+    EmpresaFacturadora,
+    RolUsuario,
+    TipoMantenimiento,
+)
 from Modulos.Equipos import Equipos
 from Modulos.Facturacion import Facturacion
 from Modulos.Insumos import Insumo

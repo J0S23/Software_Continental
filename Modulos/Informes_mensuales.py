@@ -2,8 +2,8 @@
 
 Este modulo no tiene tabla propia: cada funcion lee los modelos que ya
 existen (Facturacion, Cartera, Contratos, Equipos, Costos, Rentabilidad,
-Mantenimiento_preventivo, Mantenimiento_correctivo, Lecturas, Clientes) y
-devuelve un diccionario simple listo para convertir a JSON.
+Lecturas, Clientes) y devuelve un diccionario simple listo para
+convertir a JSON.
 
 Datos que el documento pide pero que hoy NO se pueden calcular porque
 ningun modelo tiene el campo necesario (se devuelven como None con un
@@ -25,9 +25,9 @@ comentario en el punto donde se generan; no se inventan ni se aproximan):
   6. Contratos con baja rentabilidad: Rentabilidad es un agregado global
      por periodo, no tiene contrato_id.
   7. Compromisos de pago: ningun modelo tiene ese campo.
-  8. Tiempo promedio de respuesta/solucion de correctivos:
-     Mantenimiento_correctivo solo tiene una fecha (fecha_mantenimiento),
-     no hay fechas separadas de apertura/asignacion/solucion.
+  8. Mantenimientos preventivos/correctivos (cantidad, estado, fallas por
+     equipo, tiempo de respuesta/solucion): el proyecto no tiene modelo
+     de mantenimiento.
 """
 
 from datetime import datetime, timedelta
@@ -41,13 +41,7 @@ from Modulos.enums import EstadoFactura, TipoCosto
 from Modulos.Equipos import Equipos
 from Modulos.Facturacion import Facturacion
 from Modulos.Lecturas import Lecturas
-from Modulos.Mantenimiento_correctivo import MantenimientoCorrectivo
-from Modulos.Mantenimiento_preventivo import MantenimientoPreventivo
 from Modulos.Rentabilidad import Rentabilidad
-
-# A partir de cuantos correctivos en el mismo periodo se considera que un
-# equipo tiene fallas recurrentes.
-UMBRAL_FALLAS_RECURRENTES = 3
 
 # Que tipos de costo cuentan como "costos tecnicos" para el informe tecnico.
 TIPOS_COSTO_TECNICOS = [
@@ -88,8 +82,6 @@ def informe_general(periodo):
         costos = db.query(Costos).filter(Costos.periodo == periodo).all()
         facturas = db.query(Facturacion).filter(Facturacion.periodo == periodo).all()
         cartera = db.query(Cartera).all()
-        preventivos = db.query(MantenimientoPreventivo).all()
-        correctivos = db.query(MantenimientoCorrectivo).all()
 
         facturado_mes = sum(f.total_facturado or 0 for f in facturas)
         recaudado_mes = sum(
@@ -117,9 +109,6 @@ def informe_general(periodo):
             c.monto or 0 for c in cartera if (c.estado or "").strip().lower() != "pagada"
         )
 
-        preventivos_mes = [p for p in preventivos if _en_periodo(p.fecha_programada, mes, anio)]
-        correctivos_mes = [c for c in correctivos if _en_periodo(c.fecha_mantenimiento, mes, anio)]
-
         hoy = datetime.utcnow()
         # Contratos cuya fecha_fin cae dentro de los proximos 60 dias.
         limite = hoy + timedelta(days=60)
@@ -129,15 +118,6 @@ def informe_general(periodo):
             c.cliente_id for c in cartera if "mora" in (c.estado or "").strip().lower()
         }
 
-        conteo_correctivos_por_equipo = {}
-        for c in correctivos_mes:
-            conteo_correctivos_por_equipo[c.equipo_id] = conteo_correctivos_por_equipo.get(c.equipo_id, 0) + 1
-        equipos_fallas_recurrentes = [
-            equipo_id
-            for equipo_id, cantidad in conteo_correctivos_por_equipo.items()
-            if cantidad >= UMBRAL_FALLAS_RECURRENTES
-        ]
-
         recomendaciones = []
         if facturado_mes and margen_promedio < 15:
             recomendaciones.append("Margen del mes por debajo del 15%: revisar costos del periodo.")
@@ -145,10 +125,6 @@ def informe_general(periodo):
             recomendaciones.append(f"{len(clientes_en_mora_ids)} cliente(s) en mora: priorizar gestion de cobro.")
         if contratos_por_vencer:
             recomendaciones.append(f"{len(contratos_por_vencer)} contrato(s) vencen en los proximos 60 dias.")
-        if equipos_fallas_recurrentes:
-            recomendaciones.append(
-                f"{len(equipos_fallas_recurrentes)} equipo(s) con fallas recurrentes: evaluar reparacion mayor o baja."
-            )
 
         return {
             "periodo": periodo,
@@ -170,13 +146,16 @@ def informe_general(periodo):
             # Bloqueado: no hay registro transaccional de entrega de toner
             # con cantidad y fecha (punto 2 del docstring).
             "toneres_entregados": None,
-            "preventivos_del_mes": len(preventivos_mes),
-            "correctivos_del_mes": len(correctivos_mes),
+            # Bloqueado: el proyecto no tiene modelo de mantenimiento
+            # preventivo/correctivo (punto 8 del docstring del modulo).
+            "preventivos_del_mes": None,
+            "correctivos_del_mes": None,
             "contratos_por_vencer": len(contratos_por_vencer),
             # Bloqueado: Rentabilidad no tiene contrato_id (punto 6).
             "contratos_baja_rentabilidad": None,
             "clientes_en_mora": len(clientes_en_mora_ids),
-            "equipos_fallas_recurrentes": len(equipos_fallas_recurrentes),
+            # Bloqueado: depende de mantenimientos correctivos (punto 8).
+            "equipos_fallas_recurrentes": None,
             "recomendaciones": recomendaciones,
         }
     finally:
@@ -266,9 +245,6 @@ def informe_por_equipo(periodo, equipo_id):
         costos = db.query(Costos).filter(Costos.equipo_id == equipo_id, Costos.periodo == periodo).all()
         costos_total = sum(c.valor_total or 0 for c in costos)
 
-        correctivos = db.query(MantenimientoCorrectivo).filter(MantenimientoCorrectivo.equipo_id == equipo_id).all()
-        preventivos = db.query(MantenimientoPreventivo).filter(MantenimientoPreventivo.equipo_id == equipo_id).all()
-
         return {
             "periodo": periodo,
             "equipo_id": equipo_id,
@@ -286,9 +262,11 @@ def informe_por_equipo(periodo, equipo_id):
             "costos": costos_total,
             # Bloqueado: depende de ingreso_generado, que esta bloqueado.
             "rentabilidad": None,
-            "numero_fallas": len(correctivos),
-            "mantenimientos_preventivos": len(preventivos),
-            "mantenimientos_correctivos": len(correctivos),
+            # Bloqueado: el proyecto no tiene modelo de mantenimiento
+            # preventivo/correctivo (punto 8 del docstring del modulo).
+            "numero_fallas": None,
+            "mantenimientos_preventivos": None,
+            "mantenimientos_correctivos": None,
             "estado_tecnico": equipo.estado_tecnico,
         }
     finally:
@@ -344,26 +322,15 @@ def informe_cartera(periodo):
 
 
 def informe_tecnico(periodo):
-    """Correctivos, preventivos, equipos/repuestos mas frecuentes y costos tecnicos del periodo."""
-    mes, anio = _parse_periodo(periodo)
+    """Equipos/repuestos mas frecuentes y costos tecnicos del periodo.
+
+    Bloqueado: el proyecto no tiene modelo de mantenimiento preventivo/
+    correctivo (punto 8 del docstring del modulo), asi que no se pueden
+    calcular correctivos, preventivos, fallas por equipo ni tiempos de
+    respuesta/solucion.
+    """
     db = SessionLocal()
     try:
-        correctivos = db.query(MantenimientoCorrectivo).all()
-        correctivos_mes = [c for c in correctivos if _en_periodo(c.fecha_mantenimiento, mes, anio)]
-
-        preventivos = db.query(MantenimientoPreventivo).all()
-        preventivos_mes = [p for p in preventivos if _en_periodo(p.fecha_programada, mes, anio)]
-
-        preventivos_por_estado = {}
-        for p in preventivos_mes:
-            clave = (p.estado or "sin_estado").strip().lower()
-            preventivos_por_estado[clave] = preventivos_por_estado.get(clave, 0) + 1
-
-        conteo_por_equipo = {}
-        for c in correctivos_mes:
-            conteo_por_equipo[c.equipo_id] = conteo_por_equipo.get(c.equipo_id, 0) + 1
-        equipos_mas_fallas = sorted(conteo_por_equipo.items(), key=lambda item: item[1], reverse=True)[:5]
-
         costos_repuesto = (
             db.query(Costos)
             .filter(Costos.tipo_costo == TipoCosto.REPUESTO, Costos.periodo == periodo)
@@ -388,13 +355,12 @@ def informe_tecnico(periodo):
 
         return {
             "periodo": periodo,
-            "correctivos_del_mes": len(correctivos_mes),
-            "preventivos_por_estado": preventivos_por_estado,
-            # Bloqueado: Mantenimiento_correctivo solo tiene una fecha, no
-            # hay fechas separadas de apertura/asignacion/solucion (punto 8).
+            # Bloqueado: ver nota de la funcion (punto 8 del docstring del modulo).
+            "correctivos_del_mes": None,
+            "preventivos_por_estado": None,
             "tiempo_promedio_respuesta": None,
             "tiempo_promedio_solucion": None,
-            "equipos_con_mas_fallas": [{"equipo_id": eid, "fallas": n} for eid, n in equipos_mas_fallas],
+            "equipos_con_mas_fallas": None,
             "repuestos_mas_usados": [{"descripcion": desc, "cantidad": cant} for desc, cant in repuestos_mas_usados],
             "costos_tecnicos_por_contrato": costos_tecnicos_por_contrato,
         }

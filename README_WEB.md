@@ -30,14 +30,14 @@ FastAPI no abre el navegador automaticamente; el servidor queda activo en la ter
 ## Tipos disponibles
 
 - `clientes`
-- `modelos`
 - `equipos`
 - `insumos`
-- `polizas`
+- `contratos`
 - `repuestos`
-- `mano_obra`
-- `impuestos`
-- `valor_facturado`
+- `servicios`
+- `costos`
+- `facturacion`
+- `usuarios`
 
 ## API
 
@@ -75,7 +75,7 @@ La aplicacion usa SQLite en `continental_app.db`. Ese archivo contiene datos rea
 
 ## Organizacion
 
-`app.py` queda como punto de entrada. La configuracion de tablas y campos vive en `catalogo_modelos.py`, las operaciones de base de datos en `servicios_datos.py`, las rutas de pagina en `routers/paginas.py`, y la conexion a SQLite en `base_de_datos.py`.
+`app.py` queda como punto de entrada: monta los routers, importa los modelos que no tienen CRUD generico (para que `crear_tablas()` los registre) y arranca uvicorn. La configuracion de tablas y campos vive en `catalogo_modelos.py`, las operaciones de base de datos en `servicios_datos.py`, las rutas de pagina en `routers/paginas.py`, las rutas de datos en `routers/datos.py`, y la conexion a SQLite en `base_de_datos.py`. Los modelos SQLAlchemy de cada entidad viven en `Modulos/`.
 
 ```text
 Continental.py/
@@ -89,22 +89,26 @@ Continental.py/
 |-- routers/
 |   |-- datos.py
 |   `-- paginas.py
+|-- Modulos/
+|   |-- Cartera.py
+|   |-- Clientes.py
+|   |-- Contratos.py
+|   |-- Costos.py
+|   |-- Dashboard.py
+|   |-- enums.py
+|   |-- Equipos.py
+|   |-- Facturacion.py
+|   |-- Informes_mensuales.py
+|   |-- Insumos.py
+|   |-- Lecturas.py
+|   |-- Rentabilidad.py
+|   |-- Repuestos.py
+|   |-- Sedes.py
+|   |-- Servicio.py
+|   `-- Usuarios.py
 |-- templates/
 |   `-- index.html
-|-- static/
-|   |-- style.css
-|   `-- script.js
-`-- Variables/
-    |-- Clientes.py
-    |-- Modelos.py
-    |-- Insumos.py
-    |-- Poliza.py
-    |-- Repuestos.py
-    |-- Costos.py
-    |-- Facturacion.py
-    `-- enums.py
+`-- static/
+    |-- style.css
+    `-- script.js
 ```
-
-## Compatibilidad
-
-`database.py` y `model_registry.py` se mantienen como alias para codigo anterior, pero el codigo nuevo debe importar desde los modulos con nombres en espanol.
