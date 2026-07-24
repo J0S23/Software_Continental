@@ -18,6 +18,8 @@ from Modulos.Insumos import Insumo
 from Modulos.Repuestos import Repuesto
 from Modulos.Servicio import Servicio
 from Modulos.Usuarios import Usuarios
+from Modulos.Contratos import Contratos
+from Modulos.enums import TipoMantenimiento
 
 
 def campo(nombre, etiqueta, tipo="text", opciones=None, requerido=True):
@@ -94,8 +96,6 @@ CATALOGO_DATOS = {
             campo("nombre_servicio", "Nombre del servicio", requerido=False),
             campo("descripcion_servicio", "Descripcion del servicio", requerido=False),
             campo("precio_servicio", "Precio del servicio", "number", requerido=False),
-            campo("mantenimiento_preventivo_incluido", "Mant. preventivo incluido", requerido=False),
-            campo("mantenimiento_correctivo_incluido", "Mant. correctivo incluido", requerido=False),
             campo("repuestos_incluidos", "Repuestos incluidos", requerido=False),
             campo("toner_incluido", "Toner incluido", requerido=False),
             campo("toner_respaldo_sitio", "Toner respaldo en sitio", requerido=False),
@@ -123,7 +123,6 @@ CATALOGO_DATOS = {
             campo("nombre_servicio", "Nombre del servicio"),
             campo("descripcion", "Descripción", requerido=False),
             campo("precio", "Precio", "number"),
-            campo("mantenimiento", "Mantenimiento", "select", opciones_enum(TipoMantenimiento), requerido=False),
             campo("descripcion_mantenimiento", "Descripción del mantenimiento", requerido=False),
             campo("repuestos_incluidos", "Repuestos incluidos", requerido=False),
             campo("toner_incluido", "Toner incluido", requerido=False),
