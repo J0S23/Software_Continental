@@ -12,7 +12,7 @@ class Servicio(Base):
     nombre_servicio = Column(String)
     descripcion = Column(String, nullable=True)
     precio = Column(Float, default=0)
-    mantenimiento = Column(SQLEnum(TipoMantenimiento), nullable=True)
+    mantenimiento = Column(SQLEnum(TipoMantenimiento), default=TipoMantenimiento.CORRECTIVO, nullable=False)
     descripcion_mantenimiento = Column(String, nullable=True)
     repuestos_incluidos = Column(String, default="No")
     toner_incluido = Column(String, default="No")
@@ -26,7 +26,7 @@ class Servicio(Base):
         Base.metadata.create_all(bind=engine)
     
     @staticmethod
-    def agregar(cliente_id, nombre_servicio, descripcion="", precio=0, mantenimiento=None,
+    def agregar(cliente_id, nombre_servicio, descripcion="", precio=0,
                 descripcion_mantenimiento="", repuestos_incluidos="No", toner_incluido="No",
                 toner_respaldo_sitio="No", equipo_respaldo_incluido="No", estado="Activo"):
         """Agrega un servicio a la BD"""
@@ -36,7 +36,6 @@ class Servicio(Base):
             nombre_servicio=nombre_servicio,
             descripcion=descripcion,
             precio=precio,
-            mantenimiento=mantenimiento,
             descripcion_mantenimiento=descripcion_mantenimiento,
             repuestos_incluidos=repuestos_incluidos,
             toner_incluido=toner_incluido,

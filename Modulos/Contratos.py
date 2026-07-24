@@ -1,3 +1,4 @@
+from Modulos.enums import TipoMantenimiento
 from sqlalchemy import Column, Integer, String, DateTime
 from datetime import datetime
 from base_de_datos import Base, SessionLocal, engine
@@ -13,6 +14,7 @@ class Contratos(Base):
     tipo_contrato = Column(String)
     forma_legalizacion = Column(String)
     seriedad = Column(String, nullable=True) 
+    mantenimiento = Column(SQLEnum(TipoMantenimiento), default=TipoMantenimiento.PREVENTIVO, nullable=False)
     fecha_inicio = Column(DateTime)
     fecha_fin = Column(DateTime, nullable=True)
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
