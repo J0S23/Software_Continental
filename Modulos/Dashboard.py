@@ -2,15 +2,14 @@
 
 Este modulo no tiene tabla propia: reutiliza las funciones de calculo de
 Modulos/Informes_mensuales.py (facturado, recaudado, cartera, costos,
-utilidad, margen, mantenimientos) en vez de repetir esa logica, y solo
-agrega aqui lo que Informes_mensuales no cubre:
+utilidad, margen) en vez de repetir esa logica, y solo agrega aqui lo
+que Informes_mensuales no cubre:
 
   - Indicadores puntuales del mes actual que informe_general() no calcula:
     contratos activos, equipos instalados/disponibles/en reparacion.
   - Series de tiempo (varios periodos hacia atras) para graficas:
     facturacion/recaudo/utilidad/margen, costos por tipo, ingresos por
-    cliente, rentabilidad por cliente, cartera por edad y correctivos por
-    equipo.
+    cliente, rentabilidad por cliente y cartera por edad.
 
 Bloqueado, por los mismos motivos ya documentados en el docstring de
 Informes_mensuales.py (no se inventan ni se aproximan):
@@ -23,6 +22,8 @@ Informes_mensuales.py (no se inventan ni se aproximan):
   - Contratos con baja rentabilidad: Rentabilidad no tiene contrato_id
     (punto 6 de Informes_mensuales); se expone tal cual lo devuelve
     informe_general().
+  - Correctivos por equipo: el proyecto no tiene modelo de mantenimiento
+    (punto 8 de Informes_mensuales).
 """
 
 from datetime import datetime
@@ -34,8 +35,7 @@ from Modulos.Costos import Costos
 from Modulos.enums import EstadoFactura
 from Modulos.Equipos import Equipos
 from Modulos.Facturacion import Facturacion
-from Modulos.Informes_mensuales import _en_periodo, _parse_periodo, informe_general, informe_por_cliente
-from Modulos.Mantenimiento_correctivo import MantenimientoCorrectivo
+from Modulos.Informes_mensuales import _parse_periodo, informe_general, informe_por_cliente
 
 # Limites de dias de mora para agrupar cartera por antiguedad.
 RANGOS_ANTIGUEDAD_CARTERA = (
@@ -231,25 +231,12 @@ def serie_cartera_por_edad(periodo_final, meses=6):
 
 
 def serie_correctivos_por_equipo(periodo_final, meses=6):
-    """Cantidad de mantenimientos correctivos por equipo, mes a mes."""
-    periodos = _periodos_hacia_atras(periodo_final, meses)
-
-    db = SessionLocal()
-    try:
-        correctivos = db.query(MantenimientoCorrectivo).all()
-    finally:
-        db.close()
-
-    serie = []
-    for periodo in periodos:
-        mes, anio = _parse_periodo(periodo)
-        conteo = {}
-        for c in correctivos:
-            if _en_periodo(c.fecha_mantenimiento, mes, anio):
-                conteo[c.equipo_id] = conteo.get(c.equipo_id, 0) + 1
-        serie.append({"periodo": periodo, "correctivos_por_equipo": conteo})
-
-    return serie
+    """Bloqueado: el proyecto no tiene modelo de mantenimiento correctivo
+    (punto 8 de Informes_mensuales)."""
+    return [
+        {"periodo": periodo, "correctivos_por_equipo": None}
+        for periodo in _periodos_hacia_atras(periodo_final, meses)
+    ]
 
 
 def serie_consumo_paginas_por_cliente(periodo_final, meses=6):
