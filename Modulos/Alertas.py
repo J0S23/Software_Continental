@@ -1,0 +1,181 @@
+
+#Sin tabla propia, igual que Informes_mensuales y Dashboard: lee los
+#modelos existentes y devuelve alertas calculadas en el momento.
+
+#Bloqueadas por falta de datos en el modelo actual (no se inventan):
+#- Stock bajo de consumibles: Insumos no tiene columna de stock.
+# Tonerentregados con frecuencia inusual: no hay registro transaccional
+#de entregas (mismo motivo que en Informes_mensuales).
+#Equipos con fallas recurrentes / mantenimientos: Servicio (correctivo)
+# #no tiene un contador de fallas por equipo todavia
+
+from datetime import datetime, timedelta
+
+from base_de_datos import SessionLocal
+from Modulos.Cartera import Cartera
+from Modulos.Contratos import Contratos
+from Modulos.enums import EstadoFactura
+from Modulos.Equipos import Equipos
+from Modulos.Facturacion import Facturacion
+from Modulos.Lecturas import Lecturas
+
+UMBRAL_VENCIMIENTO_DIAS = (90, 60, 30)
+UMBRAL_FACTURA_PROXIMA_DIAS = 7
+
+
+def _alerta(tipo, nivel, mensaje, referencia_id=None):
+    return {"tipo": tipo, "nivel": nivel, "mensaje": mensaje, "referencia_id": referencia_id}
+
+
+def _alertas_contratos(db, hoy):
+    alertas = []
+    contratos = db.query(Contratos).all()
+
+    for c in contratos:
+        if not c.fecha_fin:
+            continue
+
+        dias_restantes = (c.fecha_fin - hoy).days
+        activo = (c.estado_contrato or "").strip().lower() == "activo"
+
+        if activo and dias_restantes < 0:
+            alertas.append(_alerta(
+                "contrato_vencido", "critico",
+                f"El contrato {c.numero_contrato} esta vencido desde hace {abs(dias_restantes)} dia(s).",
+                c.id,
+            ))
+        elif activo and dias_restantes <= min(UMBRAL_VENCIMIENTO_DIAS):
+            alertas.append(_alerta(
+                "contrato_por_vencer", "advertencia",
+                f"El contrato {c.numero_contrato} vence en {dias_restantes} dia(s).",
+                c.id,
+            ))
+
+    return alertas
+
+
+def _alertas_facturacion(db, hoy):
+    alertas = []
+    facturas = db.query(Facturacion).all()
+
+    for f in facturas:
+        if f.estado_factura == EstadoFactura.PAGADA or f.estado_factura == EstadoFactura.ANULADA:
+            continue
+
+        if f.fecha_vencimiento and f.fecha_vencimiento < hoy:
+            alertas.append(_alerta(
+                "factura_vencida", "critico",
+                f"La factura {f.numero_factura} esta vencida.",
+                f.id,
+            ))
+        elif f.fecha_vencimiento and (f.fecha_vencimiento - hoy).days <= UMBRAL_FACTURA_PROXIMA_DIAS:
+            alertas.append(_alerta(
+                "factura_por_vencer", "advertencia",
+                f"La factura {f.numero_factura} vence pronto.",
+                f.id,
+            ))
+
+    return alertas
+
+
+def _alertas_cartera(db):
+    alertas = []
+    cartera = db.query(Cartera).all()
+    clientes_en_mora = {}
+
+    for c in cartera:
+        if "mora" in (c.estado or "").strip().lower():
+            clientes_en_mora[c.cliente_id] = clientes_en_mora.get(c.cliente_id, 0) + 1
+
+    for cliente_id, cantidad in clientes_en_mora.items():
+        nivel = "critico" if cantidad > 1 else "advertencia"
+        alertas.append(_alerta(
+            "cliente_en_mora", nivel,
+            f"El cliente {cliente_id} tiene {cantidad} registro(s) de cartera en mora.",
+            cliente_id,
+        ))
+
+    return alertas
+
+
+def _alertas_equipos(db):
+    """Equipos instalados sin contrato activo que los referencie, y
+    equipos disponibles sin uso (creados hace mas de 90 dias y aun
+    'disponible')."""
+    alertas = []
+    equipos = db.query(Equipos).all()
+    contratos_activos = db.query(Contratos).filter(Contratos.estado_contrato == "activo").all()
+    equipos_con_contrato = {c.equipo_id for c in contratos_activos if c.equipo_id}
+    hoy = datetime.utcnow()
+
+    for e in equipos:
+        estado = (e.estado_equipo or "").strip().lower()
+
+        if estado == "instalado" and e.id not in equipos_con_contrato:
+            alertas.append(_alerta(
+                "equipo_sin_contrato", "advertencia",
+                f"El equipo {e.numero_serie} figura instalado pero no tiene contrato activo asociado.",
+                e.id,
+            ))
+
+        if estado == "disponible" and e.fecha_creacion and (hoy - e.fecha_creacion).days > 90:
+            alertas.append(_alerta(
+                "equipo_sin_uso", "info",
+                f"El equipo {e.numero_serie} lleva mas de 90 dias disponible sin asignar.",
+                e.id,
+            ))
+
+    return alertas
+
+
+def _alertas_lecturas(db):
+    """Lecturas pendientes y lecturas inconsistentes (contador actual
+    menor al de la lectura anterior del mismo equipo)."""
+    alertas = []
+    lecturas = db.query(Lecturas).order_by(Lecturas.equipo_id, Lecturas.fecha_lectura).all()
+
+    anterior_por_equipo = {}
+    for l in lecturas:
+        if (l.estado_lectura or "").strip().lower() == "pendiente":
+            alertas.append(_alerta(
+                "lectura_pendiente", "advertencia",
+                f"Lectura pendiente de validar para el equipo {l.equipo_id}.",
+                l.id,
+            ))
+
+        anterior = anterior_por_equipo.get(l.equipo_id)
+        if anterior is not None and l.contador is not None and l.contador < anterior:
+            alertas.append(_alerta(
+                "lectura_inconsistente", "critico",
+                f"El contador del equipo {l.equipo_id} bajo respecto a la lectura anterior.",
+                l.id,
+            ))
+        anterior_por_equipo[l.equipo_id] = l.contador
+
+    return alertas
+
+
+def generar_alertas():
+    """Punto de entrada: agrupa todas las alertas del sistema."""
+    hoy = datetime.utcnow()
+    db = SessionLocal()
+    try:
+        alertas = (
+            _alertas_contratos(db, hoy)
+            + _alertas_facturacion(db, hoy)
+            + _alertas_cartera(db)
+            + _alertas_equipos(db)
+            + _alertas_lecturas(db)
+        )
+    finally:
+        db.close()
+
+    orden_nivel = {"critico": 0, "advertencia": 1, "info": 2}
+    alertas.sort(key=lambda a: orden_nivel.get(a["nivel"], 3))
+
+    return {
+        "generado_en": hoy.isoformat(),
+        "total": len(alertas),
+        "criticas": sum(1 for a in alertas if a["nivel"] == "critico"),
+        "alertas": alertas,
+    }
