@@ -6,8 +6,8 @@ from Modulos.enums import EstadoCliente, TipoCliente, TipoCosto, EstadoFactura, 
 from Modulos.Equipos import Equipos
 from Modulos.Facturacion import Facturacion
 from Modulos.Insumos import Insumo
-from Modulos.Modelos import Modelo
 from Modulos.Repuestos import Repuesto
+from Modulos.Servicio import Servicio
 from Modulos.Usuarios import Usuarios
 
 
@@ -46,16 +46,6 @@ CATALOGO_DATOS = {
             "estado_cliente": EstadoCliente,
         },
     },
-    "modelos": {
-        "etiqueta": "Modelos",
-        "modelo": Modelo,
-        "campos": [
-            campo("modelo", "Modelo"),
-            campo("toner", "Toner"),
-            campo("rend_orig", "Rendimiento original", "number"),
-            campo("rend_gen", "Rendimiento generico", "number"),
-        ],
-    },
     "equipos": {
         "etiqueta": "Equipos",
         "modelo": Equipos,
@@ -67,6 +57,10 @@ CATALOGO_DATOS = {
             campo("estado_equipo", "Estado del equipo"),
             campo("estado_tecnico", "Estado tecnico"),
             campo("recomendacion_tecnica", "Recomendacion tecnica", requerido=False),
+            campo("modelo", "Modelo", requerido=False),
+            campo("toner", "Toner", requerido=False),
+            campo("rend_orig", "Rendimiento original", "number", requerido=False),
+            campo("rend_gen", "Rendimiento generico", "number", requerido=False),
         ],
     },
     "insumos": {
@@ -76,6 +70,29 @@ CATALOGO_DATOS = {
             campo("tipo_insumo", "Tipo de insumo"),
             campo("color", "Color", requerido=False),
             campo("estado", "Estado", requerido=False),
+        ],
+    },
+    "contratos": {
+        "etiqueta": "Contratos",
+        "modelo": Contratos,
+        "campos": [
+            campo("numero_contrato", "Numero de contrato"),
+            campo("cliente_id", "Cliente", "number"),
+            campo("estado_contrato", "Estado del contrato"),
+            campo("tipo_contrato", "Tipo de contrato"),
+            campo("forma_legalizacion", "Forma de legalizacion"),
+            campo("seriedad", "Seriedad", requerido=False),
+            campo("nombre_servicio", "Nombre del servicio", requerido=False),
+            campo("descripcion_servicio", "Descripcion del servicio", requerido=False),
+            campo("precio_servicio", "Precio del servicio", "number", requerido=False),
+            campo("mantenimiento_preventivo_incluido", "Mant. preventivo incluido", requerido=False),
+            campo("mantenimiento_correctivo_incluido", "Mant. correctivo incluido", requerido=False),
+            campo("repuestos_incluidos", "Repuestos incluidos", requerido=False),
+            campo("toner_incluido", "Toner incluido", requerido=False),
+            campo("toner_respaldo_sitio", "Toner respaldo en sitio", requerido=False),
+            campo("equipo_respaldo_incluido", "Equipo de respaldo incluido", requerido=False),
+            campo("fecha_inicio", "Fecha de inicio", "date"),
+            campo("fecha_fin", "Fecha de fin", "date", requerido=False),
         ],
     },
     "repuestos": {
@@ -88,6 +105,22 @@ CATALOGO_DATOS = {
             campo("rodillo_fusor", "Rodillo fusor"),
             campo("sleeven_fusor", "Sleeven fusor"),
             campo("telilla", "Telilla"),
+        ],
+    },
+    "servicios": {
+        "etiqueta": "Servicios",
+        "modelo": Servicio,
+        "campos": [
+            campo("nombre_servicio", "Nombre del servicio"),
+            campo("descripcion", "Descripción", requerido=False),
+            campo("precio", "Precio", "number"),
+            campo("mantenimiento", "Mantenimiento", "select", opciones_enum(TipoMantenimiento), requerido=False),
+            campo("descripcion_mantenimiento", "Descripción del mantenimiento", requerido=False),
+            campo("repuestos_incluidos", "Repuestos incluidos", requerido=False),
+            campo("toner_incluido", "Toner incluido", requerido=False),
+            campo("toner_respaldo_sitio", "Toner respaldo sitio", requerido=False),
+            campo("equipo_respaldo_incluido", "Equipo respaldo incluido", requerido=False),
+            campo("estado", "Estado", requerido=False),
         ],
     },
     "costos": {
