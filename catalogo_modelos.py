@@ -188,6 +188,22 @@ CATALOGO_DATOS = {
             "estado_factura": EstadoFactura,
         },
     },
+    "equipos_respaldo": {
+    "etiqueta": "Equipos de Respaldo",
+    "modelo": EquipoRespaldo,
+    "campos": [
+        campo("cliente_id", "Cliente", "number"),
+        campo("contrato_id", "Contrato", "number", requerido=False),
+        campo("equipo_principal_id", "Equipo principal", "number"),
+        campo("equipo_respaldo_id", "Equipo de respaldo", "number"),
+        campo("motivo", "Motivo"),
+        campo("tecnico_responsable", "Tecnico responsable"),
+        campo("contador_inicial_respaldo", "Contador inicial", "number", requerido=False),
+        campo("fecha_estimada_retiro", "Fecha estimada de retiro", "date", requerido=False),
+        campo("costo_asociado", "Costo asociado", "number", requerido=False),
+        campo("observaciones", "Observaciones", requerido=False),
+    ],
+},
     "usuarios": {
         "etiqueta": "Usuarios",
         "modelo": Usuarios,
