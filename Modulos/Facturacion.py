@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, Enum a
 from datetime import datetime
 from base_de_datos import Base, SessionLocal, engine
 from Modulos.enums import EstadoFactura
+from .enums import EmpresaFacturadora
 
 
 class Facturacion(Base):
@@ -21,6 +22,7 @@ class Facturacion(Base):
     periodo = Column(String)
     cliente_id = Column(Integer)
     contrato_id = Column(Integer)
+    empresa_factura = Column(SQLEnum(EmpresaFacturadora))
 
     numero_factura = Column(String)
     fecha_factura = Column(DateTime)
