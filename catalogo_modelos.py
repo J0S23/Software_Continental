@@ -1,15 +1,14 @@
 from fastapi import HTTPException
 
-from Variables.Clientes import Clientes
-from Variables.Costos import Costos
-from Variables.enums import EstadoCliente, TipoCliente, TipoCosto, EstadoFactura, RolUsuario
-from Variables.Equipos import Equipos
-from Variables.Facturacion import Facturacion
-from Variables.Insumos import Insumo
-from Variables.Modelos import Modelo
-from Variables.Poliza import Poliza
-from Variables.Repuestos import Repuesto
-from Variables.Usuarios import Usuarios
+from Modulos.Clientes import Clientes
+from Modulos.Costos import Costos
+from Modulos.enums import EstadoCliente, TipoCliente, TipoCosto, EstadoFactura, RolUsuario
+from Modulos.Equipos import Equipos
+from Modulos.Facturacion import Facturacion
+from Modulos.Insumos import Insumo
+from Modulos.Modelos import Modelo
+from Modulos.Repuestos import Repuesto
+from Modulos.Usuarios import Usuarios
 
 
 def campo(nombre, etiqueta, tipo="text", opciones=None, requerido=True):
@@ -74,15 +73,9 @@ CATALOGO_DATOS = {
         "etiqueta": "Insumos",
         "modelo": Insumo,
         "campos": [
-            campo("toner", "Toner"),
-        ],
-    },
-    "polizas": {
-        "etiqueta": "Polizas",
-        "modelo": Poliza,
-        "campos": [
-            campo("seriedad", "Seriedad"),
-            campo("contrato", "Contrato"),
+            campo("tipo_insumo", "Tipo de insumo"),
+            campo("color", "Color", requerido=False),
+            campo("estado", "Estado", requerido=False),
         ],
     },
     "repuestos": {
