@@ -1,5 +1,5 @@
 from enum import Enum
-
+import enum
 
 class TipoCliente(str, Enum):
     """Tipos de clientes en el sistema"""
@@ -57,3 +57,12 @@ class RolUsuario(str, Enum):
     FACTURACION = "Facturación"
     CARTERA = "Cartera"
     CONSULTA_LIMITADA = "Consulta limitada"
+
+class TipoEquipo(str, enum.Enum):
+    MULTIFUNCIONAL = "multifuncional"
+    IMPRESORA = "impresora"
+    ESCANER = "escaner"
+    PLOTTER = "plotter"
+    OTRO = "otro"
+
+    
