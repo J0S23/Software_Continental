@@ -14,6 +14,10 @@ class Equipos(Base):
     estado_equipo = Column(String)
     estado_tecnico = Column(String)
     recomendacion_tecnica = Column(String, nullable=True)
+    modelo = Column(String, nullable=True)
+    toner = Column(String, nullable=True)
+    rend_orig = Column(Float, nullable=True)
+    rend_gen = Column(Float, nullable=True)
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
     
     @staticmethod
@@ -21,7 +25,8 @@ class Equipos(Base):
         Base.metadata.create_all(bind=engine)
     
     @staticmethod
-    def agregar(numero_serie, tipo_equipo, tecnologia, color, estado_equipo, estado_tecnico, recomendacion_tecnica=""):
+    def agregar(numero_serie, tipo_equipo, tecnologia, color, estado_equipo, estado_tecnico,
+                recomendacion_tecnica="", modelo="", toner="", rend_orig=None, rend_gen=None):
         """Agrega un equipo a la BD"""
         db = SessionLocal()
         nuevo_equipo = Equipos(
@@ -31,7 +36,11 @@ class Equipos(Base):
             color=color,
             estado_equipo=estado_equipo,
             estado_tecnico=estado_tecnico,
-            recomendacion_tecnica=recomendacion_tecnica
+            recomendacion_tecnica=recomendacion_tecnica,
+            modelo=modelo,
+            toner=toner,
+            rend_orig=rend_orig,
+            rend_gen=rend_gen,
         )
         db.add(nuevo_equipo)
         db.commit()
