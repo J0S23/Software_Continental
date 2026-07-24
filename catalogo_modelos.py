@@ -9,6 +9,8 @@ from Modulos.Insumos import Insumo
 from Modulos.Repuestos import Repuesto
 from Modulos.Servicio import Servicio
 from Modulos.Usuarios import Usuarios
+from Modulos.Contratos import Contratos
+from Modulos.enums import TipoMantenimiento
 
 
 def campo(nombre, etiqueta, tipo="text", opciones=None, requerido=True):
