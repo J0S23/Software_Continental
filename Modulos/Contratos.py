@@ -12,6 +12,7 @@ class Contratos(Base):
     estado_contrato = Column(String)
     tipo_contrato = Column(String)
     forma_legalizacion = Column(String)
+    seriedad = Column(String, nullable=True) 
     fecha_inicio = Column(DateTime)
     fecha_fin = Column(DateTime, nullable=True)
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
@@ -21,7 +22,7 @@ class Contratos(Base):
         Base.metadata.create_all(bind=engine)
     
     @staticmethod
-    def agregar(numero_contrato, cliente_id, estado_contrato, tipo_contrato, forma_legalizacion, fecha_inicio, fecha_fin=None):
+    def agregar(numero_contrato, cliente_id, estado_contrato, tipo_contrato, forma_legalizacion, fecha_inicio, fecha_fin=None, seriedad=""):
         """Agrega un contrato a la BD"""
         db = SessionLocal()
         nuevo_contrato = Contratos(
@@ -31,7 +32,8 @@ class Contratos(Base):
             tipo_contrato=tipo_contrato,
             forma_legalizacion=forma_legalizacion,
             fecha_inicio=fecha_inicio,
-            fecha_fin=fecha_fin
+            fecha_fin=fecha_fin,
+            seriedad=seriedad,
         )
         db.add(nuevo_contrato)
         db.commit()
