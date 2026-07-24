@@ -1,3 +1,4 @@
+from Modulos.enums import TipoMantenimiento
 from sqlalchemy import Column, Integer, String, Float, DateTime
 from datetime import datetime
 from base_de_datos import Base, SessionLocal, engine
@@ -10,8 +11,8 @@ class Servicio(Base):
     nombre_servicio = Column(String)
     descripcion = Column(String, nullable=True)
     precio = Column(Float, default=0)
-    mantenimiento_preventivo_incluido = Column(String, default="No")
-    mantenimiento_correctivo_incluido = Column(String, default="No")
+    mantenimiento = Column(SQLEnum(TipoMantenimiento), nullable=True)
+    descripcion_mantenimiento = Column(String, nullable=True)
     repuestos_incluidos = Column(String, default="No")
     toner_incluido = Column(String, default="No")
     toner_respaldo_sitio = Column(String, default="No")
@@ -24,8 +25,8 @@ class Servicio(Base):
         Base.metadata.create_all(bind=engine)
     
     @staticmethod
-    def agregar(nombre_servicio, descripcion="", precio=0, mantenimiento_preventivo_incluido="No",
-                mantenimiento_correctivo_incluido="No", repuestos_incluidos="No", toner_incluido="No",
+    def agregar(nombre_servicio, descripcion="", precio=0, mantenimiento=None,
+                descripcion_mantenimiento="", repuestos_incluidos="No", toner_incluido="No",
                 toner_respaldo_sitio="No", equipo_respaldo_incluido="No", estado="Activo"):
         """Agrega un servicio a la BD"""
         db = SessionLocal()
@@ -33,8 +34,8 @@ class Servicio(Base):
             nombre_servicio=nombre_servicio,
             descripcion=descripcion,
             precio=precio,
-            mantenimiento_preventivo_incluido=mantenimiento_preventivo_incluido,
-            mantenimiento_correctivo_incluido=mantenimiento_correctivo_incluido,
+            mantenimiento=mantenimiento,
+            descripcion_mantenimiento=descripcion_mantenimiento,
             repuestos_incluidos=repuestos_incluidos,
             toner_incluido=toner_incluido,
             toner_respaldo_sitio=toner_respaldo_sitio,

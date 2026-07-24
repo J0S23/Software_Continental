@@ -80,3 +80,7 @@ class EmpresaFacturadora(str, Enum):
     ASESORIAS_CONTINENTAL = "Asesorías y Servicios Continental"
     OTRA = "Otra"
 
+class TipoMantenimiento(str, Enum):
+    """Tipos de mantenimiento que puede incluir un servicio"""
+    PREVENTIVO = "preventivo"
+    CORRECTIVO = "correctivo"
