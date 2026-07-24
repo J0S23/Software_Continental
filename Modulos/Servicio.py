@@ -8,6 +8,7 @@ class Servicio(Base):
     __tablename__ = "servicios"
     
     id = Column(Integer, primary_key=True, index=True)
+    cliente_id = Column(Integer)
     nombre_servicio = Column(String)
     descripcion = Column(String, nullable=True)
     precio = Column(Float, default=0)
@@ -25,12 +26,13 @@ class Servicio(Base):
         Base.metadata.create_all(bind=engine)
     
     @staticmethod
-    def agregar(nombre_servicio, descripcion="", precio=0, mantenimiento=None,
+    def agregar(cliente_id, nombre_servicio, descripcion="", precio=0, mantenimiento=None,
                 descripcion_mantenimiento="", repuestos_incluidos="No", toner_incluido="No",
                 toner_respaldo_sitio="No", equipo_respaldo_incluido="No", estado="Activo"):
         """Agrega un servicio a la BD"""
         db = SessionLocal()
         nuevo_servicio = Servicio(
+            cliente_id=cliente_id,
             nombre_servicio=nombre_servicio,
             descripcion=descripcion,
             precio=precio,
