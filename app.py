@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from base_de_datos import crear_tablas
 from configuracion import RUTA_STATIC
 from routers import datos, paginas
+from routers.exportacion import router as exportacion_router
 
 # Importados solo para registrar sus tablas en Base.metadata antes de
 # crear_tablas(); catalogo_modelos.py no cubre estos modelos porque no
@@ -20,6 +21,7 @@ app = FastAPI(title="Gestor de Datos Continental")
 app.mount("/static", StaticFiles(directory=RUTA_STATIC), name="static")
 app.include_router(paginas.router)
 app.include_router(datos.router)
+app.include_router(exportacion_router)  # Exportación CSV/Excel
 
 
 if __name__ == "__main__":
