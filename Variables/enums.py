@@ -65,4 +65,12 @@ class TipoEquipo(str, enum.Enum):
     PLOTTER = "plotter"
     OTRO = "otro"
 
-    
+class EstadoEquipo(str, enum.Enum):
+    DISPONIBLE = "disponible"
+    INSTALADO = "instalado"
+    EN_MANTENIMIENTO = "en_mantenimiento"
+    EN_REPARACION = "en_reparacion"
+    DE_RESPALDO = "de_respaldo"
+    RETIRADO = "retirado"
+    DADO_DE_BAJA = "dado_de_baja"
+
