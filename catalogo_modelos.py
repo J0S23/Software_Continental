@@ -94,15 +94,10 @@ CATALOGO_DATOS = {
             campo("tipo_contrato", "Tipo de contrato"),
             campo("forma_legalizacion", "Forma de legalizacion"),
             campo("seriedad", "Seriedad", requerido=False),
-            campo("nombre_servicio", "Nombre del servicio", requerido=False),
-            campo("descripcion_servicio", "Descripcion del servicio", requerido=False),
-            campo("precio_servicio", "Precio del servicio", "number", requerido=False),
-            campo("repuestos_incluidos", "Repuestos incluidos", requerido=False),
-            campo("toner_incluido", "Toner incluido", requerido=False),
-            campo("toner_respaldo_sitio", "Toner respaldo en sitio", requerido=False),
-            campo("equipo_respaldo_incluido", "Equipo de respaldo incluido", requerido=False),
+            campo("equipo_id", "Equipo", "number", requerido=False),
             campo("fecha_inicio", "Fecha de inicio", "date"),
             campo("fecha_fin", "Fecha de fin", "date", requerido=False),
+            # "mantenimiento" no se expone: siempre queda Preventivo por defecto (se fija una sola vez).
         ],
     },
     "repuestos": {
@@ -121,15 +116,18 @@ CATALOGO_DATOS = {
         "etiqueta": "Servicios",
         "modelo": Servicio,
         "campos": [
+            campo("cliente_id", "Cliente", "number"),
+            campo("equipo_id", "Equipo", "number", requerido=False),
             campo("nombre_servicio", "Nombre del servicio"),
-            campo("descripcion", "Descripción", requerido=False),
+            campo("descripcion", "Descripcion", requerido=False),
             campo("precio", "Precio", "number"),
-            campo("descripcion_mantenimiento", "Descripción del mantenimiento", requerido=False),
+            campo("descripcion_mantenimiento", "Descripcion del mantenimiento", requerido=False),
             campo("repuestos_incluidos", "Repuestos incluidos", requerido=False),
             campo("toner_incluido", "Toner incluido", requerido=False),
             campo("toner_respaldo_sitio", "Toner respaldo sitio", requerido=False),
             campo("equipo_respaldo_incluido", "Equipo respaldo incluido", requerido=False),
             campo("estado", "Estado", requerido=False),
+            # "mantenimiento" no se expone: siempre queda Correctivo por defecto.
         ],
     },
     "costos": {
