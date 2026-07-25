@@ -4,88 +4,149 @@
 # (CSV y, opcionalmente, Excel) sin crear lógica específica para cada módulo.
 
 
-import csv
 import io
+from datetime import datetime
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import cm
+from reportlab.platypus import (
+    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, ListFlowable, ListItem,
+)
 
-from catalogo_modelos import obtener_configuracion_tipo
-from servicios_datos import listar_registros, obtener_campos, obtener_modelo, serializar
+from Modulos.Informes_mensuales import informe_general, informe_por_cliente
 
 router = APIRouter()
 
-def _fila_valores(registro_serializado, campos):
-    """Convierte el dict serializado en una fila plana en el mismo orden
-    que las columnas, evitando que un valor None rompa el CSV/Excel."""
-    return [
-        registro_serializado.get(c["nombre"], "") if registro_serializado.get(c["nombre"]) is not None else ""
-        for c in campos
+
+def _moneda(valor):
+    if valor is None:
+        return "N/D"
+    return f"$ {valor:,.0f}".replace(",", ".")
+
+
+def _porcentaje(valor):
+    return f"{valor:.1f}%" if valor is not None else "N/D"
+
+
+def _tabla_indicadores(filas):
+    tabla = Table(filas, colWidths=[9 * cm, 6 * cm])
+    tabla.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#263445")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#d8dee6")),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8fafc")]),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+    ]))
+    return tabla
+
+
+def _pdf_informe_general(periodo, datos):
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=2 * cm, bottomMargin=2 * cm)
+    estilos = getSampleStyleSheet()
+    story = [
+        Paragraph("Informe Mensual General - Continental", estilos["Title"]),
+        Paragraph(f"Periodo: {periodo}", estilos["Normal"]),
+        Paragraph(f"Generado: {datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC", estilos["Normal"]),
+        Spacer(1, 16),
     ]
 
+    filas = [
+        ["Indicador", "Valor"],
+        ["Contratos activos", datos["total_contratos"]],
+        ["Clientes", datos["total_clientes"]],
+        ["Equipos", datos["total_equipos"]],
+        ["Facturado del mes", _moneda(datos["facturado_mes"])],
+        ["Recaudado del mes", _moneda(datos["recaudado_mes"])],
+        ["Cartera pendiente", _moneda(datos["cartera_pendiente"])],
+        ["Costos del mes", _moneda(datos["costos_mes"])],
+        ["Utilidad bruta", _moneda(datos["utilidad_bruta"])],
+        ["Margen promedio", _porcentaje(datos["margen_promedio"])],
+        ["Toneres entregados", datos["toneres_entregados"] if datos["toneres_entregados"] is not None else "N/D"],
+        ["Contratos por vencer (60 dias)", datos["contratos_por_vencer"]],
+        ["Clientes en mora", datos["clientes_en_mora"]],
+    ]
+    story.append(_tabla_indicadores(filas))
+    story.append(Spacer(1, 20))
 
-@router.get("/api/{tipo}/exportar/csv")
-async def exportar_csv(tipo: str):
-    configuracion = obtener_configuracion_tipo(tipo)
-    modelo = obtener_modelo(configuracion)
-    campos = obtener_campos(configuracion)
-    registros = listar_registros(modelo)
+    story.append(Paragraph("Recomendaciones", estilos["Heading2"]))
+    if datos["recomendaciones"]:
+        items = [ListItem(Paragraph(r, estilos["Normal"])) for r in datos["recomendaciones"]]
+        story.append(ListFlowable(items, bulletType="bullet"))
+    else:
+        story.append(Paragraph("Sin recomendaciones para este periodo.", estilos["Normal"]))
 
-    buffer = io.StringIO()
-    writer = csv.writer(buffer)
-
-    # Encabezado: ID + etiquetas legibles (no los nombres tecnicos de columna).
-    writer.writerow(["ID"] + [c.get("etiqueta") or c.get("label") for c in campos])
-
-    for registro in registros:
-        fila = serializar(registro, campos)
-        writer.writerow([fila["id"]] + _fila_valores(fila, campos))
-
+    doc.build(story)
     buffer.seek(0)
-    # BOM UTF-8 (\ufeff) para que Excel en Windows abra tildes/enes bien;
-    # sin esto, "Facturacion" con enes se ve mal en Excel aunque el CSV
-    # este correcto.
-    contenido = "\ufeff" + buffer.getvalue()
+    return buffer
 
+
+def _pdf_informe_cliente(periodo, cliente_id, datos):
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=2 * cm, bottomMargin=2 * cm)
+    estilos = getSampleStyleSheet()
+    story = [
+        Paragraph(f"Informe por Cliente #{cliente_id}", estilos["Title"]),
+        Paragraph(f"Periodo: {periodo}", estilos["Normal"]),
+        Spacer(1, 16),
+    ]
+
+    filas = [
+        ["Indicador", "Valor"],
+        ["Estado del cliente", datos["estado_general"] or "N/D"],
+        ["Contratos activos", datos["contratos_activos"]],
+        ["Equipos instalados", datos["equipos_instalados"] if datos["equipos_instalados"] is not None else "N/D"],
+        ["Valor mensual contratado", _moneda(datos["valor_mensual_contratado"])],
+        ["Consumo del mes", datos["consumo"] if datos["consumo"] is not None else "N/D"],
+        ["Facturado", _moneda(datos["facturado"])],
+        ["Pagado", _moneda(datos["pagado"])],
+        ["Saldo pendiente", _moneda(datos["saldo"])],
+        ["Costos", _moneda(datos["costos"])],
+        ["Utilidad", _moneda(datos["utilidad"])],
+        ["Margen", _porcentaje(datos["margen"])],
+    ]
+    story.append(_tabla_indicadores(filas))
+
+    doc.build(story)
+    buffer.seek(0)
+    return buffer
+
+
+@router.get("/api/informes/{periodo}/pdf")
+async def exportar_informe_general_pdf(periodo: str):
+    try:
+        datos = informe_general(periodo)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    buffer = _pdf_informe_general(periodo, datos)
     return StreamingResponse(
-        iter([contenido]),
-        media_type="text/csv; charset=utf-8",
-        headers={"Content-Disposition": f'attachment; filename="{tipo}.csv"'},
+        buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="informe_general_{periodo}.pdf"'},
     )
 
 
-@router.get("/api/{tipo}/exportar/excel")
-async def exportar_excel(tipo: str):
+@router.get("/api/informes/{periodo}/cliente/{cliente_id}/pdf")
+async def exportar_informe_cliente_pdf(periodo: str, cliente_id: int):
     try:
-        from openpyxl import Workbook
-    except ImportError as exc:
-        # No se asume que openpyxl esta instalado: si falta, se informa
-        # con claridad en vez de un 500 generico.
-        raise HTTPException(
-            status_code=501,
-            detail="Exportacion a Excel requiere 'openpyxl'. Agregalo a requirements.txt e instala con pip.",
-        ) from exc
+        datos = informe_por_cliente(periodo, cliente_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    configuracion = obtener_configuracion_tipo(tipo)
-    modelo = obtener_modelo(configuracion)
-    campos = obtener_campos(configuracion)
-    registros = listar_registros(modelo)
+    if datos["estado_general"] is None and datos["facturado"] == 0 and datos["costos"] == 0:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado o sin datos en el periodo")
 
-    libro = Workbook()
-    hoja = libro.active
-    hoja.title = tipo[:31]  # Excel limita el nombre de hoja a 31 caracteres.
-
-    hoja.append(["ID"] + [c.get("etiqueta") or c.get("label") for c in campos])
-    for registro in registros:
-        fila = serializar(registro, campos)
-        hoja.append([fila["id"]] + _fila_valores(fila, campos))
-
-    buffer = io.BytesIO()
-    libro.save(buffer)
-    buffer.seek(0)
-
+    buffer = _pdf_informe_cliente(periodo, cliente_id, datos)
     return StreamingResponse(
         buffer,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f'attachment; filename="{tipo}.xlsx"'},
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="informe_cliente_{cliente_id}_{periodo}.pdf"'},
     )
