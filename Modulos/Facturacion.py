@@ -25,6 +25,16 @@ class Facturacion(Base):
     empresa_factura = Column(SQLEnum(EmpresaFacturadora))
     multiempresa = Column(SQLEnum(EmpresaFacturadora), nullable=True)
 
+    # Multiempresa (seccion 24.1): por ahora es solo un flag de "esta
+    # factura involucra mas de una empresa del grupo". No reemplaza a
+    # empresa_factura (que sigue siendo la empresa que factura); antes
+    # este campo usaba el mismo enum EmpresaFacturadora duplicado, lo
+    # cual no tenia sentido propio. El dia que haga falta guardar CUAL es
+    # la segunda empresa, se agrega aparte una columna
+    # 'empresa_relacionada = Column(SQLEnum(EmpresaFacturadora), nullable=True)'
+    # sin tocar este flag.
+    es_multiempresa = Column(Boolean, default=False)
+
     numero_factura = Column(String)
     fecha_factura = Column(DateTime)
     fecha_vencimiento = Column(DateTime, nullable=True)
@@ -75,6 +85,8 @@ class Facturacion(Base):
         numero_factura,
         fecha_factura,
         estado_factura,
+        empresa_factura=None,
+        es_multiempresa=False,
         fecha_vencimiento=None,
         valor_mensual_base=0,
         valor_adicionales_bn=0,
@@ -92,8 +104,7 @@ class Facturacion(Base):
         total_facturado=None,
         fecha_envio=None,
         medio_envio=None,
-        observaciones=None,
-        multiempresa=None
+        observaciones=None
 
     ):
         """Agrega una factura a la BD"""
@@ -126,62 +137,73 @@ class Facturacion(Base):
                 - retenciones
             )
 
+        # Sesion envuelta en try/finally: si algo falla entre el commit y
+        # el close, la sesion se cierra igual (antes quedaba abierta).
         db = SessionLocal()
-        nueva_factura = Facturacion(
-            periodo=periodo,
-            cliente_id=cliente_id,
-            contrato_id=contrato_id,
-            numero_factura=numero_factura,
-            fecha_factura=fecha_factura,
-            fecha_vencimiento=fecha_vencimiento,
-            valor_mensual_base=valor_mensual_base,
-            valor_adicionales_bn=valor_adicionales_bn,
-            valor_adicionales_color=valor_adicionales_color,
-            valor_adicionales_escaneo=valor_adicionales_escaneo,
-            otros_cargos=otros_cargos,
-            subtotal=subtotal,
-            incluye_iva=incluye_iva,
-            porcentaje_iva=porcentaje_iva,
-            valor_iva=valor_iva,
-            impuesto_municipal=impuesto_municipal,
-            impuesto_departamental=impuesto_departamental,
-            impuesto_pro_deporte=impuesto_pro_deporte,
-            retenciones=retenciones,
-            total_facturado=total_facturado,
-            estado_factura=estado_factura,
-            fecha_envio=fecha_envio,
-            medio_envio=medio_envio,
-            observaciones=observaciones,
-            multiempresa=multiempresa,
-        )
-        db.add(nueva_factura)
-        db.commit()
-        db.refresh(nueva_factura)
-        db.close()
-        return nueva_factura
+        try:
+            nueva_factura = Facturacion(
+                periodo=periodo,
+                cliente_id=cliente_id,
+                contrato_id=contrato_id,
+                empresa_factura=empresa_factura,
+                es_multiempresa=es_multiempresa,
+                numero_factura=numero_factura,
+                fecha_factura=fecha_factura,
+                fecha_vencimiento=fecha_vencimiento,
+                valor_mensual_base=valor_mensual_base,
+                valor_adicionales_bn=valor_adicionales_bn,
+                valor_adicionales_color=valor_adicionales_color,
+                valor_adicionales_escaneo=valor_adicionales_escaneo,
+                otros_cargos=otros_cargos,
+                subtotal=subtotal,
+                incluye_iva=incluye_iva,
+                porcentaje_iva=porcentaje_iva,
+                valor_iva=valor_iva,
+                impuesto_municipal=impuesto_municipal,
+                impuesto_departamental=impuesto_departamental,
+                impuesto_pro_deporte=impuesto_pro_deporte,
+                retenciones=retenciones,
+                total_facturado=total_facturado,
+                estado_factura=estado_factura,
+                fecha_envio=fecha_envio,
+                medio_envio=medio_envio,
+                observaciones=observaciones,
+            )
+            db.add(nueva_factura)
+            db.commit()
+            db.refresh(nueva_factura)
+            return nueva_factura
+        finally:
+            db.close()
 
     @staticmethod
     def obtener_todos():
         """Obtiene todas las facturas"""
         db = SessionLocal()
-        facturas = db.query(Facturacion).all()
-        db.close()
-        return facturas
+        try:
+            return db.query(Facturacion).all()
+        finally:
+            db.close()
 
     @staticmethod
     def obtener_por_id(factura_id):
         """Obtiene una factura por ID"""
         db = SessionLocal()
-        factura = db.query(Facturacion).filter(Facturacion.id == factura_id).first()
-        db.close()
-        return factura
+        try:
+            return db.query(Facturacion).filter(Facturacion.id == factura_id).first()
+        finally:
+            db.close()
 
     @staticmethod
     def eliminar(factura_id):
         """Elimina una factura por ID"""
         db = SessionLocal()
-        factura = db.query(Facturacion).filter(Facturacion.id == factura_id).first()
-        if factura:
-            db.delete(factura)
-            db.commit()
-        db.close()
+        try:
+            factura = db.query(Facturacion).filter(Facturacion.id == factura_id).first()
+            if factura:
+                db.delete(factura)
+                db.commit()
+                return True
+            return False
+        finally:
+            db.close()

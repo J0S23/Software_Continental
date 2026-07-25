@@ -4,6 +4,7 @@ from Modulos.Clientes import Clientes
 from Modulos.Contratos import Contratos
 from Modulos.CambiosRetiro import CambioRetiro
 from Modulos.Costos import Costos
+from Modulos.EquiposRespaldo import EquipoRespaldo
 from Modulos.enums import (
     EstadoCliente,
     TipoCliente,
@@ -59,22 +60,24 @@ CATALOGO_DATOS = {
         },
     },
     "equipos": {
-        "etiqueta": "Equipos",
-        "modelo": Equipos,
-        "campos": [
-            campo("numero_serie", "Numero de serie"),
-            campo("tipo_equipo", "Tipo de equipo"),
-            campo("tecnologia", "Tecnologia"),
-            campo("color", "Color"),
-            campo("estado_equipo", "Estado del equipo"),
-            campo("estado_tecnico", "Estado tecnico"),
-            campo("recomendacion_tecnica", "Recomendacion tecnica", requerido=False),
-            campo("modelo", "Modelo", requerido=False),
-            campo("toner", "Toner", requerido=False),
-            campo("rend_orig", "Rendimiento original", "number", requerido=False),
-            campo("rend_gen", "Rendimiento generico", "number", requerido=False),
-        ],
-    },
+    "etiqueta": "Equipos",
+    "modelo": Equipos,
+    "campos": [
+        campo("numero_serie", "Numero de serie"),
+        campo("tipo_equipo", "Tipo de equipo"),
+        campo("tecnologia", "Tecnologia"),
+        campo("color", "Color"),
+        campo("estado_equipo", "Estado del equipo"),
+        campo("estado_tecnico", "Estado tecnico"),
+        campo("recomendacion_tecnica", "Recomendacion tecnica", requerido=False),
+        campo("modelo", "Modelo", requerido=False),
+        campo("toner", "Toner", requerido=False),
+        campo("rend_orig", "Rendimiento original", "number", requerido=False),
+        campo("rend_gen", "Rendimiento generico", "number", requerido=False),
+        campo("cliente_id", "Cliente actual", "number", requerido=False),
+        campo("contrato_id", "Contrato actual", "number", requerido=False),
+    ],
+},
     "insumos": {
         "etiqueta": "Insumos",
         "modelo": Insumo,
@@ -93,7 +96,8 @@ CATALOGO_DATOS = {
             campo("estado_contrato", "Estado del contrato"),
             campo("tipo_contrato", "Tipo de contrato"),
             campo("forma_legalizacion", "Forma de legalizacion"),
-            campo("seriedad", "Seriedad", requerido=False),
+            campo("poliza_contrato", "Póliza de contrato", requerido=False),
+            campo("poliza_seriedad", "Póliza de seriedad", requerido=False),
             campo("equipo_id", "Equipo", "number", requerido=False),
             campo("fecha_inicio", "Fecha de inicio", "date"),
             campo("fecha_fin", "Fecha de fin", "date", requerido=False),
