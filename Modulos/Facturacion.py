@@ -23,6 +23,7 @@ class Facturacion(Base):
     cliente_id = Column(Integer)
     contrato_id = Column(Integer)
     empresa_factura = Column(SQLEnum(EmpresaFacturadora))
+    multiempresa = Column(SQLEnum(EmpresaFacturadora), nullable=True)
 
     # Multiempresa (seccion 24.1): por ahora es solo un flag de "esta
     # factura involucra mas de una empresa del grupo". No reemplaza a
