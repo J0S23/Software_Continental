@@ -23,6 +23,7 @@ class Facturacion(Base):
     cliente_id = Column(Integer)
     contrato_id = Column(Integer)
     empresa_factura = Column(SQLEnum(EmpresaFacturadora))
+    multiempresa = Column(SQLEnum(EmpresaFacturadora), nullable=True)
 
     numero_factura = Column(String)
     fecha_factura = Column(DateTime)
@@ -91,8 +92,9 @@ class Facturacion(Base):
         total_facturado=None,
         fecha_envio=None,
         medio_envio=None,
-        observaciones=None
-        
+        observaciones=None,
+        multiempresa=None
+
     ):
         """Agrega una factura a la BD"""
         # subtotal automatico si no viene explicito.
@@ -150,6 +152,7 @@ class Facturacion(Base):
             fecha_envio=fecha_envio,
             medio_envio=medio_envio,
             observaciones=observaciones,
+            multiempresa=multiempresa,
         )
         db.add(nueva_factura)
         db.commit()
