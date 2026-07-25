@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import Enum as PythonEnum
 
 from fastapi import HTTPException
@@ -51,6 +52,15 @@ def normalizar_payload(configuracion, datos):
                     detail=f"El campo '{nombre_campo}' debe ser numerico",
                 ) from exc
 
+        if configuracion_campo.get("tipo") == "date":
+            try:
+                valor = datetime.strptime(valor, "%Y-%m-%d")
+            except (TypeError, ValueError) as exc:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"El campo '{nombre_campo}' debe tener formato de fecha YYYY-MM-DD",
+                ) from exc
+
         valores[nombre_campo] = valor
 
     return valores
@@ -73,6 +83,9 @@ def listar_registros(modelo):
 
 
 def crear_registro(modelo, valores):
+    if hasattr(modelo, "agregar"):
+        return modelo.agregar(**valores)
+
     with SesionLocal() as sesion:
         registro = modelo(**valores)
         sesion.add(registro)
@@ -87,6 +100,9 @@ def buscar_registro(modelo, registro_id):
 
 
 def actualizar_registro(modelo, registro_id, valores):
+    if hasattr(modelo, "actualizar"):
+        return modelo.actualizar(registro_id, **valores)
+
     with SesionLocal() as sesion:
         registro = sesion.get(modelo, registro_id)
 
