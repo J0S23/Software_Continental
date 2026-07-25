@@ -117,12 +117,8 @@ CATALOGO_DATOS = {
         "etiqueta": "Repuestos",
         "modelo": Repuesto,
         "campos": [
-            campo("cuchilla_limpieza", "Cuchilla limpieza"),
-            campo("cuchilla_transferencia", "Cuchilla transferencia"),
-            campo("banda_fusora", "Banda fusora"),
-            campo("rodillo_fusor", "Rodillo fusor"),
-            campo("sleeven_fusor", "Sleeven fusor"),
-            campo("telilla", "Telilla"),
+            campo("nombre", "Nombre"),
+            campo("precio", "Precio", "number"),
         ],
     },
     "servicios": {
@@ -153,6 +149,7 @@ CATALOGO_DATOS = {
             campo("contrato_id", "Contrato", "number"),
             campo("equipo_id", "Equipo", "number"),
             campo("tipo_costo", "Tipo de costo", "select", opciones_enum(TipoCosto)),
+            campo("repuesto_id", "Repuesto", "number", requerido=False),
             campo("descripcion", "Descripcion"),
             campo("cantidad", "Cantidad", "number"),
             campo("valor_unitario", "Valor unitario", "number"),

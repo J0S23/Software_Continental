@@ -1,67 +1,91 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, Float, DateTime
 from datetime import datetime
 from base_de_datos import Base, SessionLocal, engine
 
 
 class Repuesto(Base):
+    """Catalogo de tipos de repuesto (cuchilla de limpieza, banda fusora,
+    rodillo fusor, etc.) y su precio.
+
+    Costos.repuesto_id guarda el id de aqui (sin ForeignKey, igual que
+    cliente_id/contrato_id/equipo_id/tipo_insumo_id en el resto del
+    proyecto) para relacionar un costo de tipo "repuesto" con su precio.
+    """
+
     __tablename__ = "repuestos"
-    
+
     id = Column(Integer, primary_key=True, index=True)
-    cuchilla_limpieza = Column(String)
-    cuchilla_transferencia = Column(String)
-    banda_fusora = Column(String)
-    rodillo_fusor = Column(String)
-    sleeven_fusor = Column(String)
-    telilla = Column(String)
+    nombre = Column(String, unique=True, index=True)
+    precio = Column(Float, default=0)
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
-    
+
     @staticmethod
     def crear_tabla():
         Base.metadata.create_all(bind=engine)
-    
+
     @staticmethod
-    def agregar(cuchilla_limpieza, cuchilla_transferencia, banda_fusora, rodillo_fusor, sleeven_fusor, telilla):
-        """Agrega un repuesto a la BD"""
+    def agregar(nombre, precio=0):
         db = SessionLocal()
-        nuevo_repuesto = Repuesto(
-            cuchilla_limpieza=cuchilla_limpieza,
-            cuchilla_transferencia=cuchilla_transferencia,
-            banda_fusora=banda_fusora,
-            rodillo_fusor=rodillo_fusor,
-            sleeven_fusor=sleeven_fusor,
-            telilla=telilla
-        )
-        db.add(nuevo_repuesto)
-        db.commit()
-        db.refresh(nuevo_repuesto)
-        db.close()
-        return nuevo_repuesto
-    
+        try:
+            nuevo_repuesto = Repuesto(nombre=nombre, precio=precio)
+            db.add(nuevo_repuesto)
+            db.commit()
+            db.refresh(nuevo_repuesto)
+            return nuevo_repuesto
+        finally:
+            db.close()
+
     @staticmethod
     def obtener_todos():
-        """Obtiene todos los repuestos"""
         db = SessionLocal()
-        repuestos = db.query(Repuesto).all()
-        db.close()
-        return repuestos
-    
+        try:
+            return db.query(Repuesto).all()
+        finally:
+            db.close()
+
     @staticmethod
     def obtener_por_id(repuesto_id):
-        """Obtiene un repuesto por ID"""
         db = SessionLocal()
-        repuesto = db.query(Repuesto).filter(Repuesto.id == repuesto_id).first()
-        db.close()
-        return repuesto
-    
+        try:
+            return db.query(Repuesto).filter(Repuesto.id == repuesto_id).first()
+        finally:
+            db.close()
+
+    @staticmethod
+    def obtener_por_nombre(nombre):
+        db = SessionLocal()
+        try:
+            return db.query(Repuesto).filter(Repuesto.nombre == nombre).first()
+        finally:
+            db.close()
+
+    @staticmethod
+    def actualizar(repuesto_id, **campos):
+        db = SessionLocal()
+        try:
+            repuesto = db.query(Repuesto).filter(Repuesto.id == repuesto_id).first()
+            if not repuesto:
+                return None
+            for nombre_campo, valor in campos.items():
+                setattr(repuesto, nombre_campo, valor)
+            db.commit()
+            db.refresh(repuesto)
+            return repuesto
+        finally:
+            db.close()
+
     @staticmethod
     def eliminar(repuesto_id):
-        """Elimina un repuesto por ID"""
         db = SessionLocal()
-        repuesto = db.query(Repuesto).filter(Repuesto.id == repuesto_id).first()
-        if repuesto:
-            db.delete(repuesto)
-            db.commit()
-        db.close()
+        try:
+            repuesto = db.query(Repuesto).filter(Repuesto.id == repuesto_id).first()
+            if repuesto:
+                db.delete(repuesto)
+                db.commit()
+                return True
+            return False
+        finally:
+            db.close()
 
 
 Maquinas = Repuesto
