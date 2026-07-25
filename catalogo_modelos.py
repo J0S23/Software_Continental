@@ -4,6 +4,7 @@ from Modulos.Clientes import Clientes
 from Modulos.Contratos import Contratos
 from Modulos.CambiosRetiro import CambioRetiro
 from Modulos.Costos import Costos
+from Modulos.EquiposRespaldo import EquipoRespaldo
 from Modulos.enums import (
     EstadoCliente,
     TipoCliente,
