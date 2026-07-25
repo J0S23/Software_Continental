@@ -43,7 +43,7 @@ class Servicio(Base):
             toner_incluido=toner_incluido,
             toner_respaldo_sitio=toner_respaldo_sitio,
             equipo_respaldo_incluido=equipo_respaldo_incluido,
-            estado=estado
+            estado=estado   
         )
         db.add(nuevo_servicio)
         db.commit()

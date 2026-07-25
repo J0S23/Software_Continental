@@ -17,6 +17,7 @@ from Modulos.enums import (
 from Modulos.Equipos import Equipos
 from Modulos.Facturacion import Facturacion
 from Modulos.Insumos import Insumo
+from Modulos.TiposInsumo import TipoInsumo
 from Modulos.Repuestos import Repuesto
 from Modulos.Servicio import Servicio
 from Modulos.Usuarios import Usuarios
@@ -82,9 +83,17 @@ CATALOGO_DATOS = {
         "etiqueta": "Insumos",
         "modelo": Insumo,
         "campos": [
-            campo("tipo_insumo", "Tipo de insumo"),
+            campo("tipo_insumo_id", "Tipo de insumo", "number"),
             campo("color", "Color", requerido=False),
             campo("estado", "Estado", requerido=False),
+        ],
+    },
+    "tipos_insumo": {
+        "etiqueta": "Tipos de insumo",
+        "modelo": TipoInsumo,
+        "campos": [
+            campo("nombre", "Nombre"),
+            campo("precio", "Precio", "number"),
         ],
     },
     "contratos": {
