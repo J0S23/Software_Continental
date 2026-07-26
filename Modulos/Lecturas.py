@@ -63,6 +63,18 @@ class Lecturas(Base):
         lectura = db.query(Lecturas).filter(Lecturas.id == lectura_id).first()
         db.close()
         return lectura
+
+    @staticmethod
+    def obtener_por_contrato(contrato_id, periodo=None):
+        #Función que necesita la facturacion automatica para traer las
+        #lecturas de un contrato (opcionalmente filtradas por periodo)
+        db = SessionLocal()
+        query = db.query(Lecturas).filter(Lecturas.contrato_id == contrato_id)
+        if periodo:
+            query = query.filter(Lecturas.periodo == periodo)
+        lecturas = query.order_by(Lecturas.fecha_lectura).all()
+        db.close()
+        return lecturas
     
     @staticmethod
     def eliminar(lectura_id):
