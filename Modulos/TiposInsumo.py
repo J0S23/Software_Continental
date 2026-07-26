@@ -3,16 +3,15 @@ from datetime import datetime
 from base_de_datos import Base, SessionLocal, engine
 
 
-class Repuesto(Base):
-    """Catalogo de tipos de repuesto (cuchilla de limpieza, banda fusora,
-    rodillo fusor, etc.) y su precio.
+class TipoInsumo(Base):
+    """Catalogo de tipos de insumo (toner, tinta, papel, etc.) y su precio.
 
-    Costos.repuesto_id guarda el id de aqui (sin ForeignKey, igual que
-    cliente_id/contrato_id/equipo_id/tipo_insumo_id en el resto del
-    proyecto) para relacionar un costo de tipo "repuesto" con su precio.
+    Insumo.tipo_insumo_id guarda el id de aqui (sin ForeignKey, igual que
+    cliente_id/contrato_id/equipo_id en el resto del proyecto) para poder
+    relacionar cada insumo con su precio sin acoplar los modulos.
     """
 
-    __tablename__ = "repuestos"
+    __tablename__ = "tipos_insumo"
 
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String, unique=True, index=True)
@@ -27,11 +26,11 @@ class Repuesto(Base):
     def agregar(nombre, precio=0):
         db = SessionLocal()
         try:
-            nuevo_repuesto = Repuesto(nombre=nombre, precio=precio)
-            db.add(nuevo_repuesto)
+            nuevo_tipo = TipoInsumo(nombre=nombre, precio=precio)
+            db.add(nuevo_tipo)
             db.commit()
-            db.refresh(nuevo_repuesto)
-            return nuevo_repuesto
+            db.refresh(nuevo_tipo)
+            return nuevo_tipo
         finally:
             db.close()
 
@@ -39,15 +38,15 @@ class Repuesto(Base):
     def obtener_todos():
         db = SessionLocal()
         try:
-            return db.query(Repuesto).all()
+            return db.query(TipoInsumo).all()
         finally:
             db.close()
 
     @staticmethod
-    def obtener_por_id(repuesto_id):
+    def obtener_por_id(tipo_insumo_id):
         db = SessionLocal()
         try:
-            return db.query(Repuesto).filter(Repuesto.id == repuesto_id).first()
+            return db.query(TipoInsumo).filter(TipoInsumo.id == tipo_insumo_id).first()
         finally:
             db.close()
 
@@ -55,37 +54,34 @@ class Repuesto(Base):
     def obtener_por_nombre(nombre):
         db = SessionLocal()
         try:
-            return db.query(Repuesto).filter(Repuesto.nombre == nombre).first()
+            return db.query(TipoInsumo).filter(TipoInsumo.nombre == nombre).first()
         finally:
             db.close()
 
     @staticmethod
-    def actualizar(repuesto_id, **campos):
+    def actualizar(tipo_insumo_id, **campos):
         db = SessionLocal()
         try:
-            repuesto = db.query(Repuesto).filter(Repuesto.id == repuesto_id).first()
-            if not repuesto:
+            tipo = db.query(TipoInsumo).filter(TipoInsumo.id == tipo_insumo_id).first()
+            if not tipo:
                 return None
             for nombre_campo, valor in campos.items():
-                setattr(repuesto, nombre_campo, valor)
+                setattr(tipo, nombre_campo, valor)
             db.commit()
-            db.refresh(repuesto)
-            return repuesto
+            db.refresh(tipo)
+            return tipo
         finally:
             db.close()
 
     @staticmethod
-    def eliminar(repuesto_id):
+    def eliminar(tipo_insumo_id):
         db = SessionLocal()
         try:
-            repuesto = db.query(Repuesto).filter(Repuesto.id == repuesto_id).first()
-            if repuesto:
-                db.delete(repuesto)
+            tipo = db.query(TipoInsumo).filter(TipoInsumo.id == tipo_insumo_id).first()
+            if tipo:
+                db.delete(tipo)
                 db.commit()
                 return True
             return False
         finally:
             db.close()
-
-
-Maquinas = Repuesto

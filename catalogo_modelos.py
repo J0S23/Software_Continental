@@ -4,6 +4,7 @@ from Modulos.Clientes import Clientes
 from Modulos.Contratos import Contratos
 from Modulos.CambiosRetiro import CambioRetiro
 from Modulos.Costos import Costos
+from Modulos.EquiposRespaldo import EquipoRespaldo
 from Modulos.enums import (
     EstadoCliente,
     TipoCliente,
@@ -16,6 +17,7 @@ from Modulos.enums import (
 from Modulos.Equipos import Equipos
 from Modulos.Facturacion import Facturacion
 from Modulos.Insumos import Insumo
+from Modulos.TiposInsumo import TipoInsumo
 from Modulos.Repuestos import Repuesto
 from Modulos.Servicio import Servicio
 from Modulos.Usuarios import Usuarios
@@ -59,29 +61,39 @@ CATALOGO_DATOS = {
         },
     },
     "equipos": {
-        "etiqueta": "Equipos",
-        "modelo": Equipos,
-        "campos": [
-            campo("numero_serie", "Numero de serie"),
-            campo("tipo_equipo", "Tipo de equipo"),
-            campo("tecnologia", "Tecnologia"),
-            campo("color", "Color"),
-            campo("estado_equipo", "Estado del equipo"),
-            campo("estado_tecnico", "Estado tecnico"),
-            campo("recomendacion_tecnica", "Recomendacion tecnica", requerido=False),
-            campo("modelo", "Modelo", requerido=False),
-            campo("toner", "Toner", requerido=False),
-            campo("rend_orig", "Rendimiento original", "number", requerido=False),
-            campo("rend_gen", "Rendimiento generico", "number", requerido=False),
-        ],
-    },
+    "etiqueta": "Equipos",
+    "modelo": Equipos,
+    "campos": [
+        campo("numero_serie", "Numero de serie"),
+        campo("tipo_equipo", "Tipo de equipo"),
+        campo("tecnologia", "Tecnologia"),
+        campo("color", "Color"),
+        campo("estado_equipo", "Estado del equipo"),
+        campo("estado_tecnico", "Estado tecnico"),
+        campo("recomendacion_tecnica", "Recomendacion tecnica", requerido=False),
+        campo("modelo", "Modelo", requerido=False),
+        campo("toner", "Toner", requerido=False),
+        campo("rend_orig", "Rendimiento original", "number", requerido=False),
+        campo("rend_gen", "Rendimiento generico", "number", requerido=False),
+        campo("cliente_id", "Cliente actual", "number", requerido=False),
+        campo("contrato_id", "Contrato actual", "number", requerido=False),
+    ],
+},
     "insumos": {
         "etiqueta": "Insumos",
         "modelo": Insumo,
         "campos": [
-            campo("tipo_insumo", "Tipo de insumo"),
+            campo("tipo_insumo_id", "Tipo de insumo", "number"),
             campo("color", "Color", requerido=False),
             campo("estado", "Estado", requerido=False),
+        ],
+    },
+    "tipos_insumo": {
+        "etiqueta": "Tipos de insumo",
+        "modelo": TipoInsumo,
+        "campos": [
+            campo("nombre", "Nombre"),
+            campo("precio", "Precio", "number"),
         ],
     },
     "contratos": {
@@ -93,7 +105,8 @@ CATALOGO_DATOS = {
             campo("estado_contrato", "Estado del contrato"),
             campo("tipo_contrato", "Tipo de contrato"),
             campo("forma_legalizacion", "Forma de legalizacion"),
-            campo("seriedad", "Seriedad", requerido=False),
+            campo("poliza_contrato", "Póliza de contrato", requerido=False),
+            campo("poliza_seriedad", "Póliza de seriedad", requerido=False),
             campo("equipo_id", "Equipo", "number", requerido=False),
             campo("fecha_inicio", "Fecha de inicio", "date"),
             campo("fecha_fin", "Fecha de fin", "date", requerido=False),
@@ -104,12 +117,8 @@ CATALOGO_DATOS = {
         "etiqueta": "Repuestos",
         "modelo": Repuesto,
         "campos": [
-            campo("cuchilla_limpieza", "Cuchilla limpieza"),
-            campo("cuchilla_transferencia", "Cuchilla transferencia"),
-            campo("banda_fusora", "Banda fusora"),
-            campo("rodillo_fusor", "Rodillo fusor"),
-            campo("sleeven_fusor", "Sleeven fusor"),
-            campo("telilla", "Telilla"),
+            campo("nombre", "Nombre"),
+            campo("precio", "Precio", "number"),
         ],
     },
     "servicios": {
@@ -140,6 +149,7 @@ CATALOGO_DATOS = {
             campo("contrato_id", "Contrato", "number"),
             campo("equipo_id", "Equipo", "number"),
             campo("tipo_costo", "Tipo de costo", "select", opciones_enum(TipoCosto)),
+            campo("repuesto_id", "Repuesto", "number", requerido=False),
             campo("descripcion", "Descripcion"),
             campo("cantidad", "Cantidad", "number"),
             campo("valor_unitario", "Valor unitario", "number"),

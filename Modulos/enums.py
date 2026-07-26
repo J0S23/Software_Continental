@@ -77,7 +77,6 @@ class EstadoEquipo(str, enum.Enum):
 
 class EmpresaFacturadora(str, Enum):
     CONTINENTAL_LTDA = "Continental Ltda."
-    ASESORIAS_CONTINENTAL = "Asesorías y Servicios Continental"
     OTRA = "Otra"
 
 class TipoMantenimiento(str, Enum):

@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Float, DateTime, Enum as SQLEnum
 from datetime import datetime
 from base_de_datos import Base, SessionLocal, engine
 from Modulos.enums import TipoCosto
+from Modulos.Repuestos import Repuesto
 
 
 class Costos(Base):
@@ -32,6 +33,10 @@ class Costos(Base):
     tipo_costo = Column(SQLEnum(TipoCosto))
     descripcion = Column(String)
 
+    # Que repuesto especifico es (solo aplica cuando tipo_costo="repuesto"),
+    # sin ForeignKey, igual que el resto de ids del proyecto.
+    repuesto_id = Column(Integer, nullable=True)
+
     # cantidad x valor_unitario = valor_total (ver agregar()).
     cantidad = Column(Float, default=1)
     valor_unitario = Column(Float, default=0)
@@ -56,6 +61,13 @@ class Costos(Base):
         "toner_por_referencia": 0,
     }
 
+    @property
+    def repuesto(self):
+        """Repuesto relacionado (con su nombre y precio), si aplica."""
+        if self.repuesto_id is None:
+            return None
+        return Repuesto.obtener_por_id(self.repuesto_id)
+
     @staticmethod
     def crear_tabla():
         Base.metadata.create_all(bind=engine)
@@ -67,69 +79,55 @@ class Costos(Base):
 
     @staticmethod
     def agregar(
-        fecha_costo,
-        periodo,
-        cliente_id,
-        contrato_id,
-        equipo_id,
-        tipo_costo,
-        descripcion,
-        responsable,
-        cantidad=1,
-        valor_unitario=0,
-        valor_total=None,
-        soporte=None,
-        observaciones=None,
+        fecha_costo, periodo, cliente_id, contrato_id, equipo_id,
+        tipo_costo, descripcion, responsable,
+        cantidad=1, valor_unitario=0, valor_total=None,
+        soporte=None, observaciones=None, repuesto_id=None,
     ):
-        """Agrega un costo a la BD"""
-        # Si no viene valor_total explicito, se calcula automaticamente.
         if valor_total is None:
             valor_total = cantidad * valor_unitario
-
+        #Si no viene valor_total explicito, se calcula automaticamente.
         db = SessionLocal()
-        nuevo_costo = Costos(
-            fecha_costo=fecha_costo,
-            periodo=periodo,
-            cliente_id=cliente_id,
-            contrato_id=contrato_id,
-            equipo_id=equipo_id,
-            tipo_costo=tipo_costo,
-            descripcion=descripcion,
-            cantidad=cantidad,
-            valor_unitario=valor_unitario,
-            valor_total=valor_total,
-            responsable=responsable,
-            soporte=soporte,
-            observaciones=observaciones,
-        )
-        db.add(nuevo_costo)
-        db.commit()
-        db.refresh(nuevo_costo)
-        db.close()
-        return nuevo_costo
+        try:
+            nuevo_costo = Costos(
+                fecha_costo=fecha_costo, periodo=periodo, cliente_id=cliente_id,
+                contrato_id=contrato_id, equipo_id=equipo_id, tipo_costo=tipo_costo,
+                descripcion=descripcion, cantidad=cantidad, valor_unitario=valor_unitario,
+                valor_total=valor_total, responsable=responsable, soporte=soporte,
+                observaciones=observaciones, repuesto_id=repuesto_id,
+            )
+            db.add(nuevo_costo)
+            db.commit()
+            db.refresh(nuevo_costo)
+            return nuevo_costo
+        finally:
+            db.close()
 
     @staticmethod
     def obtener_todos():
-        """Obtiene todos los costos"""
         db = SessionLocal()
-        costos = db.query(Costos).all()
-        db.close()
-        return costos
+        try:
+            return db.query(Costos).all()
+        finally:
+            db.close()
 
     @staticmethod
     def obtener_por_id(costo_id):
-        """Obtiene un costo por ID"""
         db = SessionLocal()
-        costo = db.query(Costos).filter(Costos.id == costo_id).first()
-        db.close()
-        return costo
+        try:
+            return db.query(Costos).filter(Costos.id == costo_id).first()
+        finally:
+            db.close()
 
     @staticmethod
     def eliminar(costo_id):
-        """Elimina un costo por ID"""
         db = SessionLocal()
-        costo = db.query(Costos).filter(Costos.id == costo_id).first()
-        if costo:
-            db.delete(costo)
-            db.commit()
-        db.close()
+        try:
+            costo = db.query(Costos).filter(Costos.id == costo_id).first()
+            if costo:
+                db.delete(costo)
+                db.commit()
+                return True
+            return False
+        finally:
+            db.close()

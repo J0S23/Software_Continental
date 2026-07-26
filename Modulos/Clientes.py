@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, DateTime, Enum
 from datetime import datetime
 from base_de_datos import Base, SessionLocal, engine
-from .enums import TipoCliente, EstadoCliente
+from .enums import TipoCliente, EstadoCliente, EmpresaFacturadora
 
 
 class Clientes(Base):
@@ -13,6 +13,7 @@ class Clientes(Base):
     tipo_contacto = Column(String)
     condicion_pago = Column(String)
     estado_cartera_cliente = Column(String)
+    multiempresa = Column(Enum(EmpresaFacturadora), nullable=True)
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
     
     @staticmethod
@@ -20,7 +21,7 @@ class Clientes(Base):
         Base.metadata.create_all(bind=engine)
     
     @staticmethod
-    def agregar(tipo_cliente, estado_cliente, tipo_contacto, condicion_pago, estado_cartera_cliente):
+    def agregar(tipo_cliente, estado_cliente, tipo_contacto, condicion_pago, estado_cartera_cliente, multiempresa=None):
         """Agrega un cliente a la BD"""
         db = SessionLocal()
         nuevo_cliente = Clientes(
@@ -28,7 +29,8 @@ class Clientes(Base):
             estado_cliente=estado_cliente,
             tipo_contacto=tipo_contacto,
             condicion_pago=condicion_pago,
-            estado_cartera_cliente=estado_cartera_cliente
+            estado_cartera_cliente=estado_cartera_cliente,
+            multiempresa=multiempresa
         )
         db.add(nuevo_cliente)
         db.commit()

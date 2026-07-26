@@ -13,7 +13,8 @@ class Contratos(Base):
     estado_contrato = Column(String)
     tipo_contrato = Column(String)
     forma_legalizacion = Column(String)
-    seriedad = Column(String, nullable=True)
+    poliza_contrato = Column(String, nullable=True)
+    poliza_seriedad = Column(String, nullable=True)
     #Al ser un solo id por equipo por lo que no se puede tener multiequipos en el contrato
     #En un futuro se añadira una tabla intermediaria contratos y equipos
     equipo_id = Column(Integer, nullable=True)
@@ -27,7 +28,7 @@ class Contratos(Base):
         Base.metadata.create_all(bind=engine)
     
     @staticmethod
-    def agregar(numero_contrato, cliente_id, estado_contrato, tipo_contrato, forma_legalizacion, fecha_inicio, fecha_fin=None, seriedad="", equipo_id=None):
+    def agregar(numero_contrato, cliente_id, estado_contrato, tipo_contrato, forma_legalizacion, fecha_inicio, fecha_fin=None, poliza_contrato="", poliza_seriedad="", equipo_id=None):
         """Agrega un contrato a la BD"""
         db = SessionLocal()
         nuevo_contrato = Contratos(
@@ -38,7 +39,8 @@ class Contratos(Base):
             forma_legalizacion=forma_legalizacion,
             fecha_inicio=fecha_inicio,
             fecha_fin=fecha_fin,
-            seriedad=seriedad,
+            poliza_contrato=poliza_contrato,
+            poliza_seriedad=poliza_seriedad,
             equipo_id=equipo_id,
         )
         db.add(nuevo_contrato)
