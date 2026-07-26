@@ -1,6 +1,6 @@
 #Requiere un contrato con condiciones económicas configuradas y una lectura del período a facturar; de lo contrario, devuelve None
 
-from Modulos import Contratos, Lecturas
+from Modulos import Contratos, Facturacion, Lecturas
 from Modulos.Informes_mensuales import _parse_periodo
 
 
@@ -80,8 +80,39 @@ def calcular_facturacion(contrato_id, periodo):
         "valor_adicional_color": valor_adicional_color,
 
         "valor_mensual_base": valor_mensual_base,
-        
+
         # Sin IVA por ahora: subtotal y total_facturado son el mismo valor.
         "subtotal": subtotal,
         "total_facturado": subtotal,
     }
+
+def generar_facturacion(
+    contrato_id, periodo, numero_factura, fecha_factura,
+    estado_factura, empresa_factura=None, fecha_vencimiento=None,
+):
+    #Calcula la facturacion del contrato/periodo y crea el registro en Facturacion. 
+    # Devuelve None (sin crear nada) si calcular_facturacion() no pudo calcular por falta de contrato o de lectura.
+    
+    calculo = calcular_facturacion(contrato_id, periodo)
+    if calculo is None:
+        return None
+
+    return Facturacion.agregar(
+        periodo=periodo,
+        cliente_id=calculo["cliente_id"],
+        contrato_id=contrato_id,
+        numero_factura=numero_factura,
+        fecha_factura=fecha_factura,
+        estado_factura=estado_factura,
+        empresa_factura=empresa_factura,
+        fecha_vencimiento=fecha_vencimiento,
+        valor_mensual_base=calculo["valor_mensual_base"],
+        valor_adicionales_bn=calculo["valor_adicional_bn"],
+        valor_adicionales_color=calculo["valor_adicional_color"],
+        subtotal=calculo["subtotal"],
+        # Sin IVA por ahora.
+        incluye_iva=False,
+        porcentaje_iva=0,
+        valor_iva=0,
+        total_facturado=calculo["total_facturado"],
+    )
