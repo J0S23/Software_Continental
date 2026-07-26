@@ -9,9 +9,12 @@ Datos que el documento pide pero que hoy NO se pueden calcular porque
 ningun modelo tiene el campo necesario (se devuelven como None con un
 comentario en el punto donde se generan; no se inventan ni se aproximan):
 
-  1. Paginas producidas por B/N y color, y "adicionales": Lecturas.contador
-     es un solo numero sin desglose por tipo, y no existe un valor de
-     "paginas incluidas en el plan" contra el cual calcular adicionales.
+  1. 1. Paginas adicionales por B/N y color: Lecturas ya separa el consumo
+     en contador_bn/contador_color, pero calcular "adicionales" requiere
+     cruzar con Contratos.paginas_bn_incluidas/paginas_color_incluidas
+     del contrato correspondiente (ver Modulos/Contratos.py). Se deja
+     pendiente hasta que informe_por_equipo/informe_general reciban el
+     contrato asociado.
   2. Toneres entregados (cantidad + fecha): Insumos/Consumibles son
      catalogos (tipo/color/estado), no hay un registro transaccional de
      entrega con cantidad y fecha.
