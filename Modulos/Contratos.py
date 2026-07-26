@@ -22,13 +22,25 @@ class Contratos(Base):
     fecha_inicio = Column(DateTime)
     fecha_fin = Column(DateTime, nullable=True)
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
-    
+    valor_mensual_base = Column(Float, default=0)
+    paginas_bn_incluidas = Column(Integer, default=0)
+    paginas_color_incluidas = Column(Integer, default=0)
+    valor_pagina_adicional_bn = Column(Float, default=0)
+    valor_pagina_adicional_color = Column(Float, default=0)
+    #Los escaneos se dejan opcionales
+    escaneos_incluidos = Column(Integer, nullable=True, default=0)
+    valor_escaneo_adicional = Column(Float, nullable=True, default=0)
+
     @staticmethod
     def crear_tabla():
         Base.metadata.create_all(bind=engine)
     
     @staticmethod
-    def agregar(numero_contrato, cliente_id, estado_contrato, tipo_contrato, forma_legalizacion, fecha_inicio, fecha_fin=None, poliza_contrato="", poliza_seriedad="", equipo_id=None):
+    def agregar(numero_contrato, cliente_id, estado_contrato, tipo_contrato, forma_legalizacion,
+        fecha_inicio, fecha_fin=None, poliza_contrato="", poliza_seriedad="", equipo_id=None,
+        valor_mensual_base=0, paginas_bn_incluidas=0, paginas_color_incluidas=0,
+        valor_pagina_adicional_bn=0, valor_pagina_adicional_color=0,
+        escaneos_incluidos=0, valor_escaneo_adicional=0,):
         """Agrega un contrato a la BD"""
         db = SessionLocal()
         nuevo_contrato = Contratos(
@@ -42,6 +54,13 @@ class Contratos(Base):
             poliza_contrato=poliza_contrato,
             poliza_seriedad=poliza_seriedad,
             equipo_id=equipo_id,
+            valor_mensual_base=valor_mensual_base,
+            paginas_bn_incluidas=paginas_bn_incluidas,
+            paginas_color_incluidas=paginas_color_incluidas,
+            valor_pagina_adicional_bn=valor_pagina_adicional_bn,
+            valor_pagina_adicional_color=valor_pagina_adicional_color,
+            escaneos_incluidos=escaneos_incluidos,
+            valor_escaneo_adicional=valor_escaneo_adicional,
         )
         db.add(nuevo_contrato)
         db.commit()
