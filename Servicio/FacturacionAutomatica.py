@@ -1,7 +1,9 @@
 #Requiere un contrato con condiciones económicas configuradas y una lectura del período a facturar; de lo contrario, devuelve None
 
-from Modulos import Contratos, Facturacion, Lecturas
-from Modulos.Informes_mensuales import _parse_periodo
+from Modulos.Contratos import Contratos
+from Modulos.Facturacion import Facturacion
+from Modulos.Lecturas import Lecturas
+from Servicio.Informes_mensuales import _parse_periodo
 
 
 def _lectura_actual_y_anterior(contrato_id, periodo):
