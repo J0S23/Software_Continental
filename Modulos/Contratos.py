@@ -83,6 +83,20 @@ class Contratos(Base):
         contrato = db.query(Contratos).filter(Contratos.id == contrato_id).first()
         db.close()
         return contrato
+
+    @staticmethod
+    def actualizar(contrato_id, **valores):
+        db = SessionLocal()
+        contrato = db.query(Contratos).filter(Contratos.id == contrato_id).first()
+        if not contrato:
+            db.close()
+            return None
+        for campo, valor in valores.items():
+            setattr(contrato, campo, valor)
+        db.commit()
+        db.refresh(contrato)
+        db.close()
+        return contrato
     
     @staticmethod
     def eliminar(contrato_id):
