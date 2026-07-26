@@ -1,5 +1,5 @@
 
-from Modulos import Costos
+from Modulos import Costos, Rentabilidad
 from Modulos.Facturacion import Facturacion
 from base_de_datos import SessionLocal
 
@@ -42,3 +42,21 @@ def calcular_rentabilidad(contrato_id, periodo):
         "total_facturas": len(facturas),
         "total_costos": len(costos),
     }
+
+def generar_rentabilidad(contrato_id, periodo):
+    #Calcula la rentabilidad del contrato/periodo y crea el registro en Rentabilidad.
+    #OJO: no revisa si ya existe un registro previo para este contrato + periodo (Rentabilidad.obtener_por_contrato sirve para eso).
+    #Si se llama dos veces se crean dos filas duplicadas. Pendiente a decidir:
+    #o el router valida antes de llamar, o esta funcion se cambia para hacer upsert.
+
+    calculo = calcular_rentabilidad(contrato_id, periodo)
+
+    return Rentabilidad.agregar(
+        periodo=periodo,
+        contrato_id=contrato_id,
+        cliente_id=calculo["cliente_id"],
+        ingresos=calculo["ingreso_total"],
+        costos=calculo["costo_total"],
+        ganancia=calculo["utilidad_bruta"],
+        porcentaje_rentabilidad=calculo["margen"],
+    )
