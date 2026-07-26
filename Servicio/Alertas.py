@@ -130,7 +130,8 @@ def _alertas_equipos(db):
 
 def _alertas_lecturas(db):
     """Lecturas pendientes y lecturas inconsistentes (contador actual
-    menor al de la lectura anterior del mismo equipo)."""
+    menor al de la lectura anterior del mismo equipo, revisado por
+    separado para blanco y negro y color)."""
     alertas = []
     lecturas = db.query(Lecturas).order_by(Lecturas.equipo_id, Lecturas.fecha_lectura).all()
 
@@ -143,14 +144,23 @@ def _alertas_lecturas(db):
                 l.id,
             ))
 
-        anterior = anterior_por_equipo.get(l.equipo_id)
-        if anterior is not None and l.contador is not None and l.contador < anterior:
+        anterior_bn, anterior_color = anterior_por_equipo.get(l.equipo_id, (None, None))
+
+        if anterior_bn is not None and l.contador_bn is not None and l.contador_bn < anterior_bn:
             alertas.append(_alerta(
                 "lectura_inconsistente", "critico",
-                f"El contador del equipo {l.equipo_id} bajo respecto a la lectura anterior.",
+                f"El contador B/N del equipo {l.equipo_id} bajo respecto a la lectura anterior.",
                 l.id,
             ))
-        anterior_por_equipo[l.equipo_id] = l.contador
+
+        if anterior_color is not None and l.contador_color is not None and l.contador_color < anterior_color:
+            alertas.append(_alerta(
+                "lectura_inconsistente", "critico",
+                f"El contador color del equipo {l.equipo_id} bajo respecto a la lectura anterior.",
+                l.id,
+            ))
+
+        anterior_por_equipo[l.equipo_id] = (l.contador_bn, l.contador_color)
 
     return alertas
 
