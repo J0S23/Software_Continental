@@ -232,15 +232,20 @@ def informe_por_equipo(periodo, equipo_id):
             l for l in lecturas_equipo if (l.fecha_lectura.year, l.fecha_lectura.month) < (anio, mes)
         ]
 
-        contador_actual = None
+        contador_actual_bn = None
+        contador_actual_color = None
         if lecturas_periodo:
-            contador_actual = lecturas_periodo[-1].contador
+            contador_actual_bn = lecturas_periodo[-1].contador_bn
+            contador_actual_color = lecturas_periodo[-1].contador_color
         elif lecturas_equipo:
-            contador_actual = lecturas_equipo[-1].contador
+            contador_actual_bn = lecturas_equipo[-1].contador_bn
+            contador_actual_color = lecturas_equipo[-1].contador_color
 
-        consumo_mensual = None
+        consumo_mensual_bn = None
+        consumo_mensual_color = None
         if lecturas_periodo and anteriores:
-            consumo_mensual = lecturas_periodo[-1].contador - anteriores[-1].contador
+            consumo_mensual_bn = lecturas_periodo[-1].contador_bn - anteriores[-1].contador_bn
+            consumo_mensual_color = lecturas_periodo[-1].contador_color - anteriores[-1].contador_color
 
         costos = db.query(Costos).filter(Costos.equipo_id == equipo_id, Costos.periodo == periodo).all()
         costos_total = sum(c.valor_total or 0 for c in costos)
@@ -255,8 +260,10 @@ def informe_por_equipo(periodo, equipo_id):
             # Bloqueado: Equipos no tiene cliente_id ni contrato_id (punto 3).
             "cliente_id": None,
             "contrato_id": None,
-            "contador_actual": contador_actual,
-            "consumo_mensual": consumo_mensual,
+            "contador_actual_bn": contador_actual_bn,
+            "contador_actual_color": contador_actual_color,
+            "consumo_mensual_bn": consumo_mensual_bn,
+            "consumo_mensual_color": consumo_mensual_color,
             # Bloqueado: Facturacion no tiene equipo_id (punto 5).
             "ingreso_generado": None,
             "costos": costos_total,
