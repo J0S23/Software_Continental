@@ -17,7 +17,7 @@ from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, ListFlowable, ListItem,
 )
 
-from Modulos.Informes_mensuales import informe_general, informe_por_cliente
+from Servicio.Informes_mensuales import informe_general, informe_por_cliente
 
 router = APIRouter()
 
