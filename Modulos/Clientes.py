@@ -10,27 +10,50 @@ class Clientes(Base):
     id = Column(Integer, primary_key=True, index=True)
     tipo_cliente = Column(Enum(TipoCliente))
     estado_cliente = Column(Enum(EstadoCliente))
-    tipo_contacto = Column(String)
     condicion_pago = Column(String)
     estado_cartera_cliente = Column(String)
     multiempresa = Column(Enum(EmpresaFacturadora), nullable=True)
+    nombre = Column(String)
+    cliente_id = Column(String)
+    telefono = Column(String, nullable=True)
+    celular = Column(String, nullable=True)
+    nit = Column(String, nullable=True)
+    ciudad = Column(String, nullable=True)
+    departamento = Column(String, nullable=True)
+    direccion_principal = Column(String, nullable=True)
+    correo = Column(String, nullable=True)
+    vendedor_comercial = Column(String, nullable=True)
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
-    
+
     @staticmethod
     def crear_tabla():
         Base.metadata.create_all(bind=engine)
-    
+
     @staticmethod
-    def agregar(tipo_cliente, estado_cliente, tipo_contacto, condicion_pago, estado_cartera_cliente, multiempresa=None):
+    def agregar(
+        tipo_cliente, estado_cliente, condicion_pago, estado_cartera_cliente,
+        nombre, cliente_id, telefono=None, celular=None, nit=None, ciudad=None,
+        departamento=None, direccion_principal=None, correo=None,
+        vendedor_comercial=None, multiempresa=None,
+    ):
         """Agrega un cliente a la BD"""
         db = SessionLocal()
         nuevo_cliente = Clientes(
             tipo_cliente=tipo_cliente,
             estado_cliente=estado_cliente,
-            tipo_contacto=tipo_contacto,
             condicion_pago=condicion_pago,
             estado_cartera_cliente=estado_cartera_cliente,
-            multiempresa=multiempresa
+            multiempresa=multiempresa,
+            nombre=nombre,
+            cliente_id=cliente_id,
+            telefono=telefono,
+            celular=celular,
+            nit=nit,
+            ciudad=ciudad,
+            departamento=departamento,
+            direccion_principal=direccion_principal,
+            correo=correo,
+            vendedor_comercial=vendedor_comercial,
         )
         db.add(nuevo_cliente)
         db.commit()
