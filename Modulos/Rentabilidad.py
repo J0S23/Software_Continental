@@ -8,6 +8,9 @@ class Rentabilidad(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     periodo = Column(String)
+    #Atributos que permiten guardar rentabilidad por contrato
+    contrato_id = Column(Integer, nullable=True)
+    cliente_id = Column(Integer, nullable=True)
     ingresos = Column(Float, default=0)
     costos = Column(Float, default=0)
     ganancia = Column(Float, default=0)
@@ -19,15 +22,18 @@ class Rentabilidad(Base):
         Base.metadata.create_all(bind=engine)
     
     @staticmethod
-    def agregar(periodo, ingresos=0, costos=0, ganancia=0, porcentaje_rentabilidad=0):
+    def agregar(periodo, ingresos=0, costos=0, ganancia=0, porcentaje_rentabilidad=0,
+                contrato_id=None, cliente_id=None):
         """Agrega un registro de rentabilidad a la BD"""
         db = SessionLocal()
         nuevo_registro = Rentabilidad(
             periodo=periodo,
+            contrato_id=contrato_id,
+            cliente_id=cliente_id,
             ingresos=ingresos,
             costos=costos,
             ganancia=ganancia,
-            porcentaje_rentabilidad=porcentaje_rentabilidad
+            porcentaje_rentabilidad=porcentaje_rentabilidad,
         )
         db.add(nuevo_registro)
         db.commit()
@@ -50,6 +56,17 @@ class Rentabilidad(Base):
         registro = db.query(Rentabilidad).filter(Rentabilidad.id == rentabilidad_id).first()
         db.close()
         return registro
+
+    def obtener_por_contrato(contrato_id, periodo=None):
+        #Metodo que necesita la rentabilidad automatica para saber si ya
+        #existe un calculo de este contrato en este periodo
+        db = SessionLocal()
+        query = db.query(Rentabilidad).filter(Rentabilidad.contrato_id == contrato_id)
+        if periodo:
+            query = query.filter(Rentabilidad.periodo == periodo)
+        registros = query.all()
+        db.close()
+        return registros
     
     @staticmethod
     def eliminar(rentabilidad_id):

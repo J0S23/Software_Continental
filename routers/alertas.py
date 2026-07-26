@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from Modulos.Alertas import generar_alertas
+from Servicio.Alertas import generar_alertas
 
 router = APIRouter()
 
