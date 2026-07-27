@@ -12,6 +12,7 @@
 from datetime import datetime, timedelta
 
 from base_de_datos import SessionLocal
+from Modulos.AlertaEstado import AlertaEstado
 from Modulos.Cartera import Cartera
 from Modulos.Contratos import Contratos
 from Modulos.enums import EstadoFactura
@@ -24,7 +25,13 @@ UMBRAL_FACTURA_PROXIMA_DIAS = 7
 
 
 def _alerta(tipo, nivel, mensaje, referencia_id=None):
-    return {"tipo": tipo, "nivel": nivel, "mensaje": mensaje, "referencia_id": referencia_id}
+    return {
+        "id": f"{tipo}:{referencia_id}",
+        "tipo": tipo,
+        "nivel": nivel,
+        "mensaje": mensaje,
+        "referencia_id": referencia_id,
+    }
 
 
 def _alertas_contratos(db, hoy):
@@ -165,8 +172,10 @@ def _alertas_lecturas(db):
     return alertas
 
 
-def generar_alertas():
-    """Punto de entrada: agrupa todas las alertas del sistema."""
+def generar_alertas(incluir_descartadas=False):
+    """Punto de entrada: agrupa todas las alertas del sistema y les mezcla
+    el estado persistido (leida/guardada/descartada) desde AlertaEstado.
+    Por defecto no incluye las que el usuario ya descarto."""
     hoy = datetime.utcnow()
     db = SessionLocal()
     try:
@@ -179,6 +188,19 @@ def generar_alertas():
         )
     finally:
         db.close()
+
+    estados_por_clave = {
+        (estado.tipo, estado.referencia_id): estado for estado in AlertaEstado.obtener_todos()
+    }
+
+    for a in alertas:
+        estado = estados_por_clave.get((a["tipo"], a["referencia_id"]))
+        a["leida"] = bool(estado.leida) if estado else False
+        a["guardada"] = bool(estado.guardada) if estado else False
+        a["descartada"] = bool(estado.descartada) if estado else False
+
+    if not incluir_descartadas:
+        alertas = [a for a in alertas if not a["descartada"]]
 
     orden_nivel = {"critico": 0, "advertencia": 1, "info": 2}
     alertas.sort(key=lambda a: orden_nivel.get(a["nivel"], 3))
