@@ -18,6 +18,10 @@ class Equipos(Base):
     toner = Column(String, nullable=True)
     rend_orig = Column(Float, nullable=True)
     rend_gen = Column(Float, nullable=True)
+    # Contador inicial al ingresar al inventario Los usa FacturacionAutomatica cuando un contrato no tiene lectura anterior: 
+    # en vez de asumir 0 como contador anterior (lo que dispara un consumo falso e inflado en la primera factura), se parte de aca.
+    contador_inicial_bn = Column(Integer, default=0)
+    contador_inicial_color = Column(Integer, default=0)
     # Cliente/contrato donde esta instalado actualmente
     # Desbloquea equipos_instalados/consumo en informe_por_cliente y
     # cliente_id/contrato_id en informe_por_equipo.
@@ -32,6 +36,7 @@ class Equipos(Base):
     @staticmethod
     def agregar(numero_serie, tipo_equipo, tecnologia, color, estado_equipo, estado_tecnico,
                 recomendacion_tecnica="", modelo="", toner="", rend_orig=None, rend_gen=None,
+                contador_inicial_bn=0, contador_inicial_color=0,
                 cliente_id=None, contrato_id=None):
         db = SessionLocal()
         try:
@@ -40,6 +45,7 @@ class Equipos(Base):
                 color=color, estado_equipo=estado_equipo, estado_tecnico=estado_tecnico,
                 recomendacion_tecnica=recomendacion_tecnica, modelo=modelo, toner=toner,
                 rend_orig=rend_orig, rend_gen=rend_gen,
+                contador_inicial_bn=contador_inicial_bn, contador_inicial_color=contador_inicial_color,
                 cliente_id=cliente_id, contrato_id=contrato_id,
             )
             db.add(nuevo_equipo)

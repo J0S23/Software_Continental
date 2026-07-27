@@ -194,6 +194,21 @@ class Facturacion(Base):
         finally:
             db.close()
 
+
+    @staticmethod
+    def obtener_por_contrato(contrato_id, periodo=None):
+        """Facturas de un contrato, opcionalmente filtradas por periodo.
+        La necesita FacturacionAutomatica para evitar generar una factura
+        duplicada del mismo contrato+periodo."""
+        db = SessionLocal()
+        try:
+            query = db.query(Facturacion).filter(Facturacion.contrato_id == contrato_id)
+            if periodo:
+                query = query.filter(Facturacion.periodo == periodo)
+            return query.all()
+        finally:
+            db.close()
+
     @staticmethod
     def eliminar(factura_id):
         """Elimina una factura por ID"""
