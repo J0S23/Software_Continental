@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vista de pruebas - Alertas y persistencia</title>
+    <link rel="stylesheet" href="/vista/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Vista de pruebas</h1>
+            <p class="subtitle">
+                App aparte para probar la persistencia de alertas (leida / guardada / descartada)
+                sin tocar el frontend principal en <code>/</code>.
+            </p>
+        </header>
+
+        <nav class="tabs" id="tabs">
+            <button type="button" class="tab-btn active" data-tab="activas">Alertas activas</button>
+            <button type="button" class="tab-btn" data-tab="guardadas">Guardadas</button>
+            <button type="button" class="tab-btn" data-tab="consola">Consola API</button>
+        </nav>
+
+        <main>
+            <!-- Alertas activas -->
+            <section class="tab-panel active" id="panel-activas">
+                <div class="panel-toolbar">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="incluirDescartadas">
+                        Incluir descartadas
+                    </label>
+                    <button type="button" class="btn btn-secondary" id="refrescarActivas">Refrescar</button>
+                    <span class="resumen" id="resumenActivas"></span>
+                </div>
+                <div class="alertas-lista" id="listaActivas"></div>
+            </section>
+
+            <!-- Guardadas -->
+            <section class="tab-panel" id="panel-guardadas">
+                <div class="panel-toolbar">
+                    <button type="button" class="btn btn-secondary" id="refrescarGuardadas">Refrescar</button>
+                    <span class="resumen" id="resumenGuardadas"></span>
+                </div>
+                <div class="alertas-lista" id="listaGuardadas"></div>
+            </section>
+
+            <!-- Consola API -->
+            <section class="tab-panel" id="panel-consola">
+                <p class="hint">
+                    Mini cliente HTTP para probar cualquier endpoint del backend (no solo alertas)
+                    mientras desarrollas: manda el metodo, la ruta y (opcional) un body JSON.
+                </p>
+                <form id="formConsola" class="consola-form">
+                    <select id="consolaMetodo">
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                        <option value="PUT">PUT</option>
+                        <option value="DELETE">DELETE</option>
+                    </select>
+                    <input type="text" id="consolaRuta" placeholder="/api/alertas" value="/api/alertas" required>
+                    <button type="submit" class="btn btn-success">Enviar</button>
+                </form>
+                <textarea id="consolaBody" class="consola-body" placeholder='Body JSON (opcional), ej: {"tipo": "contrato_vencido", "referencia_id": 1, "guardada": true}'></textarea>
+
+                <div class="consola-respuesta">
+                    <h3>Respuesta</h3>
+                    <pre id="consolaResultado">Sin peticiones todavia.</pre>
+                </div>
+
+                <div class="consola-historial">
+                    <h3>Historial</h3>
+                    <div id="consolaHistorial"></div>
+                </div>
+            </section>
+
+            <div id="messageArea" aria-live="polite"></div>
+        </main>
+    </div>
+
+    <script src="/vista/script.js"></script>
+</body>
+</html>

@@ -118,6 +118,12 @@ def actualizar_registro(modelo, registro_id, valores):
 
 
 def eliminar_registro(modelo, registro_id):
+    if hasattr(modelo, "eliminar"):
+        with SesionLocal() as sesion:
+            existe = sesion.get(modelo, registro_id) is not None
+        modelo.eliminar(registro_id)
+        return existe
+
     with SesionLocal() as sesion:
         registro = sesion.get(modelo, registro_id)
 
