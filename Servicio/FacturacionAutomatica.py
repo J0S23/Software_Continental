@@ -1,6 +1,7 @@
 #Requiere un contrato con condiciones económicas configuradas y una lectura del período a facturar; de lo contrario, devuelve None
 
 from Modulos.Contratos import Contratos
+from Modulos.Equipos import Equipos
 from Modulos.Facturacion import Facturacion
 from Modulos.Lecturas import Lecturas
 from Servicio.Informes_mensuales import _parse_periodo
@@ -25,11 +26,51 @@ def _lectura_actual_y_anterior(contrato_id, periodo):
     lectura_anterior = anteriores[-1] if anteriores else None
     return lectura_actual, lectura_anterior
 
+
+def _validar_consistencia_equipo(contrato, lectura):
+
+    #Cruza el equipo de la lectura contra el equipo esperado del contrato, usando DOS fuentes independientes
+    #para no confiar en un solo punto de verdad:
+    #  - Contratos.equipo_id  (que dice el contrato que tiene instalado)
+    #  - Equipos.contrato_id  (que dice el equipo en que contrato esta)
+    #Si un lado se actualizo y el otro no (por ejemplo, se hizo un CambiosRetiro y no se actualizo el
+    #contrato, o viceversa), esta funcion lo detecta en vez de asumir que un solo campo es la verdad.
+    #Devuelve una lista de strings con las inconsistencias encontradas (vacia si todo cuadra). No lanza
+    #excepcion aqui: quien llama (generar_facturacion) decide si eso bloquea la generacion.
+
+    inconsistencias = []
+
+    equipo = Equipos.obtener_por_id(lectura.equipo_id)
+    if not equipo:
+        inconsistencias.append(
+            f"La lectura {lectura.id} referencia el equipo {lectura.equipo_id}, que no existe en Equipos."
+        )
+        return inconsistencias
+
+    # Fuente 1: el contrato dice cual es su equipo.
+    if contrato.equipo_id and contrato.equipo_id != lectura.equipo_id:
+        inconsistencias.append(
+            f"El contrato {contrato.id} tiene asignado el equipo {contrato.equipo_id}, "
+            f"pero la lectura es del equipo {lectura.equipo_id}."
+        )
+
+    # Fuente 2: el equipo dice en que contrato esta instalado.
+    if equipo.contrato_id and equipo.contrato_id != contrato.id:
+        inconsistencias.append(
+            f"El equipo {lectura.equipo_id} figura instalado en el contrato {equipo.contrato_id}, "
+            f"no en el contrato {contrato.id}."
+        )
+
+    return inconsistencias
+
+
 def calcular_facturacion(contrato_id, periodo):
     #Calcula consumo, paginas adicionales, valor adicional y subtotal/total (sin IVA) para un contrato en un periodo, SIN guardar nada.
     #Devuelve None si:
     #- el contrato no existe.
     #- no hay lectura registrada para ese periodo (no se puede facturar a ciegas).
+    #Incluye "inconsistencias": lista de problemas equipo-contrato detectados (vacia si todo esta bien).
+    #No bloquea el calculo aqui, pero generar_facturacion() si la revisa antes de guardar.
 
     contrato = Contratos.obtener_por_id(contrato_id)
     if not contrato:
@@ -38,6 +79,8 @@ def calcular_facturacion(contrato_id, periodo):
     lectura_actual, lectura_anterior = _lectura_actual_y_anterior(contrato_id, periodo)
     if not lectura_actual:
         return None
+
+    inconsistencias = _validar_consistencia_equipo(contrato, lectura_actual)
 
     # Si no hay lectura anterior (primera lectura del contrato), se toma 0 como contador anterior. 
     # OJO: esto puede disparar un consumo muy alto en la primera factura si el contador del equipo no arrancab en 0. 
@@ -86,18 +129,42 @@ def calcular_facturacion(contrato_id, periodo):
         # Sin IVA por ahora: subtotal y total_facturado son el mismo valor.
         "subtotal": subtotal,
         "total_facturado": subtotal,
+
+        "inconsistencias": inconsistencias,
     }
+
 
 def generar_facturacion(
     contrato_id, periodo, numero_factura, fecha_factura,
     estado_factura, empresa_factura=None, fecha_vencimiento=None,
+    forzar=False,
 ):
     #Calcula la facturacion del contrato/periodo y crea el registro en Facturacion. 
-    # Devuelve None (sin crear nada) si calcular_facturacion() no pudo calcular por falta de contrato o de lectura.
-    
+    #Devuelve None (sin crear nada) si calcular_facturacion() no pudo calcular por falta de contrato o de lectura.
+    #Bloquea la creacion (ValueError) si:
+    #  - ya existe una factura de este contrato+periodo (evita duplicados).
+    #  - se detectaron inconsistencias equipo-contrato (evita facturar con datos de un equipo
+    #    que ya no corresponde a este contrato).
+    #Ambos bloqueos se pueden saltar con forzar=True, para cuando el usuario ya vio la advertencia
+    #y decide seguir de todas formas (por ejemplo desde un modal de confirmacion en el frontend).
+
     calculo = calcular_facturacion(contrato_id, periodo)
     if calculo is None:
         return None
+
+    if not forzar:
+        ya_facturado = Facturacion.obtener_por_contrato(contrato_id, periodo)
+        if ya_facturado:
+            raise ValueError(
+                f"El contrato {contrato_id} ya tiene {len(ya_facturado)} factura(s) registrada(s) "
+                f"para el periodo {periodo}. Usa forzar=True para crear otra de todos modos."
+            )
+
+        if calculo["inconsistencias"]:
+            raise ValueError(
+                "No se genero la factura por inconsistencias equipo-contrato: "
+                + " | ".join(calculo["inconsistencias"])
+            )
 
     return Facturacion.agregar(
         periodo=periodo,
