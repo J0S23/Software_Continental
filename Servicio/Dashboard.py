@@ -35,6 +35,7 @@ from Modulos.Costos import Costos
 from Modulos.enums import EstadoFactura
 from Modulos.Equipos import Equipos
 from Modulos.Facturacion import Facturacion
+from Modulos.EntregasToner import EntregaToner
 from Servicio.Informes_mensuales import _parse_periodo, informe_general, informe_por_cliente
 
 # Limites de dias de mora para agrupar cartera por antiguedad.
@@ -106,6 +107,7 @@ def dashboard_snapshot(periodo):
         # Bloqueado: ver docstring del modulo y punto 6 de Informes_mensuales.
         "contratos_baja_rentabilidad": general["contratos_baja_rentabilidad"],
         "clientes_en_mora": general["clientes_en_mora"],
+        "toneres_entregados_mes": general["toneres_entregados"],
         "equipos_fallas_recurrentes": general["equipos_fallas_recurrentes"],
     }
 
@@ -250,10 +252,18 @@ def serie_consumo_paginas_por_cliente(periodo_final, meses=6):
 
 
 def serie_toneres_por_cliente(periodo_final, meses=6):
-    """Bloqueado: no existe un registro transaccional de entrega de toner con
-    cantidad, fecha y cliente asociado (punto 2 de Informes_mensuales).
-    Insumos es un catalogo (tipo/color/estado), no un historial de entregas."""
-    return [
-        {"periodo": periodo, "toneres_por_cliente": None}
-        for periodo in _periodos_hacia_atras(periodo_final, meses)
-    ]
+    """Cantidad de toner entregado por cliente, mes a mes."""
+    periodos = _periodos_hacia_atras(periodo_final, meses)
+
+    db = SessionLocal()
+    try:
+        serie = []
+        for periodo in periodos:
+            entregas = db.query(EntregaToner).filter(EntregaToner.periodo == periodo).all()
+            por_cliente = {}
+            for e in entregas:
+                por_cliente[e.cliente_id] = por_cliente.get(e.cliente_id, 0) + (e.cantidad or 0)
+            serie.append({"periodo": periodo, "toneres_por_cliente": por_cliente})
+        return serie
+    finally:
+        db.close()
