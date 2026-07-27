@@ -64,6 +64,24 @@ def _validar_consistencia_equipo(contrato, lectura):
     return inconsistencias
 
 
+def _contador_anterior(lectura_anterior, equipo):
+
+    #Punto de partida para calcular consumo:
+    #  - si hay lectura anterior, se usa su contador (caso normal, mes a mes).
+    #  - si NO hay lectura anterior (primera factura del contrato), se usa el contador_inicial_bn/color del equipo en vez
+    #    de asumir 0, que disparaba un consumo falso e inflado en la primera factura si el equipo ya traia contador
+    #    de fabrica o de un cliente anterior.
+    #  - si tampoco hay equipo (no deberia pasar si ya se valido consistencia, pero por seguridad), se cae a 0 como ultimo recurso.
+
+    if lectura_anterior:
+        return lectura_anterior.contador_bn or 0, lectura_anterior.contador_color or 0
+
+    if equipo:
+        return equipo.contador_inicial_bn or 0, equipo.contador_inicial_color or 0
+
+    return 0, 0
+
+
 def calcular_facturacion(contrato_id, periodo):
     #Calcula consumo, paginas adicionales, valor adicional y subtotal/total (sin IVA) para un contrato en un periodo, SIN guardar nada.
     #Devuelve None si:
@@ -82,12 +100,8 @@ def calcular_facturacion(contrato_id, periodo):
 
     inconsistencias = _validar_consistencia_equipo(contrato, lectura_actual)
 
-    # Si no hay lectura anterior (primera lectura del contrato), se toma 0 como contador anterior. 
-    # OJO: esto puede disparar un consumo muy alto en la primera factura si el contador del equipo no arrancab en 0. 
-    # Pendiente a revisar: usar el contador inicial del equipo (seccion 5.2 / 7.1 del documento) en vez de 0 cuando no hay lectura previa.
-    
-    contador_anterior_bn = lectura_anterior.contador_bn if lectura_anterior else 0
-    contador_anterior_color = lectura_anterior.contador_color if lectura_anterior else 0
+    equipo = Equipos.obtener_por_id(lectura_actual.equipo_id)
+    contador_anterior_bn, contador_anterior_color = _contador_anterior(lectura_anterior, equipo)
 
     consumo_bn = max(0, (lectura_actual.contador_bn or 0) - contador_anterior_bn)
     consumo_color = max(0, (lectura_actual.contador_color or 0) - contador_anterior_color)
@@ -109,6 +123,9 @@ def calcular_facturacion(contrato_id, periodo):
         "cliente_id": contrato.cliente_id,
         "periodo": periodo,
         "lectura_id": lectura_actual.id,
+
+        # util para saber si el contador anterior vino de una lectura previa o del contador inicial del equipo (primera factura del contrato).
+        "origen_contador_anterior": "lectura_anterior" if lectura_anterior else "contador_inicial_equipo",
 
         "contador_anterior_bn": contador_anterior_bn,
         "contador_actual_bn": lectura_actual.contador_bn,
