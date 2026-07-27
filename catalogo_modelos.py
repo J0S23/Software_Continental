@@ -6,6 +6,7 @@ from Modulos.CambiosRetiro import CambioRetiro
 from Modulos.Costos import Costos
 from Modulos.EquiposRespaldo import EquipoRespaldo
 from Modulos.Lecturas import Lecturas
+from Modulos.EntregasToner import EntregaToner
 from Modulos.enums import (
     EstadoCliente,
     TipoCliente,
@@ -177,6 +178,29 @@ CATALOGO_DATOS = {
         "enumeraciones": {
             "tipo_costo": TipoCosto,
         },
+    },
+    "entregas_toner": {
+        "etiqueta": "Entregas de Toner",
+        "modelo": EntregaToner,
+        "campos": [
+            campo("fecha_entrega", "Fecha de entrega", "date", requerido=False),
+            campo("periodo", "Periodo (MM-YYYY)", requerido=False),
+            campo("cliente_id", "Cliente", "number"),
+            campo("contrato_id", "Contrato", "number", requerido=False),
+            campo("equipo_id", "Equipo", "number"),
+            campo("tipo_insumo_id", "Consumible entregado", "number"),
+            campo("cantidad", "Cantidad", "number"),
+            campo("costo_unitario", "Costo unitario", "number", requerido=False),
+            campo("costo_total", "Costo total", "number", requerido=False),
+            campo("persona_entrega", "Persona que entrega"),
+            campo("persona_recibe", "Persona que recibe", requerido=False),
+            campo("motivo", "Motivo de entrega", "select",
+                  ["programada", "agotado", "correctivo", "respaldo", "otro"], requerido=False),
+            campo("contador_bn", "Contador B/N al momento", "number", requerido=False),
+            campo("contador_color", "Contador color al momento", "number", requerido=False),
+            campo("observaciones", "Observaciones", requerido=False),
+            campo("evidencia_recibido", "Evidencia (ruta/URL)", requerido=False),
+        ],
     },
     "facturacion": {
         "etiqueta": "Facturacion",
