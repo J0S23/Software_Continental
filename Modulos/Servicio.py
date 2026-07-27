@@ -32,47 +32,53 @@ class Servicio(Base):
                 toner_respaldo_sitio="No", equipo_respaldo_incluido="No", estado="Activo"):
         """Agrega un servicio a la BD"""
         db = SessionLocal()
-        nuevo_servicio = Servicio(
-            cliente_id=cliente_id,
-            equipo_id=equipo_id,
-            nombre_servicio=nombre_servicio,
-            descripcion=descripcion,
-            precio=precio,
-            descripcion_mantenimiento=descripcion_mantenimiento,
-            repuestos_incluidos=repuestos_incluidos,
-            toner_incluido=toner_incluido,
-            toner_respaldo_sitio=toner_respaldo_sitio,
-            equipo_respaldo_incluido=equipo_respaldo_incluido,
-            estado=estado   
-        )
-        db.add(nuevo_servicio)
-        db.commit()
-        db.refresh(nuevo_servicio)
-        db.close()
-        return nuevo_servicio
-    
+        try:
+            nuevo_servicio = Servicio(
+                cliente_id=cliente_id,
+                equipo_id=equipo_id,
+                nombre_servicio=nombre_servicio,
+                descripcion=descripcion,
+                precio=precio,
+                descripcion_mantenimiento=descripcion_mantenimiento,
+                repuestos_incluidos=repuestos_incluidos,
+                toner_incluido=toner_incluido,
+                toner_respaldo_sitio=toner_respaldo_sitio,
+                equipo_respaldo_incluido=equipo_respaldo_incluido,
+                estado=estado
+            )
+            db.add(nuevo_servicio)
+            db.commit()
+            db.refresh(nuevo_servicio)
+            return nuevo_servicio
+        finally:
+            db.close()
+
     @staticmethod
     def obtener_todos():
         """Obtiene todos los servicios"""
         db = SessionLocal()
-        servicios = db.query(Servicio).all()
-        db.close()
-        return servicios
-    
+        try:
+            return db.query(Servicio).all()
+        finally:
+            db.close()
+
     @staticmethod
     def obtener_por_id(servicio_id):
         """Obtiene un servicio por ID"""
         db = SessionLocal()
-        servicio = db.query(Servicio).filter(Servicio.id == servicio_id).first()
-        db.close()
-        return servicio
-    
+        try:
+            return db.query(Servicio).filter(Servicio.id == servicio_id).first()
+        finally:
+            db.close()
+
     @staticmethod
     def eliminar(servicio_id):
         """Elimina un servicio por ID"""
         db = SessionLocal()
-        servicio = db.query(Servicio).filter(Servicio.id == servicio_id).first()
-        if servicio:
-            db.delete(servicio)
-            db.commit()
-        db.close()
+        try:
+            servicio = db.query(Servicio).filter(Servicio.id == servicio_id).first()
+            if servicio:
+                db.delete(servicio)
+                db.commit()
+        finally:
+            db.close()

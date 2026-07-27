@@ -34,38 +34,44 @@ class Insumo(Base):
     def agregar(tipo_insumo_id, color="", estado=""):
         """Agrega un insumo a la BD"""
         db = SessionLocal()
-        nuevo_insumo = Insumo(tipo_insumo_id=tipo_insumo_id, color=color, estado=estado)
-        db.add(nuevo_insumo)
-        db.commit()
-        db.refresh(nuevo_insumo)
-        db.close()
-        return nuevo_insumo
+        try:
+            nuevo_insumo = Insumo(tipo_insumo_id=tipo_insumo_id, color=color, estado=estado)
+            db.add(nuevo_insumo)
+            db.commit()
+            db.refresh(nuevo_insumo)
+            return nuevo_insumo
+        finally:
+            db.close()
 
     @staticmethod
     def obtener_todos():
         """Obtiene todos los insumos"""
         db = SessionLocal()
-        insumos = db.query(Insumo).all()
-        db.close()
-        return insumos
+        try:
+            return db.query(Insumo).all()
+        finally:
+            db.close()
 
     @staticmethod
     def obtener_por_id(insumo_id):
         """Obtiene un insumo por ID"""
         db = SessionLocal()
-        insumo = db.query(Insumo).filter(Insumo.id == insumo_id).first()
-        db.close()
-        return insumo
+        try:
+            return db.query(Insumo).filter(Insumo.id == insumo_id).first()
+        finally:
+            db.close()
 
     @staticmethod
     def eliminar(insumo_id):
         """Elimina un insumo por ID"""
         db = SessionLocal()
-        insumo = db.query(Insumo).filter(Insumo.id == insumo_id).first()
-        if insumo:
-            db.delete(insumo)
-            db.commit()
-        db.close()
+        try:
+            insumo = db.query(Insumo).filter(Insumo.id == insumo_id).first()
+            if insumo:
+                db.delete(insumo)
+                db.commit()
+        finally:
+            db.close()
 
 
 Maquinas = Insumo

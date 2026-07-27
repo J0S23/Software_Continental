@@ -22,35 +22,41 @@ class Usuarios(Base):
     def agregar(nombre_usuario, email, rol, estado):
         """Agrega un usuario a la BD"""
         db = SessionLocal()
-        nuevo_usuario = Usuarios(nombre_usuario=nombre_usuario, email=email, rol=rol, estado=estado)
-        db.add(nuevo_usuario)
-        db.commit()
-        db.refresh(nuevo_usuario)
-        db.close()
-        return nuevo_usuario
-    
+        try:
+            nuevo_usuario = Usuarios(nombre_usuario=nombre_usuario, email=email, rol=rol, estado=estado)
+            db.add(nuevo_usuario)
+            db.commit()
+            db.refresh(nuevo_usuario)
+            return nuevo_usuario
+        finally:
+            db.close()
+
     @staticmethod
     def obtener_todos():
         """Obtiene todos los usuarios"""
         db = SessionLocal()
-        usuarios = db.query(Usuarios).all()
-        db.close()
-        return usuarios
-    
+        try:
+            return db.query(Usuarios).all()
+        finally:
+            db.close()
+
     @staticmethod
     def obtener_por_id(usuario_id):
         """Obtiene un usuario por ID"""
         db = SessionLocal()
-        usuario = db.query(Usuarios).filter(Usuarios.id == usuario_id).first()
-        db.close()
-        return usuario
-    
+        try:
+            return db.query(Usuarios).filter(Usuarios.id == usuario_id).first()
+        finally:
+            db.close()
+
     @staticmethod
     def eliminar(usuario_id):
         """Elimina un usuario por ID"""
         db = SessionLocal()
-        usuario = db.query(Usuarios).filter(Usuarios.id == usuario_id).first()
-        if usuario:
-            db.delete(usuario)
-            db.commit()
-        db.close()
+        try:
+            usuario = db.query(Usuarios).filter(Usuarios.id == usuario_id).first()
+            if usuario:
+                db.delete(usuario)
+                db.commit()
+        finally:
+            db.close()

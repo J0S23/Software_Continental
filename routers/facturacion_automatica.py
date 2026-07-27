@@ -26,7 +26,10 @@ class GenerarFacturacionRequest(BaseModel):
 async def previsualizar_facturacion(contrato_id: int, periodo: str):
     """Calcula la facturacion del contrato/periodo SIN crear ningun registro.
     Util para mostrar un preview antes de que el usuario confirme."""
-    calculo = calcular_facturacion(contrato_id, periodo)
+    try:
+        calculo = calcular_facturacion(contrato_id, periodo)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     if calculo is None:
         raise HTTPException(

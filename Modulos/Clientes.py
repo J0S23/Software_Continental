@@ -38,70 +38,77 @@ class Clientes(Base):
     ):
         """Agrega un cliente a la BD"""
         db = SessionLocal()
-        nuevo_cliente = Clientes(
-            tipo_cliente=tipo_cliente,
-            estado_cliente=estado_cliente,
-            condicion_pago=condicion_pago,
-            estado_cartera_cliente=estado_cartera_cliente,
-            multiempresa=multiempresa,
-            nombre=nombre,
-            cliente_id=cliente_id,
-            telefono=telefono,
-            celular=celular,
-            nit=nit,
-            ciudad=ciudad,
-            departamento=departamento,
-            direccion_principal=direccion_principal,
-            correo=correo,
-            vendedor_comercial=vendedor_comercial,
-        )
-        db.add(nuevo_cliente)
-        db.commit()
-        db.refresh(nuevo_cliente)
-        db.close()
-        return nuevo_cliente
-    
+        try:
+            nuevo_cliente = Clientes(
+                tipo_cliente=tipo_cliente,
+                estado_cliente=estado_cliente,
+                condicion_pago=condicion_pago,
+                estado_cartera_cliente=estado_cartera_cliente,
+                multiempresa=multiempresa,
+                nombre=nombre,
+                cliente_id=cliente_id,
+                telefono=telefono,
+                celular=celular,
+                nit=nit,
+                ciudad=ciudad,
+                departamento=departamento,
+                direccion_principal=direccion_principal,
+                correo=correo,
+                vendedor_comercial=vendedor_comercial,
+            )
+            db.add(nuevo_cliente)
+            db.commit()
+            db.refresh(nuevo_cliente)
+            return nuevo_cliente
+        finally:
+            db.close()
+
     @staticmethod
     def obtener_todos():
         """Obtiene todos los clientes"""
         db = SessionLocal()
-        clientes = db.query(Clientes).all()
-        db.close()
-        return clientes
-    
+        try:
+            return db.query(Clientes).all()
+        finally:
+            db.close()
+
     @staticmethod
     def obtener_por_id(cliente_id):
         """Obtiene un cliente por ID"""
         db = SessionLocal()
-        cliente = db.query(Clientes).filter(Clientes.id == cliente_id).first()
-        db.close()
-        return cliente
+        try:
+            return db.query(Clientes).filter(Clientes.id == cliente_id).first()
+        finally:
+            db.close()
 
     @staticmethod
     def actualizar(cliente_id, **valores):
         """Actualiza un cliente por ID"""
         db = SessionLocal()
-        cliente = db.query(Clientes).filter(Clientes.id == cliente_id).first()
+        try:
+            cliente = db.query(Clientes).filter(Clientes.id == cliente_id).first()
 
-        if not cliente:
+            if not cliente:
+                return None
+
+            for campo, valor in valores.items():
+                setattr(cliente, campo, valor)
+
+            db.commit()
+            db.refresh(cliente)
+            return cliente
+        finally:
             db.close()
-            return None
 
-        for campo, valor in valores.items():
-            setattr(cliente, campo, valor)
-
-        db.commit()
-        db.refresh(cliente)
-        db.close()
-        return cliente
-    
     @staticmethod
     def eliminar(cliente_id):
         """Elimina un cliente por ID"""
         db = SessionLocal()
-        cliente = db.query(Clientes).filter(Clientes.id == cliente_id).first()
-        if cliente:
-            db.delete(cliente)
-            db.commit()
-        db.close()
+        try:
+            cliente = db.query(Clientes).filter(Clientes.id == cliente_id).first()
+            if cliente:
+                db.delete(cliente)
+                db.commit()
+        finally:
+            db.close()
 
