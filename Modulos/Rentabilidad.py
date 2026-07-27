@@ -26,54 +26,62 @@ class Rentabilidad(Base):
                 contrato_id=None, cliente_id=None):
         """Agrega un registro de rentabilidad a la BD"""
         db = SessionLocal()
-        nuevo_registro = Rentabilidad(
-            periodo=periodo,
-            contrato_id=contrato_id,
-            cliente_id=cliente_id,
-            ingresos=ingresos,
-            costos=costos,
-            ganancia=ganancia,
-            porcentaje_rentabilidad=porcentaje_rentabilidad,
-        )
-        db.add(nuevo_registro)
-        db.commit()
-        db.refresh(nuevo_registro)
-        db.close()
-        return nuevo_registro
-    
+        try:
+            nuevo_registro = Rentabilidad(
+                periodo=periodo,
+                contrato_id=contrato_id,
+                cliente_id=cliente_id,
+                ingresos=ingresos,
+                costos=costos,
+                ganancia=ganancia,
+                porcentaje_rentabilidad=porcentaje_rentabilidad,
+            )
+            db.add(nuevo_registro)
+            db.commit()
+            db.refresh(nuevo_registro)
+            return nuevo_registro
+        finally:
+            db.close()
+
     @staticmethod
     def obtener_todos():
         """Obtiene todos los registros de rentabilidad"""
         db = SessionLocal()
-        registros = db.query(Rentabilidad).all()
-        db.close()
-        return registros
-    
+        try:
+            return db.query(Rentabilidad).all()
+        finally:
+            db.close()
+
     @staticmethod
     def obtener_por_id(rentabilidad_id):
         """Obtiene un registro de rentabilidad por ID"""
         db = SessionLocal()
-        registro = db.query(Rentabilidad).filter(Rentabilidad.id == rentabilidad_id).first()
-        db.close()
-        return registro
+        try:
+            return db.query(Rentabilidad).filter(Rentabilidad.id == rentabilidad_id).first()
+        finally:
+            db.close()
 
+    @staticmethod
     def obtener_por_contrato(contrato_id, periodo=None):
         #Metodo que necesita la rentabilidad automatica para saber si ya
         #existe un calculo de este contrato en este periodo
         db = SessionLocal()
-        query = db.query(Rentabilidad).filter(Rentabilidad.contrato_id == contrato_id)
-        if periodo:
-            query = query.filter(Rentabilidad.periodo == periodo)
-        registros = query.all()
-        db.close()
-        return registros
-    
+        try:
+            query = db.query(Rentabilidad).filter(Rentabilidad.contrato_id == contrato_id)
+            if periodo:
+                query = query.filter(Rentabilidad.periodo == periodo)
+            return query.all()
+        finally:
+            db.close()
+
     @staticmethod
     def eliminar(rentabilidad_id):
         """Elimina un registro de rentabilidad por ID"""
         db = SessionLocal()
-        registro = db.query(Rentabilidad).filter(Rentabilidad.id == rentabilidad_id).first()
-        if registro:
-            db.delete(registro)
-            db.commit()
-        db.close()
+        try:
+            registro = db.query(Rentabilidad).filter(Rentabilidad.id == rentabilidad_id).first()
+            if registro:
+                db.delete(registro)
+                db.commit()
+        finally:
+            db.close()

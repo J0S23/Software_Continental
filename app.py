@@ -7,9 +7,7 @@ from configuracion import RUTA_STATIC
 from routers import datos, paginas
 from routers.exportacion import router as exportacion_router
 from routers.alertas import router as alertas_router
-from routers.informes import router as informes_router
 from routers.facturacion_automatica import router as facturacion_automatica_router
-from routers.rentabilidad_automatica import router as rentabilidad_automatica_router
 
 from Modulos.Cartera import Cartera  # noqa: F401
 from Modulos.Lecturas import Lecturas  # noqa: F401
@@ -24,9 +22,7 @@ app.include_router(paginas.router)
 app.include_router(datos.router)
 app.include_router(exportacion_router)
 app.include_router(alertas_router)
-app.include_router(informes_router)
 app.include_router(facturacion_automatica_router)
-app.include_router(rentabilidad_automatica_router)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=5000)

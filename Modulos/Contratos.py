@@ -1,5 +1,5 @@
 from Modulos.enums import TipoMantenimiento
-from sqlalchemy import Column, Integer, String, DateTime, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, Float, DateTime, Enum as SQLEnum
 from datetime import datetime
 from base_de_datos import Base, SessionLocal, engine
 

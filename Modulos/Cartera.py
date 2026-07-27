@@ -20,35 +20,41 @@ class Cartera(Base):
     def agregar(cliente_id, monto, estado):
         """Agrega un registro de cartera a la BD"""
         db = SessionLocal()
-        nueva_cartera = Cartera(cliente_id=cliente_id, monto=monto, estado=estado)
-        db.add(nueva_cartera)
-        db.commit()
-        db.refresh(nueva_cartera)
-        db.close()
-        return nueva_cartera
-    
+        try:
+            nueva_cartera = Cartera(cliente_id=cliente_id, monto=monto, estado=estado)
+            db.add(nueva_cartera)
+            db.commit()
+            db.refresh(nueva_cartera)
+            return nueva_cartera
+        finally:
+            db.close()
+
     @staticmethod
     def obtener_todos():
         """Obtiene todos los registros de cartera"""
         db = SessionLocal()
-        cartera = db.query(Cartera).all()
-        db.close()
-        return cartera
-    
+        try:
+            return db.query(Cartera).all()
+        finally:
+            db.close()
+
     @staticmethod
     def obtener_por_id(cartera_id):
         """Obtiene un registro de cartera por ID"""
         db = SessionLocal()
-        cartera = db.query(Cartera).filter(Cartera.id == cartera_id).first()
-        db.close()
-        return cartera
-    
+        try:
+            return db.query(Cartera).filter(Cartera.id == cartera_id).first()
+        finally:
+            db.close()
+
     @staticmethod
     def eliminar(cartera_id):
         """Elimina un registro de cartera por ID"""
         db = SessionLocal()
-        cartera = db.query(Cartera).filter(Cartera.id == cartera_id).first()
-        if cartera:
-            db.delete(cartera)
-            db.commit()
-        db.close()
+        try:
+            cartera = db.query(Cartera).filter(Cartera.id == cartera_id).first()
+            if cartera:
+                db.delete(cartera)
+                db.commit()
+        finally:
+            db.close()
