@@ -15,9 +15,6 @@ comentario en el punto donde se generan; no se inventan ni se aproximan):
      del contrato correspondiente (ver Modulos/Contratos.py). Se deja
      pendiente hasta que informe_por_equipo/informe_general reciban el
      contrato asociado.
-  2. Toneres entregados (cantidad + fecha): Insumos/Consumibles son
-     catalogos (tipo/color/estado), no hay un registro transaccional de
-     entrega con cantidad y fecha.
   3. Equipos instalados / consumo por cliente: Equipos no tiene cliente_id
      ni contrato_id, asi que no hay forma de vincular un equipo a un
      cliente.
@@ -45,6 +42,7 @@ from Modulos.Equipos import Equipos
 from Modulos.Facturacion import Facturacion
 from Modulos.Lecturas import Lecturas
 from Modulos.Rentabilidad import Rentabilidad
+from Modulos.EntregasToner import EntregaToner
 
 # Que tipos de costo cuentan como "costos tecnicos" para el informe tecnico.
 TIPOS_COSTO_TECNICOS = [
@@ -85,13 +83,14 @@ def informe_general(periodo):
         costos = db.query(Costos).filter(Costos.periodo == periodo).all()
         facturas = db.query(Facturacion).filter(Facturacion.periodo == periodo).all()
         cartera = db.query(Cartera).all()
+        entregas_toner = db.query(EntregaToner).filter(EntregaToner.periodo == periodo).all()
 
         facturado_mes = sum(f.total_facturado or 0 for f in facturas)
         recaudado_mes = sum(
             f.total_facturado or 0 for f in facturas if f.estado_factura == EstadoFactura.PAGADA
         )
         costos_mes = sum(c.valor_total or 0 for c in costos)
-
+        toneres_entregados = sum(e.cantidad or 0 for e in entregas_toner)
         # Si ya existe un registro de Rentabilidad para este periodo se usa
         # como fuente autoritativa; si no, se calcula directo de
         # facturado/costos del mes.
@@ -148,7 +147,7 @@ def informe_general(periodo):
             "paginas_adicionales": None,
             # Bloqueado: no hay registro transaccional de entrega de toner
             # con cantidad y fecha (punto 2 del docstring).
-            "toneres_entregados": None,
+            "toneres_entregados": toneres_entregados,
             # Bloqueado: el proyecto no tiene modelo de mantenimiento
             # preventivo/correctivo (punto 8 del docstring del modulo).
             "preventivos_del_mes": None,
