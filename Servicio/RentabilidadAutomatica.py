@@ -1,6 +1,8 @@
+#Requiere Facturacion y Costos ya cargados por contrato/periodo; si no hay ninguno de los dos, ingreso y costos quedan en 0
 
-from Modulos import Costos, Rentabilidad
+from Modulos.Costos import Costos
 from Modulos.Facturacion import Facturacion
+from Modulos.Rentabilidad import Rentabilidad
 from base_de_datos import SessionLocal
 
 
@@ -43,13 +45,22 @@ def calcular_rentabilidad(contrato_id, periodo):
         "total_costos": len(costos),
     }
 
-def generar_rentabilidad(contrato_id, periodo):
+
+def generar_rentabilidad(contrato_id, periodo, forzar=False):
     #Calcula la rentabilidad del contrato/periodo y crea el registro en Rentabilidad.
-    #OJO: no revisa si ya existe un registro previo para este contrato + periodo (Rentabilidad.obtener_por_contrato sirve para eso).
-    #Si se llama dos veces se crean dos filas duplicadas. Pendiente a decidir:
-    #o el router valida antes de llamar, o esta funcion se cambia para hacer upsert.
+    #Bloquea la creacion (ValueError) si ya existe un registro de rentabilidad para este contrato+periodo,
+    #para evitar duplicados (Rentabilidad.obtener_por_contrato sirve para esa validacion).
+    #Se puede saltar con forzar=True si de verdad se quiere otro registro para el mismo contrato+periodo.
 
     calculo = calcular_rentabilidad(contrato_id, periodo)
+
+    if not forzar:
+        ya_calculado = Rentabilidad.obtener_por_contrato(contrato_id, periodo)
+        if ya_calculado:
+            raise ValueError(
+                f"El contrato {contrato_id} ya tiene {len(ya_calculado)} registro(s) de rentabilidad "
+                f"para el periodo {periodo}. Usa forzar=True para crear otro de todos modos."
+            )
 
     return Rentabilidad.agregar(
         periodo=periodo,
