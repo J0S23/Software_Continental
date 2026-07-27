@@ -5,6 +5,7 @@ from Modulos.Contratos import Contratos
 from Modulos.CambiosRetiro import CambioRetiro
 from Modulos.Costos import Costos
 from Modulos.EquiposRespaldo import EquipoRespaldo
+from Modulos.Lecturas import Lecturas
 from Modulos.enums import (
     EstadoCliente,
     TipoCliente,
@@ -70,24 +71,26 @@ CATALOGO_DATOS = {
         },
     },
     "equipos": {
-    "etiqueta": "Equipos",
-    "modelo": Equipos,
-    "campos": [
-        campo("numero_serie", "Numero de serie"),
-        campo("tipo_equipo", "Tipo de equipo"),
-        campo("tecnologia", "Tecnologia"),
-        campo("color", "Color"),
-        campo("estado_equipo", "Estado del equipo"),
-        campo("estado_tecnico", "Estado tecnico"),
-        campo("recomendacion_tecnica", "Recomendacion tecnica", requerido=False),
-        campo("modelo", "Modelo", requerido=False),
-        campo("toner", "Toner", requerido=False),
-        campo("rend_orig", "Rendimiento original", "number", requerido=False),
-        campo("rend_gen", "Rendimiento generico", "number", requerido=False),
-        campo("cliente_id", "Cliente actual", "number", requerido=False),
-        campo("contrato_id", "Contrato actual", "number", requerido=False),
-    ],
-},
+        "etiqueta": "Equipos",
+        "modelo": Equipos,
+        "campos": [
+            campo("numero_serie", "Numero de serie"),
+            campo("tipo_equipo", "Tipo de equipo"),
+            campo("tecnologia", "Tecnologia"),
+            campo("color", "Color"),
+            campo("estado_equipo", "Estado del equipo"),
+            campo("estado_tecnico", "Estado tecnico"),
+            campo("recomendacion_tecnica", "Recomendacion tecnica", requerido=False),
+            campo("modelo", "Modelo", requerido=False),
+            campo("toner", "Toner", requerido=False),
+            campo("rend_orig", "Rendimiento original", "number", requerido=False),
+            campo("rend_gen", "Rendimiento generico", "number", requerido=False),
+            campo("contador_inicial_bn", "Contador inicial B/N", "number", requerido=False),
+            campo("contador_inicial_color", "Contador inicial color", "number", requerido=False),
+            campo("cliente_id", "Cliente actual", "number", requerido=False),
+            campo("contrato_id", "Contrato actual", "number", requerido=False),
+        ],
+    },
     "insumos": {
         "etiqueta": "Insumos",
         "modelo": Insumo,
@@ -119,6 +122,13 @@ CATALOGO_DATOS = {
             campo("equipo_id", "Equipo", "number", requerido=False),
             campo("fecha_inicio", "Fecha de inicio", "date"),
             campo("fecha_fin", "Fecha de fin", "date", requerido=False),
+            campo("valor_mensual_base", "Valor mensual base", "number"),
+            campo("paginas_bn_incluidas", "Paginas B/N incluidas", "number"),
+            campo("paginas_color_incluidas", "Paginas color incluidas", "number"),
+            campo("valor_pagina_adicional_bn", "Valor pagina adicional B/N", "number"),
+            campo("valor_pagina_adicional_color", "Valor pagina adicional color", "number"),
+            campo("escaneos_incluidos", "Escaneos incluidos", "number", requerido=False),
+            campo("valor_escaneo_adicional", "Valor escaneo adicional", "number", requerido=False),
             # "mantenimiento" no se expone: siempre queda Preventivo por defecto (se fija una sola vez).
         ],
     },
@@ -251,7 +261,24 @@ CATALOGO_DATOS = {
             "rol": RolUsuario,
         },
     },
+    "lecturas": {
+        "etiqueta": "Lecturas",
+        "modelo": Lecturas,
+        "campos": [
+            campo("equipo_id", "Equipo", "number"),
+            campo("contrato_id", "Contrato", "number", requerido=False),
+            campo("cliente_id", "Cliente", "number", requerido=False),
+            campo("periodo", "Periodo (MM-YYYY)", requerido=False),
+            campo("medio_lectura", "Medio de lectura", "select",
+                  ["presencial", "remota", "reporte_cliente", "sistema", "foto"]),
+            campo("estado_lectura", "Estado de lectura", "select",
+                  ["pendiente", "registrada", "validada", "observada", "facturada"]),
+            campo("contador_bn", "Contador B/N", "number"),
+            campo("contador_color", "Contador color", "number"),
+        ],
+    },
 }
+
 
 
 def obtener_tipos():
