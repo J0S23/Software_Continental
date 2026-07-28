@@ -18,7 +18,7 @@ from Persistencia.ContratosRepositorio import ContratosRepositorio
 from Modulos.enums import EstadoFactura
 from Persistencia.EquiposRepositorio import EquiposRepositorio
 from Modulos.Facturacion import Facturacion
-from Modulos.Lecturas import Lecturas
+from Persistencia.LecturasRepositorio import LecturasRepositorio
 
 UMBRAL_VENCIMIENTO_DIAS = (90, 60, 30)
 UMBRAL_FACTURA_PROXIMA_DIAS = 7
@@ -135,12 +135,12 @@ def _alertas_equipos():
     return alertas
 
 
-def _alertas_lecturas(db):
-    """Lecturas pendientes y lecturas inconsistentes (contador actual
-    menor al de la lectura anterior del mismo equipo, revisado por
-    separado para blanco y negro y color)."""
+def _alertas_lecturas():
+    #Lecturas pendientes y lecturas inconsistentes (contador actual menor al de la lectura anterior del mismo equipo, revisado por
+    #separado para blanco y negro y color). Para la primera lectura de un equipo, se compara contra Equipos.contador_inicial_bn/color en vez de
+    #saltarse el chequeo -- misma regla que ya usa FacturacionAutomatica._contador_anterior para el primer periodo de un contrato.
     alertas = []
-    lecturas = db.query(Lecturas).order_by(Lecturas.equipo_id, Lecturas.fecha_lectura).all()
+    lecturas = LecturasRepositorio.obtener_todos_ordenado_por_equipo()
 
     anterior_por_equipo = {}
     for l in lecturas:
@@ -151,7 +151,12 @@ def _alertas_lecturas(db):
                 l.id,
             ))
 
-        anterior_bn, anterior_color = anterior_por_equipo.get(l.equipo_id, (None, None))
+        if l.equipo_id in anterior_por_equipo:
+            anterior_bn, anterior_color = anterior_por_equipo[l.equipo_id]
+        else:
+            equipo = EquiposRepositorio.obtener_por_id(l.equipo_id)
+            anterior_bn = equipo.contador_inicial_bn if equipo else None
+            anterior_color = equipo.contador_inicial_color if equipo else None
 
         if anterior_bn is not None and l.contador_bn is not None and l.contador_bn < anterior_bn:
             alertas.append(_alerta(
@@ -184,7 +189,7 @@ def generar_alertas(incluir_descartadas=False):
             + _alertas_facturacion(db, hoy)
             + _alertas_cartera()
             + _alertas_equipos()
-            + _alertas_lecturas(db)
+            + _alertas_lecturas()
         )
     finally:
         db.close()

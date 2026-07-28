@@ -40,7 +40,7 @@ from Modulos.Costos import Costos
 from Modulos.enums import EstadoFactura, TipoCosto
 from Persistencia.EquiposRepositorio import EquiposRepositorio
 from Modulos.Facturacion import Facturacion
-from Modulos.Lecturas import Lecturas
+from Persistencia.LecturasRepositorio import LecturasRepositorio
 from Modulos.Rentabilidad import Rentabilidad
 from Persistencia.EntregasTonerRepositorio import EntregasTonerRepositorio
 
@@ -223,12 +223,7 @@ def informe_por_equipo(periodo, equipo_id):
         if not equipo:
             return None
 
-        lecturas_equipo = (
-            db.query(Lecturas)
-            .filter(Lecturas.equipo_id == equipo_id)
-            .order_by(Lecturas.fecha_lectura)
-            .all()
-        )
+        lecturas_equipo = LecturasRepositorio.obtener_por_equipo(equipo_id)
         lecturas_periodo = [l for l in lecturas_equipo if _en_periodo(l.fecha_lectura, mes, anio)]
         anteriores = [
             l for l in lecturas_equipo if (l.fecha_lectura.year, l.fecha_lectura.month) < (anio, mes)

@@ -5,7 +5,7 @@ from Persistencia.ContratosRepositorio import ContratosRepositorio
 from Modulos.CambiosRetiro import CambioRetiro
 from Modulos.Costos import Costos
 from Modulos.EquiposRespaldo import EquipoRespaldo
-from Modulos.Lecturas import Lecturas
+from Persistencia.LecturasRepositorio import LecturasRepositorio
 from Persistencia.EntregasTonerRepositorio import EntregasTonerRepositorio
 from Modulos.enums import (
     EstadoCliente,
@@ -284,7 +284,7 @@ CATALOGO_DATOS = {
     },
     "lecturas": {
         "etiqueta": "Lecturas",
-        "modelo": Lecturas,
+        "modelo": LecturasRepositorio,
         "campos": [
             campo("equipo_id", "Equipo", "number"),
             campo("contrato_id", "Contrato", "number", requerido=False),

@@ -3,7 +3,7 @@
 from Modulos.Contratos import Contratos
 from Persistencia.EquiposRepositorio import EquiposRepositorio
 from Modulos.Facturacion import Facturacion
-from Modulos.Lecturas import Lecturas
+from Persistencia.LecturasRepositorio import LecturasRepositorio
 from Servicio.Informes_mensuales import _parse_periodo
 
 
@@ -14,7 +14,7 @@ def _lectura_actual_y_anterior(contrato_id, periodo):
     #lo que importa para facturar es el historial del contrato.
 
     mes, anio = _parse_periodo(periodo)
-    lecturas = Lecturas.obtener_por_contrato(contrato_id)
+    lecturas = LecturasRepositorio.obtener_por_contrato(contrato_id)
 
     lecturas_periodo = [l for l in lecturas if l.periodo == periodo]
     anteriores = [
