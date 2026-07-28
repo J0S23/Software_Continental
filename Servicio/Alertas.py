@@ -4,10 +4,8 @@
 
 #Bloqueadas por falta de datos en el modelo actual (no se inventan):
 #- Stock bajo de consumibles: Insumos no tiene columna de stock.
-# Tonerentregados con frecuencia inusual: no hay registro transaccional
-#de entregas (mismo motivo que en Informes_mensuales).
 #Equipos con fallas recurrentes / mantenimientos: Servicio (correctivo)
-# #no tiene un contador de fallas por equipo todavia
+#no tiene un contador de fallas por equipo todavia
 
 from datetime import datetime, timedelta
 
@@ -19,10 +17,13 @@ from Modulos.enums import EstadoFactura
 from Persistencia.EquiposRepositorio import EquiposRepositorio
 from Persistencia.FacturacionRepositorio import FacturacionRepositorio
 from Persistencia.LecturasRepositorio import LecturasRepositorio
+from Persistencia.EntregasTonerRepositorio import EntregasTonerRepositorio
 
 UMBRAL_VENCIMIENTO_DIAS = (90, 60, 30)
 UMBRAL_FACTURA_PROXIMA_DIAS = 7
-
+# Dias minimos esperados entre dos entregas de toner al mismo equipo.
+# Valor de partida razonable, no un dato del documento de requerimientos, se ajusta si se tiene una referencia real de rendimiento de toner.
+UMBRAL_DIAS_ENTREGA_TONER = 20
 
 def _alerta(tipo, nivel, mensaje, referencia_id=None):
     return {
@@ -104,6 +105,29 @@ def _alertas_cartera():
 
     return alertas
 
+def _alertas_toner():
+    """Toner entregado con frecuencia inusual: dos entregas al mismo
+    equipo separadas por menos de UMBRAL_DIAS_ENTREGA_TONER dias."""
+    alertas = []
+    entregas = EntregasTonerRepositorio.obtener_todos_ordenado_por_equipo()
+
+    anterior_por_equipo = {}
+    for e in entregas:
+        anterior = anterior_por_equipo.get(e.equipo_id)
+
+        if anterior and e.fecha_entrega and anterior.fecha_entrega:
+            dias = (e.fecha_entrega - anterior.fecha_entrega).days
+            if dias < UMBRAL_DIAS_ENTREGA_TONER:
+                alertas.append(_alerta(
+                    "toner_frecuencia_inusual", "advertencia",
+                    f"El equipo {e.equipo_id} recibio dos entregas de toner "
+                    f"con solo {dias} dia(s) de diferencia.",
+                    e.id,
+                ))
+
+        anterior_por_equipo[e.equipo_id] = e
+
+    return alertas
 
 def _alertas_equipos():
     """Equipos instalados sin contrato activo que los referencie, y
@@ -186,6 +210,7 @@ def generar_alertas(incluir_descartadas=False):
         + _alertas_cartera()
         + _alertas_equipos()
         + _alertas_lecturas()
+        + _alertas_toner()
     )
 
     estados_por_clave = {

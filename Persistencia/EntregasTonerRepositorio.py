@@ -52,6 +52,16 @@ class EntregasTonerRepositorio:
             db.close()
 
     @staticmethod
+    def obtener_todos_ordenado_por_equipo():
+        #La necesita Alertas._alertas_toner: recorre todas las entregas agrupadas por equipo y en orden cronologico para comparar cada
+        #entrega contra la anterior del mismo equipo.
+        db = SessionLocal()
+        try:
+            return db.query(EntregaToner).order_by(EntregaToner.equipo_id, EntregaToner.fecha_entrega).all()
+        finally:
+            db.close()
+
+    @staticmethod
     def obtener_por_id(entrega_id):
         db = SessionLocal()
         try:
