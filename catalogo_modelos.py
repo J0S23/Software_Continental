@@ -1,11 +1,12 @@
 from fastapi import HTTPException
 
-from Modulos.Clientes import Clientes
-from Modulos.Contratos import Contratos
-from Modulos.CambiosRetiro import CambioRetiro
-from Modulos.Costos import Costos
-from Modulos.EquiposRespaldo import EquipoRespaldo
-from Modulos.Lecturas import Lecturas
+from Persistencia.ClientesRepositorio import ClientesRepositorio
+from Persistencia.ContratosRepositorio import ContratosRepositorio
+from Persistencia.CambiosRetiroRepositorio import CambiosRetiroRepositorio
+from Persistencia.CostosRepositorio import CostosRepositorio
+from Persistencia.EquiposRespaldoRepositorio import EquiposRespaldoRepositorio
+from Persistencia.LecturasRepositorio import LecturasRepositorio
+from Persistencia.EntregasTonerRepositorio import EntregasTonerRepositorio
 from Modulos.enums import (
     EstadoCliente,
     TipoCliente,
@@ -14,13 +15,13 @@ from Modulos.enums import (
     EmpresaFacturadora,
     RolUsuario,
 )
-from Modulos.Equipos import Equipos
-from Modulos.Facturacion import Facturacion
-from Modulos.Insumos import Insumo
-from Modulos.TiposInsumo import TipoInsumo
-from Modulos.Repuestos import Repuesto
-from Modulos.Servicio import Servicio
-from Modulos.Usuarios import Usuarios
+from Persistencia.EquiposRepositorio import EquiposRepositorio
+from Persistencia.FacturacionRepositorio import FacturacionRepositorio
+from Persistencia.InsumosRepositorio import InsumosRepositorio
+from Persistencia.TiposInsumoRepositorio import TiposInsumoRepositorio
+from Persistencia.RepuestosRepositorio import RepuestosRepositorio
+from Persistencia.ServicioRepositorio import ServicioRepositorio
+from Persistencia.UsuariosRepositorio import UsuariosRepositorio
 
 
 def campo(nombre, etiqueta, tipo="text", opciones=None, requerido=True):
@@ -45,7 +46,7 @@ def opciones_enum(tipo_enum):
 CATALOGO_DATOS = {
     "clientes": {
         "etiqueta": "Clientes",
-        "modelo": Clientes,
+        "modelo": ClientesRepositorio,
         "campos": [
             campo("nombre", "Nombre"),
             campo("cliente_id", "Cliente ID"),
@@ -69,7 +70,7 @@ CATALOGO_DATOS = {
     },
     "equipos": {
         "etiqueta": "Equipos",
-        "modelo": Equipos,
+        "modelo": EquiposRepositorio,
         "campos": [
             campo("numero_serie", "Numero de serie"),
             campo("tipo_equipo", "Tipo de equipo"),
@@ -90,7 +91,7 @@ CATALOGO_DATOS = {
     },
     "insumos": {
         "etiqueta": "Insumos",
-        "modelo": Insumo,
+        "modelo": InsumosRepositorio,
         "campos": [
             campo("tipo_insumo_id", "Tipo de insumo", "number"),
             campo("color", "Color", requerido=False),
@@ -99,7 +100,7 @@ CATALOGO_DATOS = {
     },
     "tipos_insumo": {
         "etiqueta": "Tipos de insumo",
-        "modelo": TipoInsumo,
+        "modelo": TiposInsumoRepositorio,
         "campos": [
             campo("nombre", "Nombre"),
             campo("precio", "Precio", "number"),
@@ -107,7 +108,7 @@ CATALOGO_DATOS = {
     },
     "contratos": {
         "etiqueta": "Contratos",
-        "modelo": Contratos,
+        "modelo": ContratosRepositorio,
         "campos": [
             campo("numero_contrato", "Numero de contrato"),
             campo("cliente_id", "Cliente", "number"),
@@ -131,7 +132,7 @@ CATALOGO_DATOS = {
     },
     "repuestos": {
         "etiqueta": "Repuestos",
-        "modelo": Repuesto,
+        "modelo": RepuestosRepositorio,
         "campos": [
             campo("nombre", "Nombre"),
             campo("precio", "Precio", "number"),
@@ -139,7 +140,7 @@ CATALOGO_DATOS = {
     },
     "servicios": {
         "etiqueta": "Servicios",
-        "modelo": Servicio,
+        "modelo": ServicioRepositorio,
         "campos": [
             campo("cliente_id", "Cliente", "number"),
             campo("equipo_id", "Equipo", "number", requerido=False),
@@ -157,7 +158,7 @@ CATALOGO_DATOS = {
     },
     "costos": {
         "etiqueta": "Costos",
-        "modelo": Costos,
+        "modelo": CostosRepositorio,
         "campos": [
             campo("fecha_costo", "Fecha del costo", "date"),
             campo("periodo", "Periodo"),
@@ -178,9 +179,32 @@ CATALOGO_DATOS = {
             "tipo_costo": TipoCosto,
         },
     },
+    "entregas_toner": {
+        "etiqueta": "Entregas de Toner",
+        "modelo": EntregasTonerRepositorio,
+        "campos": [
+            campo("fecha_entrega", "Fecha de entrega", "date", requerido=False),
+            campo("periodo", "Periodo (MM-YYYY)", requerido=False),
+            campo("cliente_id", "Cliente", "number"),
+            campo("contrato_id", "Contrato", "number", requerido=False),
+            campo("equipo_id", "Equipo", "number"),
+            campo("tipo_insumo_id", "Consumible entregado", "number"),
+            campo("cantidad", "Cantidad", "number"),
+            campo("costo_unitario", "Costo unitario", "number", requerido=False),
+            campo("costo_total", "Costo total", "number", requerido=False),
+            campo("persona_entrega", "Persona que entrega"),
+            campo("persona_recibe", "Persona que recibe", requerido=False),
+            campo("motivo", "Motivo de entrega", "select",
+                  ["programada", "agotado", "correctivo", "respaldo", "otro"], requerido=False),
+            campo("contador_bn", "Contador B/N al momento", "number", requerido=False),
+            campo("contador_color", "Contador color al momento", "number", requerido=False),
+            campo("observaciones", "Observaciones", requerido=False),
+            campo("evidencia_recibido", "Evidencia (ruta/URL)", requerido=False),
+        ],
+    },
     "facturacion": {
         "etiqueta": "Facturacion",
-        "modelo": Facturacion,
+        "modelo": FacturacionRepositorio,
         "campos": [
             campo("periodo", "Periodo"),
             campo("cliente_id", "Cliente", "number"),
@@ -215,7 +239,7 @@ CATALOGO_DATOS = {
     },
     "cambios_retiros": {
     "etiqueta": "Cambios y Retiros",
-    "modelo": CambioRetiro,
+    "modelo": CambiosRetiroRepositorio,
     "campos": [
         campo("equipo_id", "Equipo", "number"),
         campo("tipo_evento", "Tipo de evento", "select", ["cambio", "retiro"]),
@@ -231,7 +255,7 @@ CATALOGO_DATOS = {
 },
     "equipos_respaldo": {
     "etiqueta": "Equipos de Respaldo",
-    "modelo": EquipoRespaldo,
+    "modelo": EquiposRespaldoRepositorio,
     "campos": [
         campo("cliente_id", "Cliente", "number"),
         campo("contrato_id", "Contrato", "number", requerido=False),
@@ -247,7 +271,7 @@ CATALOGO_DATOS = {
 },
     "usuarios": {
         "etiqueta": "Usuarios",
-        "modelo": Usuarios,
+        "modelo": UsuariosRepositorio,
         "campos": [
             campo("nombre_usuario", "Nombre de usuario"),
             campo("email", "Email"),
@@ -260,7 +284,7 @@ CATALOGO_DATOS = {
     },
     "lecturas": {
         "etiqueta": "Lecturas",
-        "modelo": Lecturas,
+        "modelo": LecturasRepositorio,
         "campos": [
             campo("equipo_id", "Equipo", "number"),
             campo("contrato_id", "Contrato", "number", requerido=False),

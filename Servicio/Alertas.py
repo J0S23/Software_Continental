@@ -12,13 +12,13 @@
 from datetime import datetime, timedelta
 
 from base_de_datos import SessionLocal
-from Modulos.AlertaEstado import AlertaEstado
-from Modulos.Cartera import Cartera
-from Modulos.Contratos import Contratos
+from Persistencia.AlertaEstadoRepositorio import AlertaEstadoRepositorio
+from Persistencia.CarteraRepositorio import CarteraRepositorio
+from Persistencia.ContratosRepositorio import ContratosRepositorio
 from Modulos.enums import EstadoFactura
-from Modulos.Equipos import Equipos
-from Modulos.Facturacion import Facturacion
-from Modulos.Lecturas import Lecturas
+from Persistencia.EquiposRepositorio import EquiposRepositorio
+from Persistencia.FacturacionRepositorio import FacturacionRepositorio
+from Persistencia.LecturasRepositorio import LecturasRepositorio
 
 UMBRAL_VENCIMIENTO_DIAS = (90, 60, 30)
 UMBRAL_FACTURA_PROXIMA_DIAS = 7
@@ -34,9 +34,9 @@ def _alerta(tipo, nivel, mensaje, referencia_id=None):
     }
 
 
-def _alertas_contratos(db, hoy):
+def _alertas_contratos(hoy):
     alertas = []
-    contratos = db.query(Contratos).all()
+    contratos = ContratosRepositorio.obtener_todos()
 
     for c in contratos:
         if not c.fecha_fin:
@@ -61,9 +61,9 @@ def _alertas_contratos(db, hoy):
     return alertas
 
 
-def _alertas_facturacion(db, hoy):
+def _alertas_facturacion(hoy):
     alertas = []
-    facturas = db.query(Facturacion).all()
+    facturas = FacturacionRepositorio.obtener_todos()
 
     for f in facturas:
         if f.estado_factura == EstadoFactura.PAGADA or f.estado_factura == EstadoFactura.ANULADA:
@@ -85,9 +85,9 @@ def _alertas_facturacion(db, hoy):
     return alertas
 
 
-def _alertas_cartera(db):
+def _alertas_cartera():
     alertas = []
-    cartera = db.query(Cartera).all()
+    cartera = CarteraRepositorio.obtener_todos()
     clientes_en_mora = {}
 
     for c in cartera:
@@ -105,13 +105,13 @@ def _alertas_cartera(db):
     return alertas
 
 
-def _alertas_equipos(db):
+def _alertas_equipos():
     """Equipos instalados sin contrato activo que los referencie, y
     equipos disponibles sin uso (creados hace mas de 90 dias y aun
     'disponible')."""
     alertas = []
-    equipos = db.query(Equipos).all()
-    contratos_activos = db.query(Contratos).filter(Contratos.estado_contrato == "activo").all()
+    equipos = EquiposRepositorio.obtener_todos()
+    contratos_activos = ContratosRepositorio.obtener_activos()
     equipos_con_contrato = {c.equipo_id for c in contratos_activos if c.equipo_id}
     hoy = datetime.utcnow()
 
@@ -135,12 +135,12 @@ def _alertas_equipos(db):
     return alertas
 
 
-def _alertas_lecturas(db):
-    """Lecturas pendientes y lecturas inconsistentes (contador actual
-    menor al de la lectura anterior del mismo equipo, revisado por
-    separado para blanco y negro y color)."""
+def _alertas_lecturas():
+    #Lecturas pendientes y lecturas inconsistentes (contador actual menor al de la lectura anterior del mismo equipo, revisado por
+    #separado para blanco y negro y color). Para la primera lectura de un equipo, se compara contra Equipos.contador_inicial_bn/color en vez de
+    #saltarse el chequeo -- misma regla que ya usa FacturacionAutomatica._contador_anterior para el primer periodo de un contrato.
     alertas = []
-    lecturas = db.query(Lecturas).order_by(Lecturas.equipo_id, Lecturas.fecha_lectura).all()
+    lecturas = LecturasRepositorio.obtener_todos_ordenado_por_equipo()
 
     anterior_por_equipo = {}
     for l in lecturas:
@@ -151,7 +151,12 @@ def _alertas_lecturas(db):
                 l.id,
             ))
 
-        anterior_bn, anterior_color = anterior_por_equipo.get(l.equipo_id, (None, None))
+        if l.equipo_id in anterior_por_equipo:
+            anterior_bn, anterior_color = anterior_por_equipo[l.equipo_id]
+        else:
+            equipo = EquiposRepositorio.obtener_por_id(l.equipo_id)
+            anterior_bn = equipo.contador_inicial_bn if equipo else None
+            anterior_color = equipo.contador_inicial_color if equipo else None
 
         if anterior_bn is not None and l.contador_bn is not None and l.contador_bn < anterior_bn:
             alertas.append(_alerta(
@@ -173,24 +178,18 @@ def _alertas_lecturas(db):
 
 
 def generar_alertas(incluir_descartadas=False):
-    """Punto de entrada: agrupa todas las alertas del sistema y les mezcla
-    el estado persistido (leida/guardada/descartada) desde AlertaEstado.
-    Por defecto no incluye las que el usuario ya descarto."""
     hoy = datetime.utcnow()
-    db = SessionLocal()
-    try:
-        alertas = (
-            _alertas_contratos(db, hoy)
-            + _alertas_facturacion(db, hoy)
-            + _alertas_cartera(db)
-            + _alertas_equipos(db)
-            + _alertas_lecturas(db)
-        )
-    finally:
-        db.close()
+
+    alertas = (
+        _alertas_contratos(hoy)
+        + _alertas_facturacion(hoy)
+        + _alertas_cartera()
+        + _alertas_equipos()
+        + _alertas_lecturas()
+    )
 
     estados_por_clave = {
-        (estado.tipo, estado.referencia_id): estado for estado in AlertaEstado.obtener_todos()
+        (estado.tipo, estado.referencia_id): estado for estado in AlertaEstadoRepositorio.obtener_todos()
     }
 
     for a in alertas:

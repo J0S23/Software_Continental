@@ -29,12 +29,13 @@ Informes_mensuales.py (no se inventan ni se aproximan):
 from datetime import datetime
 
 from base_de_datos import SessionLocal
-from Modulos.Clientes import Clientes
-from Modulos.Contratos import Contratos
-from Modulos.Costos import Costos
+from Persistencia.ClientesRepositorio import ClientesRepositorio
+from Persistencia.ContratosRepositorio import ContratosRepositorio
+from Persistencia.CostosRepositorio import CostosRepositorio
 from Modulos.enums import EstadoFactura
-from Modulos.Equipos import Equipos
-from Modulos.Facturacion import Facturacion
+from Persistencia.EquiposRepositorio import EquiposRepositorio
+from Persistencia.FacturacionRepositorio import FacturacionRepositorio
+from Persistencia.EntregasTonerRepositorio import EntregasTonerRepositorio
 from Servicio.Informes_mensuales import _parse_periodo, informe_general, informe_por_cliente
 
 # Limites de dias de mora para agrupar cartera por antiguedad.
@@ -70,12 +71,8 @@ def dashboard_snapshot(periodo):
     """
     general = informe_general(periodo)
 
-    db = SessionLocal()
-    try:
-        contratos = db.query(Contratos).all()
-        equipos = db.query(Equipos).all()
-    finally:
-        db.close()
+    contratos = ContratosRepositorio.obtener_todos()
+    equipos = EquiposRepositorio.obtener_todos()
 
     contratos_activos = sum(
         1 for c in contratos if (c.estado_contrato or "").strip().lower() == "activo"
@@ -106,6 +103,7 @@ def dashboard_snapshot(periodo):
         # Bloqueado: ver docstring del modulo y punto 6 de Informes_mensuales.
         "contratos_baja_rentabilidad": general["contratos_baja_rentabilidad"],
         "clientes_en_mora": general["clientes_en_mora"],
+        "toneres_entregados_mes": general["toneres_entregados"],
         "equipos_fallas_recurrentes": general["equipos_fallas_recurrentes"],
     }
 
@@ -136,36 +134,21 @@ def serie_financiera(periodo_final, meses=6):
 
 def serie_costos_por_tipo(periodo_final, meses=6):
     """Costos agrupados por tipo_costo, mes a mes."""
-    periodos = _periodos_hacia_atras(periodo_final, meses)
-
-    db = SessionLocal()
-    try:
-        serie = []
-        for periodo in periodos:
-            costos = db.query(Costos).filter(Costos.periodo == periodo).all()
-            por_tipo = {}
-            for c in costos:
-                clave = c.tipo_costo.value if c.tipo_costo else "sin_tipo"
-                por_tipo[clave] = por_tipo.get(clave, 0) + (c.valor_total or 0)
-            serie.append({"periodo": periodo, "costos_por_tipo": por_tipo})
-        return serie
-    finally:
-        db.close()
+    serie = []
+    for periodo in _periodos_hacia_atras(periodo_final, meses):
+        costos = CostosRepositorio.obtener_por_periodo(periodo)
+        por_tipo = {}
+        for c in costos:
+            clave = c.tipo_costo.value if c.tipo_costo else "sin_tipo"
+            por_tipo[clave] = por_tipo.get(clave, 0) + (c.valor_total or 0)
+        serie.append({"periodo": periodo, "costos_por_tipo": por_tipo})
+    return serie
 
 
 def _serie_por_cliente(periodo_final, meses, campo):
-    """Helper comun a serie_ingresos_por_cliente y serie_rentabilidad_por_cliente.
-
-    Reutiliza informe_por_cliente() por cliente y periodo en vez de
-    recalcular facturado/utilidad/margen aqui.
-    """
+    """Helper comun a serie_ingresos_por_cliente y serie_rentabilidad_por_cliente."""
     periodos = _periodos_hacia_atras(periodo_final, meses)
-
-    db = SessionLocal()
-    try:
-        clientes_ids = [c.id for c in db.query(Clientes).all()]
-    finally:
-        db.close()
+    clientes_ids = [c.id for c in ClientesRepositorio.obtener_todos()]
 
     serie = []
     for periodo in periodos:
@@ -189,45 +172,36 @@ def serie_rentabilidad_por_cliente(periodo_final, meses=6):
 
 
 def serie_cartera_por_edad(periodo_final, meses=6):
-    """Saldo pendiente de facturas agrupado por antiguedad de mora, mes a mes.
-
-    Usa Facturacion.fecha_vencimiento igual que
-    Informes_mensuales.informe_cartera, pero agrupado en rangos de dias en
-    vez de por cliente.
-    """
+    """Saldo pendiente de facturas agrupado por antiguedad de mora, mes a mes."""
     periodos = _periodos_hacia_atras(periodo_final, meses)
     hoy = datetime.utcnow()
 
-    db = SessionLocal()
-    try:
-        serie = []
-        for periodo in periodos:
-            facturas = db.query(Facturacion).filter(Facturacion.periodo == periodo).all()
-            rangos = {"al_dia": 0, "1_30": 0, "31_60": 0, "61_90": 0, "mas_90": 0}
+    serie = []
+    for periodo in periodos:
+        facturas = FacturacionRepositorio.obtener_por_periodo(periodo)
+        rangos = {"al_dia": 0, "1_30": 0, "31_60": 0, "61_90": 0, "mas_90": 0}
 
-            for f in facturas:
-                if f.estado_factura == EstadoFactura.PAGADA:
-                    continue
+        for f in facturas:
+            if f.estado_factura == EstadoFactura.PAGADA:
+                continue
 
-                saldo = f.total_facturado or 0
+            saldo = f.total_facturado or 0
 
-                if not f.fecha_vencimiento or f.fecha_vencimiento >= hoy:
-                    rangos["al_dia"] += saldo
-                    continue
+            if not f.fecha_vencimiento or f.fecha_vencimiento >= hoy:
+                rangos["al_dia"] += saldo
+                continue
 
-                dias_mora = (hoy - f.fecha_vencimiento).days
-                clave = "mas_90"
-                for limite, nombre_rango in RANGOS_ANTIGUEDAD_CARTERA:
-                    if dias_mora <= limite:
-                        clave = nombre_rango
-                        break
-                rangos[clave] += saldo
+            dias_mora = (hoy - f.fecha_vencimiento).days
+            clave = "mas_90"
+            for limite, nombre_rango in RANGOS_ANTIGUEDAD_CARTERA:
+                if dias_mora <= limite:
+                    clave = nombre_rango
+                    break
+            rangos[clave] += saldo
 
-            serie.append({"periodo": periodo, "cartera_por_edad": rangos})
+        serie.append({"periodo": periodo, "cartera_por_edad": rangos})
 
-        return serie
-    finally:
-        db.close()
+    return serie
 
 
 def serie_correctivos_por_equipo(periodo_final, meses=6):
@@ -250,10 +224,12 @@ def serie_consumo_paginas_por_cliente(periodo_final, meses=6):
 
 
 def serie_toneres_por_cliente(periodo_final, meses=6):
-    """Bloqueado: no existe un registro transaccional de entrega de toner con
-    cantidad, fecha y cliente asociado (punto 2 de Informes_mensuales).
-    Insumos es un catalogo (tipo/color/estado), no un historial de entregas."""
-    return [
-        {"periodo": periodo, "toneres_por_cliente": None}
-        for periodo in _periodos_hacia_atras(periodo_final, meses)
-    ]
+    """Cantidad de toner entregado por cliente, mes a mes."""
+    serie = []
+    for periodo in _periodos_hacia_atras(periodo_final, meses):
+        entregas = EntregasTonerRepositorio.obtener_por_periodo(periodo)
+        por_cliente = {}
+        for e in entregas:
+            por_cliente[e.cliente_id] = por_cliente.get(e.cliente_id, 0) + (e.cantidad or 0)
+        serie.append({"periodo": periodo, "toneres_por_cliente": por_cliente})
+    return serie

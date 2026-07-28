@@ -1,30 +1,15 @@
 #Requiere Facturacion y Costos ya cargados por contrato/periodo; si no hay ninguno de los dos, ingreso y costos quedan en 0
 
-from Modulos.Costos import Costos
-from Modulos.Facturacion import Facturacion
-from Modulos.Rentabilidad import Rentabilidad
+from Persistencia.CostosRepositorio import CostosRepositorio
+from Persistencia.FacturacionRepositorio import FacturacionRepositorio
+from Persistencia.RentabilidadRepositorio import RentabilidadRepositorio
 from base_de_datos import SessionLocal
 
 
 def calcular_rentabilidad(contrato_id, periodo):
-    #Suma facturas y costos del contrato en el periodo y calcula ingreso, costo total, utilidad y margen. SIN guardar nada. (Luego si se guarda con genera_rentabilidad)
-    #No devuelve None si no hay facturas/costos: en ese caso ingreso y costos simplemente quedan en 0
-    #(a diferencia de la facturacion, aqui no hay un dato "obligatorio" sin el cual no se pueda calcular).
-
-    db = SessionLocal()
-    try:
-        facturas = (
-            db.query(Facturacion)
-            .filter(Facturacion.contrato_id == contrato_id, Facturacion.periodo == periodo)
-            .all()
-        )
-        costos = (
-            db.query(Costos)
-            .filter(Costos.contrato_id == contrato_id, Costos.periodo == periodo)
-            .all()
-        )
-    finally:
-        db.close()
+    #Suma facturas y costos del contrato en el periodo y calcula ingreso, costo total, utilidad y margen. SIN guardar nada.
+    facturas = FacturacionRepositorio.obtener_por_contrato(contrato_id, periodo)
+    costos = CostosRepositorio.obtener_por_contrato(contrato_id, periodo)
 
     ingreso_total = sum(f.total_facturado or 0 for f in facturas)
     costo_total = sum(c.valor_total or 0 for c in costos)
@@ -55,14 +40,14 @@ def generar_rentabilidad(contrato_id, periodo, forzar=False):
     calculo = calcular_rentabilidad(contrato_id, periodo)
 
     if not forzar:
-        ya_calculado = Rentabilidad.obtener_por_contrato(contrato_id, periodo)
+        ya_calculado = RentabilidadRepositorio.obtener_por_contrato(contrato_id, periodo)
         if ya_calculado:
             raise ValueError(
                 f"El contrato {contrato_id} ya tiene {len(ya_calculado)} registro(s) de rentabilidad "
                 f"para el periodo {periodo}. Usa forzar=True para crear otro de todos modos."
             )
 
-    return Rentabilidad.agregar(
+    return RentabilidadRepositorio.agregar(
         periodo=periodo,
         contrato_id=contrato_id,
         cliente_id=calculo["cliente_id"],
