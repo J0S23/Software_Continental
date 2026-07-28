@@ -16,7 +16,7 @@ from Modulos.AlertaEstado import AlertaEstado
 from Persistencia.CarteraRepositorio import CarteraRepositorio
 from Persistencia.ContratosRepositorio import ContratosRepositorio
 from Modulos.enums import EstadoFactura
-from Modulos.Equipos import Equipos
+from Persistencia.EquiposRepositorio import EquiposRepositorio
 from Modulos.Facturacion import Facturacion
 from Modulos.Lecturas import Lecturas
 
@@ -105,12 +105,12 @@ def _alertas_cartera():
     return alertas
 
 
-def _alertas_equipos(db):
+def _alertas_equipos():
     """Equipos instalados sin contrato activo que los referencie, y
     equipos disponibles sin uso (creados hace mas de 90 dias y aun
     'disponible')."""
     alertas = []
-    equipos = db.query(Equipos).all()
+    equipos = EquiposRepositorio.obtener_todos()
     contratos_activos = ContratosRepositorio.obtener_activos()
     equipos_con_contrato = {c.equipo_id for c in contratos_activos if c.equipo_id}
     hoy = datetime.utcnow()
@@ -180,10 +180,10 @@ def generar_alertas(incluir_descartadas=False):
     db = SessionLocal()
     try:
         alertas = (
-            _alertas_contratos(db, hoy)
+            _alertas_contratos(hoy)
             + _alertas_facturacion(db, hoy)
             + _alertas_cartera()
-            + _alertas_equipos(db)
+            + _alertas_equipos()
             + _alertas_lecturas(db)
         )
     finally:

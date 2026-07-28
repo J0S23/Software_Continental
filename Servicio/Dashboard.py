@@ -33,7 +33,7 @@ from Modulos.Clientes import Clientes
 from Persistencia.ContratosRepositorio import ContratosRepositorio
 from Modulos.Costos import Costos
 from Modulos.enums import EstadoFactura
-from Modulos.Equipos import Equipos
+from Persistencia.EquiposRepositorio import EquiposRepositorio
 from Modulos.Facturacion import Facturacion
 from Persistencia.EntregasTonerRepositorio import EntregasTonerRepositorio
 from Servicio.Informes_mensuales import _parse_periodo, informe_general, informe_por_cliente
@@ -72,12 +72,7 @@ def dashboard_snapshot(periodo):
     general = informe_general(periodo)
 
     contratos = ContratosRepositorio.obtener_todos()
-
-    db = SessionLocal()
-    try:
-        equipos = db.query(Equipos).all()
-    finally:
-        db.close()
+    equipos = EquiposRepositorio.obtener_todos()
 
     contratos_activos = sum(
         1 for c in contratos if (c.estado_contrato or "").strip().lower() == "activo"

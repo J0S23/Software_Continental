@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime
 from datetime import datetime
 from base_de_datos import Base, SessionLocal, engine
-from Modulos.Equipos import Equipos
+from Persistencia.EquiposRepositorio import EquiposRepositorio
 
     #Asignaciones temporales de equipos de respaldo (seccion 14 del
     #documento de requerimientos).
@@ -109,7 +109,7 @@ class EquipoRespaldo(Base):
                     f"de respaldo activa (id {respaldo_ocupado.id})."
                 )
 
-            equipo_respaldo_obj = db.query(Equipos).filter(Equipos.id == equipo_respaldo_id).first()
+            equipo_respaldo_obj = EquiposRepositorio.obtener_por_id(equipo_respaldo_id)
             estado_actual = (equipo_respaldo_obj.estado_equipo or "").strip().lower() if equipo_respaldo_obj else ""
             if equipo_respaldo_obj and estado_actual not in ("de_respaldo", "disponible"):
                 raise ValueError(
@@ -132,10 +132,9 @@ class EquipoRespaldo(Base):
             db.close()
 
         if actualizar_estado_equipo:
-            # El equipo de respaldo pasa a instalado (esta prestando servicio).
-            Equipos.actualizar(equipo_respaldo_id, estado_equipo="instalado")
-            # El equipo principal queda marcado en reparacion/mantenimiento.
-            Equipos.actualizar(equipo_principal_id, estado_equipo="en_reparacion")
+            if actualizar_estado_equipo:
+                EquiposRepositorio.actualizar(equipo_respaldo_id, estado_equipo="instalado")
+                EquiposRepositorio.actualizar(equipo_principal_id, estado_equipo="en_reparacion")
 
         return nueva_asignacion
 
@@ -166,8 +165,8 @@ class EquipoRespaldo(Base):
             db.close()
 
         if actualizar_estado_equipo:
-            Equipos.actualizar(equipo_respaldo_id, estado_equipo="de_respaldo")
-            Equipos.actualizar(equipo_principal_id, estado_equipo="instalado")
+            EquiposRepositorio.actualizar(equipo_respaldo_id, estado_equipo="de_respaldo")
+            EquiposRepositorio.actualizar(equipo_principal_id, estado_equipo="instalado")
 
         return asignacion
 

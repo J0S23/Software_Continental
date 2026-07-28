@@ -15,7 +15,7 @@ from Modulos.enums import (
     EmpresaFacturadora,
     RolUsuario,
 )
-from Modulos.Equipos import Equipos
+from Persistencia.EquiposRepositorio import EquiposRepositorio
 from Modulos.Facturacion import Facturacion
 from Persistencia.InsumosRepositorio import InsumosRepositorio
 from Persistencia.TiposInsumoRepositorio import TiposInsumoRepositorio
@@ -70,7 +70,7 @@ CATALOGO_DATOS = {
     },
     "equipos": {
         "etiqueta": "Equipos",
-        "modelo": Equipos,
+        "modelo": EquiposRepositorio,
         "campos": [
             campo("numero_serie", "Numero de serie"),
             campo("tipo_equipo", "Tipo de equipo"),

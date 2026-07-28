@@ -38,7 +38,7 @@ from Modulos.Clientes import Clientes
 from Persistencia.ContratosRepositorio import ContratosRepositorio
 from Modulos.Costos import Costos
 from Modulos.enums import EstadoFactura, TipoCosto
-from Modulos.Equipos import Equipos
+from Persistencia.EquiposRepositorio import EquiposRepositorio
 from Modulos.Facturacion import Facturacion
 from Modulos.Lecturas import Lecturas
 from Modulos.Rentabilidad import Rentabilidad
@@ -79,7 +79,7 @@ def informe_general(periodo):
     try:
         contratos = ContratosRepositorio.obtener_todos()
         clientes = db.query(Clientes).all()
-        equipos = db.query(Equipos).all()
+        equipos = EquiposRepositorio.obtener_todos()
         costos = db.query(Costos).filter(Costos.periodo == periodo).all()
         facturas = db.query(Facturacion).filter(Facturacion.periodo == periodo).all()
         cartera = CarteraRepositorio.obtener_todos()
@@ -219,7 +219,7 @@ def informe_por_equipo(periodo, equipo_id):
     mes, anio = _parse_periodo(periodo)
     db = SessionLocal()
     try:
-        equipo = db.query(Equipos).filter(Equipos.id == equipo_id).first()
+        equipo = EquiposRepositorio.obtener_por_id(equipo_id)
         if not equipo:
             return None
 

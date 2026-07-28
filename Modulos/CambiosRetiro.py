@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, DateTime
 from datetime import datetime
 from base_de_datos import Base, SessionLocal, engine
-from Modulos.Equipos import Equipos  # <- antes: "from Modulos import Equipos" (importaba el módulo, no la clase)
+from Persistencia.EquiposRepositorio import EquiposRepositorio
 
 
 class CambioRetiro(Base):
@@ -63,9 +63,9 @@ class CambioRetiro(Base):
 
         if actualizar_estado_equipo:
             nuevo_estado = "retirado" if tipo_evento == "retiro" else "en_mantenimiento"
-            Equipos.actualizar(equipo_id, estado_equipo=nuevo_estado)
+            EquiposRepositorio.actualizar(equipo_id, estado_equipo=nuevo_estado)
             if tipo_evento == "cambio" and equipo_reemplazo_id:
-                Equipos.actualizar(equipo_reemplazo_id, estado_equipo="instalado")
+                EquiposRepositorio.actualizar(equipo_reemplazo_id, estado_equipo="instalado")
 
         return nuevo_evento
 
