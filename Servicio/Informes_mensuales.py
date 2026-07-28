@@ -34,7 +34,7 @@ from datetime import datetime, timedelta
 
 from base_de_datos import SessionLocal
 from Persistencia.CarteraRepositorio import CarteraRepositorio
-from Modulos.Clientes import Clientes
+from Persistencia.ClientesRepositorio import ClientesRepositorio
 from Persistencia.ContratosRepositorio import ContratosRepositorio
 from Persistencia.CostosRepositorio import CostosRepositorio
 from Modulos.enums import EstadoFactura, TipoCosto
@@ -75,100 +75,91 @@ def informe_general(periodo):
     """Totales del mes: contratos/clientes/equipos, facturacion, cartera,
     costos, utilidad, margen, mantenimientos, alertas y recomendaciones."""
     mes, anio = _parse_periodo(periodo)
+
+    contratos = ContratosRepositorio.obtener_todos()
+    clientes = ClientesRepositorio.obtener_todos()
+    equipos = EquiposRepositorio.obtener_todos()
+    costos = CostosRepositorio.obtener_por_periodo(periodo)
+    facturas = FacturacionRepositorio.obtener_por_periodo(periodo)
+    cartera = CarteraRepositorio.obtener_todos()
+    entregas_toner = EntregasTonerRepositorio.obtener_por_periodo(periodo)
+
+    facturado_mes = sum(f.total_facturado or 0 for f in facturas)
+    recaudado_mes = sum(
+        f.total_facturado or 0 for f in facturas if f.estado_factura == EstadoFactura.PAGADA
+    )
+    costos_mes = sum(c.valor_total or 0 for c in costos)
+    toneres_entregados = sum(e.cantidad or 0 for e in entregas_toner)
+
+    # Ultimo pendiente en active record: Rentabilidad.
     db = SessionLocal()
     try:
-        contratos = ContratosRepositorio.obtener_todos()
-        clientes = db.query(Clientes).all()
-        equipos = EquiposRepositorio.obtener_todos()
-        costos = CostosRepositorio.obtener_por_periodo(periodo)
-        facturas = FacturacionRepositorio.obtener_por_periodo(periodo)
-        cartera = CarteraRepositorio.obtener_todos()
-        entregas_toner = EntregasTonerRepositorio.obtener_por_periodo(periodo)
-
-        facturado_mes = sum(f.total_facturado or 0 for f in facturas)
-        recaudado_mes = sum(
-            f.total_facturado or 0 for f in facturas if f.estado_factura == EstadoFactura.PAGADA
-        )
-        costos_mes = sum(c.valor_total or 0 for c in costos)
-        toneres_entregados = sum(e.cantidad or 0 for e in entregas_toner)
-        # Si ya existe un registro de Rentabilidad para este periodo se usa
-        # como fuente autoritativa; si no, se calcula directo de
-        # facturado/costos del mes.
         rentabilidad_periodo = (
             db.query(Rentabilidad)
             .filter(Rentabilidad.periodo == periodo)
             .order_by(Rentabilidad.id.desc())
             .first()
         )
-        if rentabilidad_periodo:
-            utilidad_bruta = rentabilidad_periodo.ganancia
-            margen_promedio = rentabilidad_periodo.porcentaje_rentabilidad
-        else:
-            utilidad_bruta = facturado_mes - costos_mes
-            margen_promedio = (utilidad_bruta / facturado_mes * 100) if facturado_mes else 0
-
-        cartera_pendiente = sum(
-            c.monto or 0 for c in cartera if (c.estado or "").strip().lower() != "pagada"
-        )
-
-        hoy = datetime.utcnow()
-        # Contratos cuya fecha_fin cae dentro de los proximos 60 dias.
-        limite = hoy + timedelta(days=60)
-        contratos_por_vencer = [c for c in contratos if c.fecha_fin and hoy <= c.fecha_fin <= limite]
-
-        clientes_en_mora_ids = {
-            c.cliente_id for c in cartera if "mora" in (c.estado or "").strip().lower()
-        }
-
-        recomendaciones = []
-        if facturado_mes and margen_promedio < 15:
-            recomendaciones.append("Margen del mes por debajo del 15%: revisar costos del periodo.")
-        if clientes_en_mora_ids:
-            recomendaciones.append(f"{len(clientes_en_mora_ids)} cliente(s) en mora: priorizar gestion de cobro.")
-        if contratos_por_vencer:
-            recomendaciones.append(f"{len(contratos_por_vencer)} contrato(s) vencen en los proximos 60 dias.")
-
-        return {
-            "periodo": periodo,
-            "total_contratos": len(contratos),
-            "total_clientes": len(clientes),
-            "total_equipos": len(equipos),
-            "facturado_mes": facturado_mes,
-            "recaudado_mes": recaudado_mes,
-            "cartera_pendiente": cartera_pendiente,
-            "costos_mes": costos_mes,
-            "utilidad_bruta": utilidad_bruta,
-            "margen_promedio": margen_promedio,
-            # Bloqueado: Lecturas.contador no distingue B/N vs color y no
-            # existe una linea base de "paginas incluidas" para calcular
-            # adicionales (ver punto 1 del docstring del modulo).
-            "paginas_bn": None,
-            "paginas_color": None,
-            "paginas_adicionales": None,
-            # Bloqueado: no hay registro transaccional de entrega de toner
-            # con cantidad y fecha (punto 2 del docstring).
-            "toneres_entregados": toneres_entregados,
-            # Bloqueado: el proyecto no tiene modelo de mantenimiento
-            # preventivo/correctivo (punto 8 del docstring del modulo).
-            "preventivos_del_mes": None,
-            "correctivos_del_mes": None,
-            "contratos_por_vencer": len(contratos_por_vencer),
-            # Bloqueado: Rentabilidad no tiene contrato_id (punto 6).
-            "contratos_baja_rentabilidad": None,
-            "clientes_en_mora": len(clientes_en_mora_ids),
-            # Bloqueado: depende de mantenimientos correctivos (punto 8).
-            "equipos_fallas_recurrentes": None,
-            "recomendaciones": recomendaciones,
-        }
     finally:
         db.close()
+
+    if rentabilidad_periodo:
+        utilidad_bruta = rentabilidad_periodo.ganancia
+        margen_promedio = rentabilidad_periodo.porcentaje_rentabilidad
+    else:
+        utilidad_bruta = facturado_mes - costos_mes
+        margen_promedio = (utilidad_bruta / facturado_mes * 100) if facturado_mes else 0
+
+    cartera_pendiente = sum(
+        c.monto or 0 for c in cartera if (c.estado or "").strip().lower() != "pagada"
+    )
+
+    hoy = datetime.utcnow()
+    limite = hoy + timedelta(days=60)
+    contratos_por_vencer = [c for c in contratos if c.fecha_fin and hoy <= c.fecha_fin <= limite]
+
+    clientes_en_mora_ids = {
+        c.cliente_id for c in cartera if "mora" in (c.estado or "").strip().lower()
+    }
+
+    recomendaciones = []
+    if facturado_mes and margen_promedio < 15:
+        recomendaciones.append("Margen del mes por debajo del 15%: revisar costos del periodo.")
+    if clientes_en_mora_ids:
+        recomendaciones.append(f"{len(clientes_en_mora_ids)} cliente(s) en mora: priorizar gestion de cobro.")
+    if contratos_por_vencer:
+        recomendaciones.append(f"{len(contratos_por_vencer)} contrato(s) vencen en los proximos 60 dias.")
+
+    return {
+        "periodo": periodo,
+        "total_contratos": len(contratos),
+        "total_clientes": len(clientes),
+        "total_equipos": len(equipos),
+        "facturado_mes": facturado_mes,
+        "recaudado_mes": recaudado_mes,
+        "cartera_pendiente": cartera_pendiente,
+        "costos_mes": costos_mes,
+        "utilidad_bruta": utilidad_bruta,
+        "margen_promedio": margen_promedio,
+        "paginas_bn": None,
+        "paginas_color": None,
+        "paginas_adicionales": None,
+        "toneres_entregados": toneres_entregados,
+        "preventivos_del_mes": None,
+        "correctivos_del_mes": None,
+        "contratos_por_vencer": len(contratos_por_vencer),
+        "contratos_baja_rentabilidad": None,
+        "clientes_en_mora": len(clientes_en_mora_ids),
+        "equipos_fallas_recurrentes": None,
+        "recomendaciones": recomendaciones,
+    }
 
 
 def informe_por_cliente(periodo, cliente_id):
     """Contratos, facturacion, costos, utilidad y margen de un cliente en el periodo."""
     db = SessionLocal()
     try:
-        cliente = db.query(Clientes).filter(Clientes.id == cliente_id).first()
+        cliente = ClientesRepositorio.obtener_por_id(cliente_id)
         contratos_cliente = ContratosRepositorio.obtener_por_cliente(cliente_id)
         contratos_activos = [
             c for c in contratos_cliente if (c.estado_contrato or "").strip().lower() == "activo"

@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 
-from Modulos.Clientes import Clientes
+from Persistencia.ClientesRepositorio import ClientesRepositorio
 from Persistencia.ContratosRepositorio import ContratosRepositorio
 from Modulos.CambiosRetiro import CambioRetiro
 from Persistencia.CostosRepositorio import CostosRepositorio
@@ -46,7 +46,7 @@ def opciones_enum(tipo_enum):
 CATALOGO_DATOS = {
     "clientes": {
         "etiqueta": "Clientes",
-        "modelo": Clientes,
+        "modelo": ClientesRepositorio,
         "campos": [
             campo("nombre", "Nombre"),
             campo("cliente_id", "Cliente ID"),

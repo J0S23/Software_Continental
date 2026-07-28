@@ -29,7 +29,7 @@ Informes_mensuales.py (no se inventan ni se aproximan):
 from datetime import datetime
 
 from base_de_datos import SessionLocal
-from Modulos.Clientes import Clientes
+from Persistencia.ClientesRepositorio import ClientesRepositorio
 from Persistencia.ContratosRepositorio import ContratosRepositorio
 from Persistencia.CostosRepositorio import CostosRepositorio
 from Modulos.enums import EstadoFactura
@@ -146,18 +146,9 @@ def serie_costos_por_tipo(periodo_final, meses=6):
 
 
 def _serie_por_cliente(periodo_final, meses, campo):
-    """Helper comun a serie_ingresos_por_cliente y serie_rentabilidad_por_cliente.
-
-    Reutiliza informe_por_cliente() por cliente y periodo en vez de
-    recalcular facturado/utilidad/margen aqui.
-    """
+    """Helper comun a serie_ingresos_por_cliente y serie_rentabilidad_por_cliente."""
     periodos = _periodos_hacia_atras(periodo_final, meses)
-
-    db = SessionLocal()
-    try:
-        clientes_ids = [c.id for c in db.query(Clientes).all()]
-    finally:
-        db.close()
+    clientes_ids = [c.id for c in ClientesRepositorio.obtener_todos()]
 
     serie = []
     for periodo in periodos:
