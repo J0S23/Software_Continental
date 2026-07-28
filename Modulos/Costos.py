@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, Float, DateTime, Enum as SQLEnum
 from datetime import datetime
 from base_de_datos import Base, SessionLocal, engine
 from Modulos.enums import TipoCosto
-from Modulos.Repuestos import Repuesto
+from Repositorios.RepuestosRepositorio import RepuestosRepositorio
 
 
 class Costos(Base):
@@ -66,7 +66,7 @@ class Costos(Base):
         """Repuesto relacionado (con su nombre y precio), si aplica."""
         if self.repuesto_id is None:
             return None
-        return Repuesto.obtener_por_id(self.repuesto_id)
+        return RepuestosRepositorio.obtener_por_id(self.repuesto_id)
 
     @staticmethod
     def crear_tabla():
