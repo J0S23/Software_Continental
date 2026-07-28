@@ -2,9 +2,9 @@ from fastapi import HTTPException
 
 from Persistencia.ClientesRepositorio import ClientesRepositorio
 from Persistencia.ContratosRepositorio import ContratosRepositorio
-from Modulos.CambiosRetiro import CambioRetiro
+from Persistencia.CambiosRetiroRepositorio import CambiosRetiroRepositorio
 from Persistencia.CostosRepositorio import CostosRepositorio
-from Modulos.EquiposRespaldo import EquipoRespaldo
+from Persistencia.EquiposRespaldoRepositorio import EquiposRespaldoRepositorio
 from Persistencia.LecturasRepositorio import LecturasRepositorio
 from Persistencia.EntregasTonerRepositorio import EntregasTonerRepositorio
 from Modulos.enums import (
@@ -239,7 +239,7 @@ CATALOGO_DATOS = {
     },
     "cambios_retiros": {
     "etiqueta": "Cambios y Retiros",
-    "modelo": CambioRetiro,
+    "modelo": CambiosRetiroRepositorio,
     "campos": [
         campo("equipo_id", "Equipo", "number"),
         campo("tipo_evento", "Tipo de evento", "select", ["cambio", "retiro"]),
@@ -255,7 +255,7 @@ CATALOGO_DATOS = {
 },
     "equipos_respaldo": {
     "etiqueta": "Equipos de Respaldo",
-    "modelo": EquipoRespaldo,
+    "modelo": EquiposRespaldoRepositorio,
     "campos": [
         campo("cliente_id", "Cliente", "number"),
         campo("contrato_id", "Contrato", "number", requerido=False),
