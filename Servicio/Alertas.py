@@ -12,7 +12,7 @@
 from datetime import datetime, timedelta
 
 from base_de_datos import SessionLocal
-from Modulos.AlertaEstado import AlertaEstado
+from Persistencia.AlertaEstadoRepositorio import AlertaEstadoRepositorio
 from Persistencia.CarteraRepositorio import CarteraRepositorio
 from Persistencia.ContratosRepositorio import ContratosRepositorio
 from Modulos.enums import EstadoFactura
@@ -189,7 +189,7 @@ def generar_alertas(incluir_descartadas=False):
     )
 
     estados_por_clave = {
-        (estado.tipo, estado.referencia_id): estado for estado in AlertaEstado.obtener_todos()
+        (estado.tipo, estado.referencia_id): estado for estado in AlertaEstadoRepositorio.obtener_todos()
     }
 
     for a in alertas:
