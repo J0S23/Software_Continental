@@ -78,6 +78,8 @@ def serializar(registro, campos):
 
 
 def listar_registros(modelo):
+    if hasattr(modelo, "obtener_todos"):
+        return modelo.obtener_todos()
     with SesionLocal() as sesion:
         return sesion.query(modelo).all()
 
@@ -119,17 +121,15 @@ def actualizar_registro(modelo, registro_id, valores):
 
 def eliminar_registro(modelo, registro_id):
     if hasattr(modelo, "eliminar"):
-        with SesionLocal() as sesion:
-            existe = sesion.get(modelo, registro_id) is not None
+        obtener_por_id = getattr(modelo, "obtener_por_id", None)
+        existe = obtener_por_id(registro_id) is not None if obtener_por_id else True
         modelo.eliminar(registro_id)
         return existe
 
     with SesionLocal() as sesion:
         registro = sesion.get(modelo, registro_id)
-
         if not registro:
             return False
-
         sesion.delete(registro)
         sesion.commit()
         return True

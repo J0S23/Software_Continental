@@ -1,9 +1,9 @@
 #Requiere un contrato con condiciones económicas configuradas y una lectura del período a facturar; de lo contrario, devuelve None
 
 from Modulos.Contratos import Contratos
-from Modulos.Equipos import Equipos
-from Modulos.Facturacion import Facturacion
-from Modulos.Lecturas import Lecturas
+from Persistencia.EquiposRepositorio import EquiposRepositorio
+from Persistencia.FacturacionRepositorio import FacturacionRepositorio
+from Persistencia.LecturasRepositorio import LecturasRepositorio
 from Servicio.Informes_mensuales import _parse_periodo
 
 
@@ -14,7 +14,7 @@ def _lectura_actual_y_anterior(contrato_id, periodo):
     #lo que importa para facturar es el historial del contrato.
 
     mes, anio = _parse_periodo(periodo)
-    lecturas = Lecturas.obtener_por_contrato(contrato_id)
+    lecturas = LecturasRepositorio.obtener_por_contrato(contrato_id)
 
     lecturas_periodo = [l for l in lecturas if l.periodo == periodo]
     anteriores = [
@@ -40,7 +40,7 @@ def _validar_consistencia_equipo(contrato, lectura):
 
     inconsistencias = []
 
-    equipo = Equipos.obtener_por_id(lectura.equipo_id)
+    equipo = EquiposRepositorio.obtener_por_id(lectura.equipo_id)
     if not equipo:
         inconsistencias.append(
             f"La lectura {lectura.id} referencia el equipo {lectura.equipo_id}, que no existe en Equipos."
@@ -100,7 +100,7 @@ def calcular_facturacion(contrato_id, periodo):
 
     inconsistencias = _validar_consistencia_equipo(contrato, lectura_actual)
 
-    equipo = Equipos.obtener_por_id(lectura_actual.equipo_id)
+    equipo = EquiposRepositorio.obtener_por_id(lectura_actual.equipo_id)
     contador_anterior_bn, contador_anterior_color = _contador_anterior(lectura_anterior, equipo)
 
     consumo_bn = max(0, (lectura_actual.contador_bn or 0) - contador_anterior_bn)
@@ -170,7 +170,7 @@ def generar_facturacion(
         return None
 
     if not forzar:
-        ya_facturado = Facturacion.obtener_por_contrato(contrato_id, periodo)
+        ya_facturado = FacturacionRepositorio.obtener_por_contrato(contrato_id, periodo)
         if ya_facturado:
             raise ValueError(
                 f"El contrato {contrato_id} ya tiene {len(ya_facturado)} factura(s) registrada(s) "
@@ -183,7 +183,7 @@ def generar_facturacion(
                 + " | ".join(calculo["inconsistencias"])
             )
 
-    return Facturacion.agregar(
+    return FacturacionRepositorio.agregar(
         periodo=periodo,
         cliente_id=calculo["cliente_id"],
         contrato_id=contrato_id,

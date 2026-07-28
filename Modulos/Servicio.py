@@ -1,12 +1,14 @@
 from Modulos.enums import TipoMantenimiento
 from sqlalchemy import Column, Integer, String, Float, DateTime, Enum as SQLEnum
 from datetime import datetime
-from base_de_datos import Base, SessionLocal, engine
+from base_de_datos import Base, engine
 
 
 class Servicio(Base):
+    """Solo define columnas. Acceso a datos en Persistencia/ServicioRepositorio.py."""
+
     __tablename__ = "servicios"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     cliente_id = Column(Integer)
     equipo_id = Column(Integer, nullable=True)
@@ -21,64 +23,7 @@ class Servicio(Base):
     equipo_respaldo_incluido = Column(String, default="No")
     estado = Column(String, default="Activo")
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
-    
+
     @staticmethod
     def crear_tabla():
         Base.metadata.create_all(bind=engine)
-    
-    @staticmethod
-    def agregar(cliente_id, equipo_id, nombre_servicio, descripcion="", precio=0,
-                descripcion_mantenimiento="", repuestos_incluidos="No", toner_incluido="No",
-                toner_respaldo_sitio="No", equipo_respaldo_incluido="No", estado="Activo"):
-        """Agrega un servicio a la BD"""
-        db = SessionLocal()
-        try:
-            nuevo_servicio = Servicio(
-                cliente_id=cliente_id,
-                equipo_id=equipo_id,
-                nombre_servicio=nombre_servicio,
-                descripcion=descripcion,
-                precio=precio,
-                descripcion_mantenimiento=descripcion_mantenimiento,
-                repuestos_incluidos=repuestos_incluidos,
-                toner_incluido=toner_incluido,
-                toner_respaldo_sitio=toner_respaldo_sitio,
-                equipo_respaldo_incluido=equipo_respaldo_incluido,
-                estado=estado
-            )
-            db.add(nuevo_servicio)
-            db.commit()
-            db.refresh(nuevo_servicio)
-            return nuevo_servicio
-        finally:
-            db.close()
-
-    @staticmethod
-    def obtener_todos():
-        """Obtiene todos los servicios"""
-        db = SessionLocal()
-        try:
-            return db.query(Servicio).all()
-        finally:
-            db.close()
-
-    @staticmethod
-    def obtener_por_id(servicio_id):
-        """Obtiene un servicio por ID"""
-        db = SessionLocal()
-        try:
-            return db.query(Servicio).filter(Servicio.id == servicio_id).first()
-        finally:
-            db.close()
-
-    @staticmethod
-    def eliminar(servicio_id):
-        """Elimina un servicio por ID"""
-        db = SessionLocal()
-        try:
-            servicio = db.query(Servicio).filter(Servicio.id == servicio_id).first()
-            if servicio:
-                db.delete(servicio)
-                db.commit()
-        finally:
-            db.close()
