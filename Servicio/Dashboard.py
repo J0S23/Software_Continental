@@ -35,7 +35,7 @@ from Modulos.Costos import Costos
 from Modulos.enums import EstadoFactura
 from Modulos.Equipos import Equipos
 from Modulos.Facturacion import Facturacion
-from Modulos.EntregasToner import EntregaToner
+from Repositorios.EntregasTonerRepositorio import EntregasTonerRepositorio
 from Servicio.Informes_mensuales import _parse_periodo, informe_general, informe_por_cliente
 
 # Limites de dias de mora para agrupar cartera por antiguedad.
@@ -253,17 +253,11 @@ def serie_consumo_paginas_por_cliente(periodo_final, meses=6):
 
 def serie_toneres_por_cliente(periodo_final, meses=6):
     """Cantidad de toner entregado por cliente, mes a mes."""
-    periodos = _periodos_hacia_atras(periodo_final, meses)
-
-    db = SessionLocal()
-    try:
-        serie = []
-        for periodo in periodos:
-            entregas = db.query(EntregaToner).filter(EntregaToner.periodo == periodo).all()
-            por_cliente = {}
-            for e in entregas:
-                por_cliente[e.cliente_id] = por_cliente.get(e.cliente_id, 0) + (e.cantidad or 0)
-            serie.append({"periodo": periodo, "toneres_por_cliente": por_cliente})
-        return serie
-    finally:
-        db.close()
+    serie = []
+    for periodo in _periodos_hacia_atras(periodo_final, meses):
+        entregas = EntregasTonerRepositorio.obtener_por_periodo(periodo)
+        por_cliente = {}
+        for e in entregas:
+            por_cliente[e.cliente_id] = por_cliente.get(e.cliente_id, 0) + (e.cantidad or 0)
+        serie.append({"periodo": periodo, "toneres_por_cliente": por_cliente})
+    return serie
