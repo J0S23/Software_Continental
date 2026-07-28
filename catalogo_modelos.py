@@ -20,8 +20,8 @@ from Persistencia.FacturacionRepositorio import FacturacionRepositorio
 from Persistencia.InsumosRepositorio import InsumosRepositorio
 from Persistencia.TiposInsumoRepositorio import TiposInsumoRepositorio
 from Persistencia.RepuestosRepositorio import RepuestosRepositorio
-from Modulos.Servicio import Servicio
-from Modulos.Usuarios import Usuarios
+from Persistencia.ServicioRepositorio import ServicioRepositorio
+from Persistencia.UsuariosRepositorio import UsuariosRepositorio
 
 
 def campo(nombre, etiqueta, tipo="text", opciones=None, requerido=True):
@@ -140,7 +140,7 @@ CATALOGO_DATOS = {
     },
     "servicios": {
         "etiqueta": "Servicios",
-        "modelo": Servicio,
+        "modelo": ServicioRepositorio,
         "campos": [
             campo("cliente_id", "Cliente", "number"),
             campo("equipo_id", "Equipo", "number", requerido=False),
@@ -271,7 +271,7 @@ CATALOGO_DATOS = {
 },
     "usuarios": {
         "etiqueta": "Usuarios",
-        "modelo": Usuarios,
+        "modelo": UsuariosRepositorio,
         "campos": [
             campo("nombre_usuario", "Nombre de usuario"),
             campo("email", "Email"),
