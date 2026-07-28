@@ -3,7 +3,7 @@ from fastapi import HTTPException
 from Modulos.Clientes import Clientes
 from Persistencia.ContratosRepositorio import ContratosRepositorio
 from Modulos.CambiosRetiro import CambioRetiro
-from Modulos.Costos import Costos
+from Persistencia.CostosRepositorio import CostosRepositorio
 from Modulos.EquiposRespaldo import EquipoRespaldo
 from Persistencia.LecturasRepositorio import LecturasRepositorio
 from Persistencia.EntregasTonerRepositorio import EntregasTonerRepositorio
@@ -158,7 +158,7 @@ CATALOGO_DATOS = {
     },
     "costos": {
         "etiqueta": "Costos",
-        "modelo": Costos,
+        "modelo": CostosRepositorio,
         "campos": [
             campo("fecha_costo", "Fecha del costo", "date"),
             campo("periodo", "Periodo"),

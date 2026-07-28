@@ -1,27 +1,15 @@
 #Requiere Facturacion y Costos ya cargados por contrato/periodo; si no hay ninguno de los dos, ingreso y costos quedan en 0
 
-from Modulos.Costos import Costos
+from Persistencia.CostosRepositorio import CostosRepositorio
 from Persistencia.FacturacionRepositorio import FacturacionRepositorio
 from Modulos.Rentabilidad import Rentabilidad
 from base_de_datos import SessionLocal
 
 
 def calcular_rentabilidad(contrato_id, periodo):
-    #Suma facturas y costos del contrato en el periodo y calcula ingreso, costo total, utilidad y margen. SIN guardar nada. (Luego si se guarda con genera_rentabilidad)
-    #No devuelve None si no hay facturas/costos: en ese caso ingreso y costos simplemente quedan en 0
-    #(a diferencia de la facturacion, aqui no hay un dato "obligatorio" sin el cual no se pueda calcular).
-
+    #Suma facturas y costos del contrato en el periodo y calcula ingreso, costo total, utilidad y margen. SIN guardar nada.
     facturas = FacturacionRepositorio.obtener_por_contrato(contrato_id, periodo)
-
-    db = SessionLocal()
-    try:
-        costos = (
-            db.query(Costos)
-            .filter(Costos.contrato_id == contrato_id, Costos.periodo == periodo)
-            .all()
-        )
-    finally:
-        db.close()
+    costos = CostosRepositorio.obtener_por_contrato(contrato_id, periodo)
 
     ingreso_total = sum(f.total_facturado or 0 for f in facturas)
     costo_total = sum(c.valor_total or 0 for c in costos)

@@ -36,7 +36,7 @@ from base_de_datos import SessionLocal
 from Persistencia.CarteraRepositorio import CarteraRepositorio
 from Modulos.Clientes import Clientes
 from Persistencia.ContratosRepositorio import ContratosRepositorio
-from Modulos.Costos import Costos
+from Persistencia.CostosRepositorio import CostosRepositorio
 from Modulos.enums import EstadoFactura, TipoCosto
 from Persistencia.EquiposRepositorio import EquiposRepositorio
 from Persistencia.FacturacionRepositorio import FacturacionRepositorio
@@ -80,7 +80,7 @@ def informe_general(periodo):
         contratos = ContratosRepositorio.obtener_todos()
         clientes = db.query(Clientes).all()
         equipos = EquiposRepositorio.obtener_todos()
-        costos = db.query(Costos).filter(Costos.periodo == periodo).all()
+        costos = CostosRepositorio.obtener_por_periodo(periodo)
         facturas = FacturacionRepositorio.obtener_por_periodo(periodo)
         cartera = CarteraRepositorio.obtener_todos()
         entregas_toner = EntregasTonerRepositorio.obtener_por_periodo(periodo)
@@ -240,7 +240,7 @@ def informe_por_equipo(periodo, equipo_id):
             consumo_mensual_bn = lecturas_periodo[-1].contador_bn - anteriores[-1].contador_bn
             consumo_mensual_color = lecturas_periodo[-1].contador_color - anteriores[-1].contador_color
 
-        costos = db.query(Costos).filter(Costos.equipo_id == equipo_id, Costos.periodo == periodo).all()
+        costos = CostosRepositorio.obtener_por_equipo(equipo_id, periodo)
         costos_total = sum(c.valor_total or 0 for c in costos)
 
         return {
@@ -324,40 +324,27 @@ def informe_tecnico(periodo):
     calcular correctivos, preventivos, fallas por equipo ni tiempos de
     respuesta/solucion.
     """
-    db = SessionLocal()
-    try:
-        costos_repuesto = (
-            db.query(Costos)
-            .filter(Costos.tipo_costo == TipoCosto.REPUESTO, Costos.periodo == periodo)
-            .all()
-        )
-        conteo_repuestos = {}
-        for c in costos_repuesto:
-            clave = (c.descripcion or "sin_descripcion").strip()
-            conteo_repuestos[clave] = conteo_repuestos.get(clave, 0) + (c.cantidad or 0)
-        repuestos_mas_usados = sorted(conteo_repuestos.items(), key=lambda item: item[1], reverse=True)[:5]
+    costos_repuesto = CostosRepositorio.obtener_por_periodo_y_tipo(periodo, TipoCosto.REPUESTO)
+    conteo_repuestos = {}
+    for c in costos_repuesto:
+        clave = (c.descripcion or "sin_descripcion").strip()
+        conteo_repuestos[clave] = conteo_repuestos.get(clave, 0) + (c.cantidad or 0)
+    repuestos_mas_usados = sorted(conteo_repuestos.items(), key=lambda item: item[1], reverse=True)[:5]
 
-        costos_tecnicos = (
-            db.query(Costos)
-            .filter(Costos.periodo == periodo, Costos.tipo_costo.in_(TIPOS_COSTO_TECNICOS))
-            .all()
-        )
-        costos_tecnicos_por_contrato = {}
-        for c in costos_tecnicos:
-            costos_tecnicos_por_contrato[c.contrato_id] = costos_tecnicos_por_contrato.get(
-                c.contrato_id, 0
-            ) + (c.valor_total or 0)
+    costos_tecnicos = CostosRepositorio.obtener_por_periodo_y_tipos(periodo, TIPOS_COSTO_TECNICOS)
+    costos_tecnicos_por_contrato = {}
+    for c in costos_tecnicos:
+        costos_tecnicos_por_contrato[c.contrato_id] = costos_tecnicos_por_contrato.get(
+            c.contrato_id, 0
+        ) + (c.valor_total or 0)
 
-        return {
-            "periodo": periodo,
-            # Bloqueado: ver nota de la funcion (punto 8 del docstring del modulo).
-            "correctivos_del_mes": None,
-            "preventivos_por_estado": None,
-            "tiempo_promedio_respuesta": None,
-            "tiempo_promedio_solucion": None,
-            "equipos_con_mas_fallas": None,
-            "repuestos_mas_usados": [{"descripcion": desc, "cantidad": cant} for desc, cant in repuestos_mas_usados],
-            "costos_tecnicos_por_contrato": costos_tecnicos_por_contrato,
-        }
-    finally:
-        db.close()
+    return {
+        "periodo": periodo,
+        "correctivos_del_mes": None,
+        "preventivos_por_estado": None,
+        "tiempo_promedio_respuesta": None,
+        "tiempo_promedio_solucion": None,
+        "equipos_con_mas_fallas": None,
+        "repuestos_mas_usados": [{"descripcion": desc, "cantidad": cant} for desc, cant in repuestos_mas_usados],
+        "costos_tecnicos_por_contrato": costos_tecnicos_por_contrato,
+    }

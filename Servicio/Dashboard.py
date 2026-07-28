@@ -31,7 +31,7 @@ from datetime import datetime
 from base_de_datos import SessionLocal
 from Modulos.Clientes import Clientes
 from Persistencia.ContratosRepositorio import ContratosRepositorio
-from Modulos.Costos import Costos
+from Persistencia.CostosRepositorio import CostosRepositorio
 from Modulos.enums import EstadoFactura
 from Persistencia.EquiposRepositorio import EquiposRepositorio
 from Persistencia.FacturacionRepositorio import FacturacionRepositorio
@@ -134,21 +134,15 @@ def serie_financiera(periodo_final, meses=6):
 
 def serie_costos_por_tipo(periodo_final, meses=6):
     """Costos agrupados por tipo_costo, mes a mes."""
-    periodos = _periodos_hacia_atras(periodo_final, meses)
-
-    db = SessionLocal()
-    try:
-        serie = []
-        for periodo in periodos:
-            costos = db.query(Costos).filter(Costos.periodo == periodo).all()
-            por_tipo = {}
-            for c in costos:
-                clave = c.tipo_costo.value if c.tipo_costo else "sin_tipo"
-                por_tipo[clave] = por_tipo.get(clave, 0) + (c.valor_total or 0)
-            serie.append({"periodo": periodo, "costos_por_tipo": por_tipo})
-        return serie
-    finally:
-        db.close()
+    serie = []
+    for periodo in _periodos_hacia_atras(periodo_final, meses):
+        costos = CostosRepositorio.obtener_por_periodo(periodo)
+        por_tipo = {}
+        for c in costos:
+            clave = c.tipo_costo.value if c.tipo_costo else "sin_tipo"
+            por_tipo[clave] = por_tipo.get(clave, 0) + (c.valor_total or 0)
+        serie.append({"periodo": periodo, "costos_por_tipo": por_tipo})
+    return serie
 
 
 def _serie_por_cliente(periodo_final, meses, campo):
