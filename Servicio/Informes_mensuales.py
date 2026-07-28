@@ -41,7 +41,7 @@ from Modulos.enums import EstadoFactura, TipoCosto
 from Persistencia.EquiposRepositorio import EquiposRepositorio
 from Persistencia.FacturacionRepositorio import FacturacionRepositorio
 from Persistencia.LecturasRepositorio import LecturasRepositorio
-from Modulos.Rentabilidad import Rentabilidad
+from Persistencia.RentabilidadRepositorio import RentabilidadRepositorio
 from Persistencia.EntregasTonerRepositorio import EntregasTonerRepositorio
 
 # Que tipos de costo cuentan como "costos tecnicos" para el informe tecnico.
@@ -91,17 +91,7 @@ def informe_general(periodo):
     costos_mes = sum(c.valor_total or 0 for c in costos)
     toneres_entregados = sum(e.cantidad or 0 for e in entregas_toner)
 
-    # Ultimo pendiente en active record: Rentabilidad.
-    db = SessionLocal()
-    try:
-        rentabilidad_periodo = (
-            db.query(Rentabilidad)
-            .filter(Rentabilidad.periodo == periodo)
-            .order_by(Rentabilidad.id.desc())
-            .first()
-        )
-    finally:
-        db.close()
+    rentabilidad_periodo = RentabilidadRepositorio.obtener_ultimo_por_periodo(periodo)
 
     if rentabilidad_periodo:
         utilidad_bruta = rentabilidad_periodo.ganancia
@@ -158,7 +148,7 @@ def informe_general(periodo):
 def informe_por_cliente(periodo, cliente_id):
 
     #Contratos, facturacion, costos, utilidad y margen de un cliente en el periodo.
-    
+
     cliente = ClientesRepositorio.obtener_por_id(cliente_id)
     contratos_cliente = ContratosRepositorio.obtener_por_cliente(cliente_id)
     contratos_activos = [
@@ -198,64 +188,61 @@ def informe_por_cliente(periodo, cliente_id):
 def informe_por_equipo(periodo, equipo_id):
     """Datos tecnicos, consumo, costos y fallas de un equipo en el periodo."""
     mes, anio = _parse_periodo(periodo)
-    db = SessionLocal()
-    try:
-        equipo = EquiposRepositorio.obtener_por_id(equipo_id)
-        if not equipo:
-            return None
 
-        lecturas_equipo = LecturasRepositorio.obtener_por_equipo(equipo_id)
-        lecturas_periodo = [l for l in lecturas_equipo if _en_periodo(l.fecha_lectura, mes, anio)]
-        anteriores = [
-            l for l in lecturas_equipo if (l.fecha_lectura.year, l.fecha_lectura.month) < (anio, mes)
-        ]
+    equipo = EquiposRepositorio.obtener_por_id(equipo_id)
+    if not equipo:
+        return None
 
-        contador_actual_bn = None
-        contador_actual_color = None
-        if lecturas_periodo:
-            contador_actual_bn = lecturas_periodo[-1].contador_bn
-            contador_actual_color = lecturas_periodo[-1].contador_color
-        elif lecturas_equipo:
-            contador_actual_bn = lecturas_equipo[-1].contador_bn
-            contador_actual_color = lecturas_equipo[-1].contador_color
+    lecturas_equipo = LecturasRepositorio.obtener_por_equipo(equipo_id)
+    lecturas_periodo = [l for l in lecturas_equipo if _en_periodo(l.fecha_lectura, mes, anio)]
+    anteriores = [
+        l for l in lecturas_equipo if (l.fecha_lectura.year, l.fecha_lectura.month) < (anio, mes)
+    ]
 
-        consumo_mensual_bn = None
-        consumo_mensual_color = None
-        if lecturas_periodo and anteriores:
-            consumo_mensual_bn = lecturas_periodo[-1].contador_bn - anteriores[-1].contador_bn
-            consumo_mensual_color = lecturas_periodo[-1].contador_color - anteriores[-1].contador_color
+    contador_actual_bn = None
+    contador_actual_color = None
+    if lecturas_periodo:
+        contador_actual_bn = lecturas_periodo[-1].contador_bn
+        contador_actual_color = lecturas_periodo[-1].contador_color
+    elif lecturas_equipo:
+        contador_actual_bn = lecturas_equipo[-1].contador_bn
+        contador_actual_color = lecturas_equipo[-1].contador_color
 
-        costos = CostosRepositorio.obtener_por_equipo(equipo_id, periodo)
-        costos_total = sum(c.valor_total or 0 for c in costos)
+    consumo_mensual_bn = None
+    consumo_mensual_color = None
+    if lecturas_periodo and anteriores:
+        consumo_mensual_bn = lecturas_periodo[-1].contador_bn - anteriores[-1].contador_bn
+        consumo_mensual_color = lecturas_periodo[-1].contador_color - anteriores[-1].contador_color
 
-        return {
-            "periodo": periodo,
-            "equipo_id": equipo_id,
-            # Bloqueado: Equipos no tiene columnas 'codigo' ni 'marca' (punto 4).
-            "codigo": None,
-            "marca": None,
-            "numero_serie": equipo.numero_serie,
-            # Bloqueado: Equipos no tiene cliente_id ni contrato_id (punto 3).
-            "cliente_id": None,
-            "contrato_id": None,
-            "contador_actual_bn": contador_actual_bn,
-            "contador_actual_color": contador_actual_color,
-            "consumo_mensual_bn": consumo_mensual_bn,
-            "consumo_mensual_color": consumo_mensual_color,
-            # Bloqueado: Facturacion no tiene equipo_id (punto 5).
-            "ingreso_generado": None,
-            "costos": costos_total,
-            # Bloqueado: depende de ingreso_generado, que esta bloqueado.
-            "rentabilidad": None,
-            # Bloqueado: el proyecto no tiene modelo de mantenimiento
-            # preventivo/correctivo (punto 8 del docstring del modulo).
-            "numero_fallas": None,
-            "mantenimientos_preventivos": None,
-            "mantenimientos_correctivos": None,
-            "estado_tecnico": equipo.estado_tecnico,
-        }
-    finally:
-        db.close()
+    costos = CostosRepositorio.obtener_por_equipo(equipo_id, periodo)
+    costos_total = sum(c.valor_total or 0 for c in costos)
+
+    return {
+        "periodo": periodo,
+        "equipo_id": equipo_id,
+        # Bloqueado: Equipos no tiene columnas 'codigo' ni 'marca' (punto 4).
+        "codigo": None,
+        "marca": None,
+        "numero_serie": equipo.numero_serie,
+        # Bloqueado: Equipos no tiene cliente_id ni contrato_id (punto 3).
+        "cliente_id": None,
+        "contrato_id": None,
+        "contador_actual_bn": contador_actual_bn,
+        "contador_actual_color": contador_actual_color,
+        "consumo_mensual_bn": consumo_mensual_bn,
+        "consumo_mensual_color": consumo_mensual_color,
+        # Bloqueado: Facturacion no tiene equipo_id (punto 5).
+        "ingreso_generado": None,
+        "costos": costos_total,
+        # Bloqueado: depende de ingreso_generado, que esta bloqueado.
+        "rentabilidad": None,
+        # Bloqueado: el proyecto no tiene modelo de mantenimiento
+        # preventivo/correctivo (punto 8 del docstring del modulo).
+        "numero_fallas": None,
+        "mantenimientos_preventivos": None,
+        "mantenimientos_correctivos": None,
+        "estado_tecnico": equipo.estado_tecnico,
+    }
 
 
 def informe_cartera(periodo):

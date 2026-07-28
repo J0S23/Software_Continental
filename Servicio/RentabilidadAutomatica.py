@@ -2,7 +2,7 @@
 
 from Persistencia.CostosRepositorio import CostosRepositorio
 from Persistencia.FacturacionRepositorio import FacturacionRepositorio
-from Modulos.Rentabilidad import Rentabilidad
+from Persistencia.RentabilidadRepositorio import RentabilidadRepositorio
 from base_de_datos import SessionLocal
 
 
@@ -40,14 +40,14 @@ def generar_rentabilidad(contrato_id, periodo, forzar=False):
     calculo = calcular_rentabilidad(contrato_id, periodo)
 
     if not forzar:
-        ya_calculado = Rentabilidad.obtener_por_contrato(contrato_id, periodo)
+        ya_calculado = RentabilidadRepositorio.obtener_por_contrato(contrato_id, periodo)
         if ya_calculado:
             raise ValueError(
                 f"El contrato {contrato_id} ya tiene {len(ya_calculado)} registro(s) de rentabilidad "
                 f"para el periodo {periodo}. Usa forzar=True para crear otro de todos modos."
             )
 
-    return Rentabilidad.agregar(
+    return RentabilidadRepositorio.agregar(
         periodo=periodo,
         contrato_id=contrato_id,
         cliente_id=calculo["cliente_id"],
