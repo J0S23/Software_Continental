@@ -35,7 +35,7 @@ from datetime import datetime, timedelta
 from base_de_datos import SessionLocal
 from Persistencia.CarteraRepositorio import CarteraRepositorio
 from Modulos.Clientes import Clientes
-from Modulos.Contratos import Contratos
+from Persistencia.ContratosRepositorio import ContratosRepositorio
 from Modulos.Costos import Costos
 from Modulos.enums import EstadoFactura, TipoCosto
 from Modulos.Equipos import Equipos
@@ -77,7 +77,7 @@ def informe_general(periodo):
     mes, anio = _parse_periodo(periodo)
     db = SessionLocal()
     try:
-        contratos = db.query(Contratos).all()
+        contratos = ContratosRepositorio.obtener_todos()
         clientes = db.query(Clientes).all()
         equipos = db.query(Equipos).all()
         costos = db.query(Costos).filter(Costos.periodo == periodo).all()
@@ -169,7 +169,7 @@ def informe_por_cliente(periodo, cliente_id):
     db = SessionLocal()
     try:
         cliente = db.query(Clientes).filter(Clientes.id == cliente_id).first()
-        contratos_cliente = db.query(Contratos).filter(Contratos.cliente_id == cliente_id).all()
+        contratos_cliente = ContratosRepositorio.obtener_por_cliente(cliente_id)
         contratos_activos = [
             c for c in contratos_cliente if (c.estado_contrato or "").strip().lower() == "activo"
         ]

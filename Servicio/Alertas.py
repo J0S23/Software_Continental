@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 from base_de_datos import SessionLocal
 from Modulos.AlertaEstado import AlertaEstado
 from Persistencia.CarteraRepositorio import CarteraRepositorio
-from Modulos.Contratos import Contratos
+from Persistencia.ContratosRepositorio import ContratosRepositorio
 from Modulos.enums import EstadoFactura
 from Modulos.Equipos import Equipos
 from Modulos.Facturacion import Facturacion
@@ -34,9 +34,9 @@ def _alerta(tipo, nivel, mensaje, referencia_id=None):
     }
 
 
-def _alertas_contratos(db, hoy):
+def _alertas_contratos(hoy):
     alertas = []
-    contratos = db.query(Contratos).all()
+    contratos = ContratosRepositorio.obtener_todos()
 
     for c in contratos:
         if not c.fecha_fin:
@@ -85,7 +85,7 @@ def _alertas_facturacion(db, hoy):
     return alertas
 
 
-def _alertas_cartera(db):
+def _alertas_cartera():
     alertas = []
     cartera = CarteraRepositorio.obtener_todos()
     clientes_en_mora = {}
@@ -111,7 +111,7 @@ def _alertas_equipos(db):
     'disponible')."""
     alertas = []
     equipos = db.query(Equipos).all()
-    contratos_activos = db.query(Contratos).filter(Contratos.estado_contrato == "activo").all()
+    contratos_activos = ContratosRepositorio.obtener_activos()
     equipos_con_contrato = {c.equipo_id for c in contratos_activos if c.equipo_id}
     hoy = datetime.utcnow()
 

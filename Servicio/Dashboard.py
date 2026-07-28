@@ -30,7 +30,7 @@ from datetime import datetime
 
 from base_de_datos import SessionLocal
 from Modulos.Clientes import Clientes
-from Modulos.Contratos import Contratos
+from Persistencia.ContratosRepositorio import ContratosRepositorio
 from Modulos.Costos import Costos
 from Modulos.enums import EstadoFactura
 from Modulos.Equipos import Equipos
@@ -71,9 +71,10 @@ def dashboard_snapshot(periodo):
     """
     general = informe_general(periodo)
 
+    contratos = ContratosRepositorio.obtener_todos()
+
     db = SessionLocal()
     try:
-        contratos = db.query(Contratos).all()
         equipos = db.query(Equipos).all()
     finally:
         db.close()

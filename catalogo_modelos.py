@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 
 from Modulos.Clientes import Clientes
-from Modulos.Contratos import Contratos
+from Persistencia.ContratosRepositorio import ContratosRepositorio
 from Modulos.CambiosRetiro import CambioRetiro
 from Modulos.Costos import Costos
 from Modulos.EquiposRespaldo import EquipoRespaldo
@@ -108,7 +108,7 @@ CATALOGO_DATOS = {
     },
     "contratos": {
         "etiqueta": "Contratos",
-        "modelo": Contratos,
+        "modelo": ContratosRepositorio,
         "campos": [
             campo("numero_contrato", "Numero de contrato"),
             campo("cliente_id", "Cliente", "number"),
