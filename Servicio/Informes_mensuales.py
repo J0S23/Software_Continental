@@ -15,9 +15,10 @@ comentario en el punto donde se generan; no se inventan ni se aproximan):
      del contrato correspondiente (ver Modulos/Contratos.py). Se deja
      pendiente hasta que informe_por_equipo/informe_general reciban el
      contrato asociado.
-  3. Equipos instalados / consumo por cliente: Equipos no tiene cliente_id
-     ni contrato_id, asi que no hay forma de vincular un equipo a un
-     cliente.
+  3. 3. [Resuelto] Equipos instalados / consumo por cliente: se calculan en
+     informe_por_cliente reutilizando informe_por_equipo. Sigue pendiente
+     el aggregate a nivel de informe_general (paginas_bn/paginas_color del
+     punto 1) y la precision cuando Contratos soporte multiequipo.
   4. Equipos.codigo y Equipos.marca: no existen esas columnas (solo
      numero_serie, tipo_equipo, tecnologia, color). Modelos.py tiene un
      catalogo de modelos pero sin FK desde Equipos.
@@ -146,9 +147,7 @@ def informe_general(periodo):
 
 
 def informe_por_cliente(periodo, cliente_id):
-
-    #Contratos, facturacion, costos, utilidad y margen de un cliente en el periodo.
-
+    """Contratos, facturacion, costos, utilidad y margen de un cliente en el periodo."""
     cliente = ClientesRepositorio.obtener_por_id(cliente_id)
     contratos_cliente = ContratosRepositorio.obtener_por_cliente(cliente_id)
     contratos_activos = [
@@ -156,6 +155,28 @@ def informe_por_cliente(periodo, cliente_id):
     ]
     facturas = FacturacionRepositorio.obtener_por_cliente(cliente_id, periodo)
     costos = CostosRepositorio.obtener_por_cliente(cliente_id, periodo)
+
+    equipos_cliente = EquiposRepositorio.obtener_por_cliente(cliente_id)
+    equipos_instalados = sum(
+        1 for e in equipos_cliente if (e.estado_equipo or "").strip().lower() == "instalado"
+    )
+
+    # Consumo del cliente = suma del consumo de cada uno de sus equipos, reutilizando el mismo calculo que ya hace informe_por_equipo.
+    consumo_bn = 0
+    consumo_color = 0
+    for equipo in equipos_cliente:
+        datos_equipo = informe_por_equipo(periodo, equipo.id)
+        if datos_equipo:
+            consumo_bn += datos_equipo["consumo_mensual_bn"] or 0
+            consumo_color += datos_equipo["consumo_mensual_color"] or 0
+    consumo = consumo_bn + consumo_color
+
+    # Aproximado: se suman las paginas incluidas de todos los contratos activos del cliente. Mientras Contratos no soporte multiequipo
+    # (pendiente ya conocido, ver Modulos/Contratos.py), esto asume 1 contrato ~ 1 equipo, igual que el resto del sistema hoy.
+    paginas_incluidas = sum(
+        (c.paginas_bn_incluidas or 0) + (c.paginas_color_incluidas or 0) for c in contratos_activos
+    )
+    paginas_adicionales = max(0, consumo - paginas_incluidas)
 
     facturado = sum(f.total_facturado or 0 for f in facturas)
     pagado = sum(f.total_facturado or 0 for f in facturas if f.estado_factura == EstadoFactura.PAGADA)
@@ -171,11 +192,11 @@ def informe_por_cliente(periodo, cliente_id):
         "cliente_id": cliente_id,
         "estado_general": cliente.estado_cliente.value if cliente and cliente.estado_cliente else None,
         "contratos_activos": len(contratos_activos),
-        "equipos_instalados": None,
+        "equipos_instalados": equipos_instalados,
         "valor_mensual_contratado": valor_mensual_contratado,
-        "consumo": None,
-        "paginas_incluidas": None,
-        "paginas_adicionales": None,
+        "consumo": consumo,
+        "paginas_incluidas": paginas_incluidas,
+        "paginas_adicionales": paginas_adicionales,
         "facturado": facturado,
         "pagado": pagado,
         "saldo": saldo,
@@ -186,9 +207,8 @@ def informe_por_cliente(periodo, cliente_id):
 
 
 def informe_por_equipo(periodo, equipo_id):
-    """Datos tecnicos, consumo, costos y fallas de un equipo en el periodo."""
+    #Datos tecnicos, consumo, costos y fallas de un equipo en el periodo.
     mes, anio = _parse_periodo(periodo)
-
     equipo = EquiposRepositorio.obtener_por_id(equipo_id)
     if not equipo:
         return None
@@ -220,24 +240,21 @@ def informe_por_equipo(periodo, equipo_id):
     return {
         "periodo": periodo,
         "equipo_id": equipo_id,
-        # Bloqueado: Equipos no tiene columnas 'codigo' ni 'marca' (punto 4).
+        # Bloqueado: Equipos no tiene columnas 'codigo' ni 'marca'.
         "codigo": None,
         "marca": None,
         "numero_serie": equipo.numero_serie,
-        # Bloqueado: Equipos no tiene cliente_id ni contrato_id (punto 3).
-        "cliente_id": None,
-        "contrato_id": None,
+        # Desbloqueado: Equipos.cliente_id/contrato_id ya existen en el modelo.
+        "cliente_id": equipo.cliente_id,
+        "contrato_id": equipo.contrato_id,
         "contador_actual_bn": contador_actual_bn,
         "contador_actual_color": contador_actual_color,
         "consumo_mensual_bn": consumo_mensual_bn,
         "consumo_mensual_color": consumo_mensual_color,
-        # Bloqueado: Facturacion no tiene equipo_id (punto 5).
+        # Bloqueado: Facturacion no tiene equipo_id.
         "ingreso_generado": None,
         "costos": costos_total,
-        # Bloqueado: depende de ingreso_generado, que esta bloqueado.
         "rentabilidad": None,
-        # Bloqueado: el proyecto no tiene modelo de mantenimiento
-        # preventivo/correctivo (punto 8 del docstring del modulo).
         "numero_fallas": None,
         "mantenimientos_preventivos": None,
         "mantenimientos_correctivos": None,
