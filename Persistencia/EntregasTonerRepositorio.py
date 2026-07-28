@@ -2,7 +2,7 @@ from datetime import datetime
 
 from base_de_datos import SessionLocal
 from Modulos.EntregasToner import EntregaToner
-from Modulos.TiposInsumo import TipoInsumo
+from Persistencia.TiposInsumoRepositorio import TiposInsumoRepositorio
 
 
 class EntregasTonerRepositorio:
@@ -16,7 +16,7 @@ class EntregasTonerRepositorio:
         fecha_entrega=None, periodo=None,
     ):
         if costo_unitario is None:
-            tipo = TipoInsumo.obtener_por_id(tipo_insumo_id)
+            tipo = TiposInsumoRepositorio.obtener_por_id(tipo_insumo_id)
             costo_unitario = tipo.precio if tipo else 0
 
         if costo_total is None:

@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime
 from datetime import datetime
 from base_de_datos import Base, SessionLocal, engine
 from Modulos.TiposInsumo import TipoInsumo
+from Persistencia.TiposInsumoRepositorio import TiposInsumoRepositorio
 
 
 class Insumo(Base):
@@ -18,7 +19,7 @@ class Insumo(Base):
         """Tipo de insumo relacionado (con su nombre y precio)."""
         if self.tipo_insumo_id is None:
             return None
-        return TipoInsumo.obtener_por_id(self.tipo_insumo_id)
+        return TiposInsumoRepositorio.obtener_por_id(self.tipo_insumo_id)
 
     @property
     def precio(self):
@@ -72,6 +73,3 @@ class Insumo(Base):
                 db.commit()
         finally:
             db.close()
-
-
-Maquinas = Insumo
