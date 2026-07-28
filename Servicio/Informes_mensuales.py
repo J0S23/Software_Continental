@@ -156,49 +156,43 @@ def informe_general(periodo):
 
 
 def informe_por_cliente(periodo, cliente_id):
-    """Contratos, facturacion, costos, utilidad y margen de un cliente en el periodo."""
-    db = SessionLocal()
-    try:
-        cliente = ClientesRepositorio.obtener_por_id(cliente_id)
-        contratos_cliente = ContratosRepositorio.obtener_por_cliente(cliente_id)
-        contratos_activos = [
-            c for c in contratos_cliente if (c.estado_contrato or "").strip().lower() == "activo"
-        ]
-        facturas = FacturacionRepositorio.obtener_por_cliente(cliente_id, periodo)
-        costos = db.query(Costos).filter(Costos.cliente_id == cliente_id, Costos.periodo == periodo).all()
 
-        facturado = sum(f.total_facturado or 0 for f in facturas)
-        pagado = sum(f.total_facturado or 0 for f in facturas if f.estado_factura == EstadoFactura.PAGADA)
-        saldo = facturado - pagado
-        costos_total = sum(c.valor_total or 0 for c in costos)
-        utilidad = facturado - costos_total
-        margen = (utilidad / facturado * 100) if facturado else 0
+    #Contratos, facturacion, costos, utilidad y margen de un cliente en el periodo.
+    
+    cliente = ClientesRepositorio.obtener_por_id(cliente_id)
+    contratos_cliente = ContratosRepositorio.obtener_por_cliente(cliente_id)
+    contratos_activos = [
+        c for c in contratos_cliente if (c.estado_contrato or "").strip().lower() == "activo"
+    ]
+    facturas = FacturacionRepositorio.obtener_por_cliente(cliente_id, periodo)
+    costos = CostosRepositorio.obtener_por_cliente(cliente_id, periodo)
 
-        valor_mensual_contratado = facturas[-1].valor_mensual_base if facturas else None
+    facturado = sum(f.total_facturado or 0 for f in facturas)
+    pagado = sum(f.total_facturado or 0 for f in facturas if f.estado_factura == EstadoFactura.PAGADA)
+    saldo = facturado - pagado
+    costos_total = sum(c.valor_total or 0 for c in costos)
+    utilidad = facturado - costos_total
+    margen = (utilidad / facturado * 100) if facturado else 0
 
-        return {
-            "periodo": periodo,
-            "cliente_id": cliente_id,
-            "estado_general": cliente.estado_cliente.value if cliente and cliente.estado_cliente else None,
-            "contratos_activos": len(contratos_activos),
-            # Bloqueado: Equipos no tiene cliente_id ni contrato_id (punto 3).
-            "equipos_instalados": None,
-            "valor_mensual_contratado": valor_mensual_contratado,
-            # Bloqueado: depende de Lecturas -> equipo -> cliente, y ese
-            # vinculo no existe (punto 3).
-            "consumo": None,
-            # Bloqueado: mismo motivo que paginas_* en informe_general (punto 1).
-            "paginas_incluidas": None,
-            "paginas_adicionales": None,
-            "facturado": facturado,
-            "pagado": pagado,
-            "saldo": saldo,
-            "costos": costos_total,
-            "utilidad": utilidad,
-            "margen": margen,
-        }
-    finally:
-        db.close()
+    valor_mensual_contratado = facturas[-1].valor_mensual_base if facturas else None
+
+    return {
+        "periodo": periodo,
+        "cliente_id": cliente_id,
+        "estado_general": cliente.estado_cliente.value if cliente and cliente.estado_cliente else None,
+        "contratos_activos": len(contratos_activos),
+        "equipos_instalados": None,
+        "valor_mensual_contratado": valor_mensual_contratado,
+        "consumo": None,
+        "paginas_incluidas": None,
+        "paginas_adicionales": None,
+        "facturado": facturado,
+        "pagado": pagado,
+        "saldo": saldo,
+        "costos": costos_total,
+        "utilidad": utilidad,
+        "margen": margen,
+    }
 
 
 def informe_por_equipo(periodo, equipo_id):

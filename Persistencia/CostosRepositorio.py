@@ -56,6 +56,18 @@ class CostosRepositorio:
             db.close()
 
     @staticmethod
+    def obtener_por_cliente(cliente_id, periodo=None):
+        """La necesita Informes_mensuales.informe_por_cliente."""
+        db = SessionLocal()
+        try:
+            query = db.query(Costos).filter(Costos.cliente_id == cliente_id)
+            if periodo:
+                query = query.filter(Costos.periodo == periodo)
+            return query.all()
+        finally:
+            db.close()
+    
+    @staticmethod
     def obtener_por_id(costo_id):
         db = SessionLocal()
         try:
