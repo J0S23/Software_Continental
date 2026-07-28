@@ -6,7 +6,7 @@ from Modulos.CambiosRetiro import CambioRetiro
 from Modulos.Costos import Costos
 from Modulos.EquiposRespaldo import EquipoRespaldo
 from Modulos.Lecturas import Lecturas
-from Modulos.EntregasToner import EntregaToner
+from Repositorios.EntregasTonerRepositorio import EntregasTonerRepositorio
 from Modulos.enums import (
     EstadoCliente,
     TipoCliente,
@@ -181,7 +181,7 @@ CATALOGO_DATOS = {
     },
     "entregas_toner": {
         "etiqueta": "Entregas de Toner",
-        "modelo": EntregaToner,
+        "modelo": EntregasTonerRepositorio,
         "campos": [
             campo("fecha_entrega", "Fecha de entrega", "date", requerido=False),
             campo("periodo", "Periodo (MM-YYYY)", requerido=False),
