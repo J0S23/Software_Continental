@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, Float, DateTime, Enum as SQLEnum
 from datetime import datetime
 from base_de_datos import Base, SessionLocal, engine
 from Modulos.enums import TipoCosto
-from Repositorios.RepuestosRepositorio import RepuestosRepositorio
+from Persistencia.RepuestosRepositorio import RepuestosRepositorio
 
 
 class Costos(Base):

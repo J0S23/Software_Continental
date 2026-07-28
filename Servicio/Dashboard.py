@@ -35,7 +35,7 @@ from Modulos.Costos import Costos
 from Modulos.enums import EstadoFactura
 from Modulos.Equipos import Equipos
 from Modulos.Facturacion import Facturacion
-from Repositorios.EntregasTonerRepositorio import EntregasTonerRepositorio
+from Persistencia.EntregasTonerRepositorio import EntregasTonerRepositorio
 from Servicio.Informes_mensuales import _parse_periodo, informe_general, informe_por_cliente
 
 # Limites de dias de mora para agrupar cartera por antiguedad.

@@ -33,7 +33,7 @@ comentario en el punto donde se generan; no se inventan ni se aproximan):
 from datetime import datetime, timedelta
 
 from base_de_datos import SessionLocal
-from Repositorios.CarteraRepositorio import CarteraRepositorio
+from Persistencia.CarteraRepositorio import CarteraRepositorio
 from Modulos.Clientes import Clientes
 from Modulos.Contratos import Contratos
 from Modulos.Costos import Costos
@@ -42,7 +42,7 @@ from Modulos.Equipos import Equipos
 from Modulos.Facturacion import Facturacion
 from Modulos.Lecturas import Lecturas
 from Modulos.Rentabilidad import Rentabilidad
-from Repositorios.EntregasTonerRepositorio import EntregasTonerRepositorio
+from Persistencia.EntregasTonerRepositorio import EntregasTonerRepositorio
 
 # Que tipos de costo cuentan como "costos tecnicos" para el informe tecnico.
 TIPOS_COSTO_TECNICOS = [

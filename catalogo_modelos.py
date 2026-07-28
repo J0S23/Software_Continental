@@ -6,7 +6,7 @@ from Modulos.CambiosRetiro import CambioRetiro
 from Modulos.Costos import Costos
 from Modulos.EquiposRespaldo import EquipoRespaldo
 from Modulos.Lecturas import Lecturas
-from Repositorios.EntregasTonerRepositorio import EntregasTonerRepositorio
+from Persistencia.EntregasTonerRepositorio import EntregasTonerRepositorio
 from Modulos.enums import (
     EstadoCliente,
     TipoCliente,

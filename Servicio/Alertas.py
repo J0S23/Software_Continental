@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 
 from base_de_datos import SessionLocal
 from Modulos.AlertaEstado import AlertaEstado
-from Repositorios.CarteraRepositorio import CarteraRepositorio
+from Persistencia.CarteraRepositorio import CarteraRepositorio
 from Modulos.Contratos import Contratos
 from Modulos.enums import EstadoFactura
 from Modulos.Equipos import Equipos
