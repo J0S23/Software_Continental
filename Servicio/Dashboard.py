@@ -34,7 +34,7 @@ from Persistencia.ContratosRepositorio import ContratosRepositorio
 from Modulos.Costos import Costos
 from Modulos.enums import EstadoFactura
 from Persistencia.EquiposRepositorio import EquiposRepositorio
-from Modulos.Facturacion import Facturacion
+from Persistencia.FacturacionRepositorio import FacturacionRepositorio
 from Persistencia.EntregasTonerRepositorio import EntregasTonerRepositorio
 from Servicio.Informes_mensuales import _parse_periodo, informe_general, informe_por_cliente
 
@@ -187,45 +187,36 @@ def serie_rentabilidad_por_cliente(periodo_final, meses=6):
 
 
 def serie_cartera_por_edad(periodo_final, meses=6):
-    """Saldo pendiente de facturas agrupado por antiguedad de mora, mes a mes.
-
-    Usa Facturacion.fecha_vencimiento igual que
-    Informes_mensuales.informe_cartera, pero agrupado en rangos de dias en
-    vez de por cliente.
-    """
+    """Saldo pendiente de facturas agrupado por antiguedad de mora, mes a mes."""
     periodos = _periodos_hacia_atras(periodo_final, meses)
     hoy = datetime.utcnow()
 
-    db = SessionLocal()
-    try:
-        serie = []
-        for periodo in periodos:
-            facturas = db.query(Facturacion).filter(Facturacion.periodo == periodo).all()
-            rangos = {"al_dia": 0, "1_30": 0, "31_60": 0, "61_90": 0, "mas_90": 0}
+    serie = []
+    for periodo in periodos:
+        facturas = FacturacionRepositorio.obtener_por_periodo(periodo)
+        rangos = {"al_dia": 0, "1_30": 0, "31_60": 0, "61_90": 0, "mas_90": 0}
 
-            for f in facturas:
-                if f.estado_factura == EstadoFactura.PAGADA:
-                    continue
+        for f in facturas:
+            if f.estado_factura == EstadoFactura.PAGADA:
+                continue
 
-                saldo = f.total_facturado or 0
+            saldo = f.total_facturado or 0
 
-                if not f.fecha_vencimiento or f.fecha_vencimiento >= hoy:
-                    rangos["al_dia"] += saldo
-                    continue
+            if not f.fecha_vencimiento or f.fecha_vencimiento >= hoy:
+                rangos["al_dia"] += saldo
+                continue
 
-                dias_mora = (hoy - f.fecha_vencimiento).days
-                clave = "mas_90"
-                for limite, nombre_rango in RANGOS_ANTIGUEDAD_CARTERA:
-                    if dias_mora <= limite:
-                        clave = nombre_rango
-                        break
-                rangos[clave] += saldo
+            dias_mora = (hoy - f.fecha_vencimiento).days
+            clave = "mas_90"
+            for limite, nombre_rango in RANGOS_ANTIGUEDAD_CARTERA:
+                if dias_mora <= limite:
+                    clave = nombre_rango
+                    break
+            rangos[clave] += saldo
 
-            serie.append({"periodo": periodo, "cartera_por_edad": rangos})
+        serie.append({"periodo": periodo, "cartera_por_edad": rangos})
 
-        return serie
-    finally:
-        db.close()
+    return serie
 
 
 def serie_correctivos_por_equipo(periodo_final, meses=6):

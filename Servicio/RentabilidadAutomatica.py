@@ -1,7 +1,7 @@
 #Requiere Facturacion y Costos ya cargados por contrato/periodo; si no hay ninguno de los dos, ingreso y costos quedan en 0
 
 from Modulos.Costos import Costos
-from Modulos.Facturacion import Facturacion
+from Persistencia.FacturacionRepositorio import FacturacionRepositorio
 from Modulos.Rentabilidad import Rentabilidad
 from base_de_datos import SessionLocal
 
@@ -11,13 +11,10 @@ def calcular_rentabilidad(contrato_id, periodo):
     #No devuelve None si no hay facturas/costos: en ese caso ingreso y costos simplemente quedan en 0
     #(a diferencia de la facturacion, aqui no hay un dato "obligatorio" sin el cual no se pueda calcular).
 
+    facturas = FacturacionRepositorio.obtener_por_contrato(contrato_id, periodo)
+
     db = SessionLocal()
     try:
-        facturas = (
-            db.query(Facturacion)
-            .filter(Facturacion.contrato_id == contrato_id, Facturacion.periodo == periodo)
-            .all()
-        )
         costos = (
             db.query(Costos)
             .filter(Costos.contrato_id == contrato_id, Costos.periodo == periodo)

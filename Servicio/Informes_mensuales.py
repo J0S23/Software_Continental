@@ -39,7 +39,7 @@ from Persistencia.ContratosRepositorio import ContratosRepositorio
 from Modulos.Costos import Costos
 from Modulos.enums import EstadoFactura, TipoCosto
 from Persistencia.EquiposRepositorio import EquiposRepositorio
-from Modulos.Facturacion import Facturacion
+from Persistencia.FacturacionRepositorio import FacturacionRepositorio
 from Persistencia.LecturasRepositorio import LecturasRepositorio
 from Modulos.Rentabilidad import Rentabilidad
 from Persistencia.EntregasTonerRepositorio import EntregasTonerRepositorio
@@ -81,7 +81,7 @@ def informe_general(periodo):
         clientes = db.query(Clientes).all()
         equipos = EquiposRepositorio.obtener_todos()
         costos = db.query(Costos).filter(Costos.periodo == periodo).all()
-        facturas = db.query(Facturacion).filter(Facturacion.periodo == periodo).all()
+        facturas = FacturacionRepositorio.obtener_por_periodo(periodo)
         cartera = CarteraRepositorio.obtener_todos()
         entregas_toner = EntregasTonerRepositorio.obtener_por_periodo(periodo)
 
@@ -173,11 +173,7 @@ def informe_por_cliente(periodo, cliente_id):
         contratos_activos = [
             c for c in contratos_cliente if (c.estado_contrato or "").strip().lower() == "activo"
         ]
-        facturas = (
-            db.query(Facturacion)
-            .filter(Facturacion.cliente_id == cliente_id, Facturacion.periodo == periodo)
-            .all()
-        )
+        facturas = FacturacionRepositorio.obtener_por_cliente(cliente_id, periodo)
         costos = db.query(Costos).filter(Costos.cliente_id == cliente_id, Costos.periodo == periodo).all()
 
         facturado = sum(f.total_facturado or 0 for f in facturas)
@@ -279,50 +275,45 @@ def informe_por_equipo(periodo, equipo_id):
 
 def informe_cartera(periodo):
     """Facturas emitidas/pagadas/vencidas, saldo y dias de mora por cliente en el periodo."""
-    db = SessionLocal()
-    try:
-        facturas = db.query(Facturacion).filter(Facturacion.periodo == periodo).all()
-        hoy = datetime.utcnow()
+    facturas = FacturacionRepositorio.obtener_por_periodo(periodo)
+    hoy = datetime.utcnow()
 
-        por_cliente = {}
-        for f in facturas:
-            datos = por_cliente.setdefault(
-                f.cliente_id,
-                {
-                    "cliente_id": f.cliente_id,
-                    "facturas_emitidas": 0,
-                    "facturas_pagadas": 0,
-                    "facturas_vencidas": 0,
-                    "saldo_pendiente": 0,
-                    "dias_mora_max": 0,
-                    "estado": "al_dia",
-                    # Bloqueado: ningun modelo registra compromisos de pago (punto 7).
-                    "compromisos_pago": None,
-                },
-            )
-            datos["facturas_emitidas"] += 1
+    por_cliente = {}
+    for f in facturas:
+        datos = por_cliente.setdefault(
+            f.cliente_id,
+            {
+                "cliente_id": f.cliente_id,
+                "facturas_emitidas": 0,
+                "facturas_pagadas": 0,
+                "facturas_vencidas": 0,
+                "saldo_pendiente": 0,
+                "dias_mora_max": 0,
+                "estado": "al_dia",
+                "compromisos_pago": None,
+            },
+        )
+        datos["facturas_emitidas"] += 1
 
-            if f.estado_factura == EstadoFactura.PAGADA:
-                datos["facturas_pagadas"] += 1
-                continue
+        if f.estado_factura == EstadoFactura.PAGADA:
+            datos["facturas_pagadas"] += 1
+            continue
 
-            datos["saldo_pendiente"] += f.total_facturado or 0
-            vencida = f.estado_factura == EstadoFactura.VENCIDA or (
-                f.fecha_vencimiento and f.fecha_vencimiento < hoy
-            )
-            if vencida:
-                datos["facturas_vencidas"] += 1
-                datos["estado"] = "en_mora"
-                if f.fecha_vencimiento:
-                    dias_mora = (hoy - f.fecha_vencimiento).days
-                    datos["dias_mora_max"] = max(datos["dias_mora_max"], dias_mora)
+        datos["saldo_pendiente"] += f.total_facturado or 0
+        vencida = f.estado_factura == EstadoFactura.VENCIDA or (
+            f.fecha_vencimiento and f.fecha_vencimiento < hoy
+        )
+        if vencida:
+            datos["facturas_vencidas"] += 1
+            datos["estado"] = "en_mora"
+            if f.fecha_vencimiento:
+                dias_mora = (hoy - f.fecha_vencimiento).days
+                datos["dias_mora_max"] = max(datos["dias_mora_max"], dias_mora)
 
-        return {
-            "periodo": periodo,
-            "clientes": list(por_cliente.values()),
-        }
-    finally:
-        db.close()
+    return {
+        "periodo": periodo,
+        "clientes": list(por_cliente.values()),
+    }
 
 
 def informe_tecnico(periodo):

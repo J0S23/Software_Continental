@@ -16,7 +16,7 @@ from Modulos.enums import (
     RolUsuario,
 )
 from Persistencia.EquiposRepositorio import EquiposRepositorio
-from Modulos.Facturacion import Facturacion
+from Persistencia.FacturacionRepositorio import FacturacionRepositorio
 from Persistencia.InsumosRepositorio import InsumosRepositorio
 from Persistencia.TiposInsumoRepositorio import TiposInsumoRepositorio
 from Persistencia.RepuestosRepositorio import RepuestosRepositorio
@@ -204,7 +204,7 @@ CATALOGO_DATOS = {
     },
     "facturacion": {
         "etiqueta": "Facturacion",
-        "modelo": Facturacion,
+        "modelo": FacturacionRepositorio,
         "campos": [
             campo("periodo", "Periodo"),
             campo("cliente_id", "Cliente", "number"),

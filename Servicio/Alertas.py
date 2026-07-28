@@ -17,7 +17,7 @@ from Persistencia.CarteraRepositorio import CarteraRepositorio
 from Persistencia.ContratosRepositorio import ContratosRepositorio
 from Modulos.enums import EstadoFactura
 from Persistencia.EquiposRepositorio import EquiposRepositorio
-from Modulos.Facturacion import Facturacion
+from Persistencia.FacturacionRepositorio import FacturacionRepositorio
 from Persistencia.LecturasRepositorio import LecturasRepositorio
 
 UMBRAL_VENCIMIENTO_DIAS = (90, 60, 30)
@@ -61,9 +61,9 @@ def _alertas_contratos(hoy):
     return alertas
 
 
-def _alertas_facturacion(db, hoy):
+def _alertas_facturacion(hoy):
     alertas = []
-    facturas = db.query(Facturacion).all()
+    facturas = FacturacionRepositorio.obtener_todos()
 
     for f in facturas:
         if f.estado_factura == EstadoFactura.PAGADA or f.estado_factura == EstadoFactura.ANULADA:
@@ -178,21 +178,15 @@ def _alertas_lecturas():
 
 
 def generar_alertas(incluir_descartadas=False):
-    """Punto de entrada: agrupa todas las alertas del sistema y les mezcla
-    el estado persistido (leida/guardada/descartada) desde AlertaEstado.
-    Por defecto no incluye las que el usuario ya descarto."""
     hoy = datetime.utcnow()
-    db = SessionLocal()
-    try:
-        alertas = (
-            _alertas_contratos(hoy)
-            + _alertas_facturacion(db, hoy)
-            + _alertas_cartera()
-            + _alertas_equipos()
-            + _alertas_lecturas()
-        )
-    finally:
-        db.close()
+
+    alertas = (
+        _alertas_contratos(hoy)
+        + _alertas_facturacion(hoy)
+        + _alertas_cartera()
+        + _alertas_equipos()
+        + _alertas_lecturas()
+    )
 
     estados_por_clave = {
         (estado.tipo, estado.referencia_id): estado for estado in AlertaEstado.obtener_todos()

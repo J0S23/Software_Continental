@@ -2,7 +2,7 @@
 
 from Modulos.Contratos import Contratos
 from Persistencia.EquiposRepositorio import EquiposRepositorio
-from Modulos.Facturacion import Facturacion
+from Persistencia.FacturacionRepositorio import FacturacionRepositorio
 from Persistencia.LecturasRepositorio import LecturasRepositorio
 from Servicio.Informes_mensuales import _parse_periodo
 
@@ -170,7 +170,7 @@ def generar_facturacion(
         return None
 
     if not forzar:
-        ya_facturado = Facturacion.obtener_por_contrato(contrato_id, periodo)
+        ya_facturado = FacturacionRepositorio.obtener_por_contrato(contrato_id, periodo)
         if ya_facturado:
             raise ValueError(
                 f"El contrato {contrato_id} ya tiene {len(ya_facturado)} factura(s) registrada(s) "
@@ -183,7 +183,7 @@ def generar_facturacion(
                 + " | ".join(calculo["inconsistencias"])
             )
 
-    return Facturacion.agregar(
+    return FacturacionRepositorio.agregar(
         periodo=periodo,
         cliente_id=calculo["cliente_id"],
         contrato_id=contrato_id,
