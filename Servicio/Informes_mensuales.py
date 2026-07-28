@@ -42,7 +42,7 @@ from Modulos.Equipos import Equipos
 from Modulos.Facturacion import Facturacion
 from Modulos.Lecturas import Lecturas
 from Modulos.Rentabilidad import Rentabilidad
-from Modulos.EntregasToner import EntregaToner
+from Repositorios.EntregasTonerRepositorio import EntregasTonerRepositorio
 
 # Que tipos de costo cuentan como "costos tecnicos" para el informe tecnico.
 TIPOS_COSTO_TECNICOS = [
@@ -83,7 +83,7 @@ def informe_general(periodo):
         costos = db.query(Costos).filter(Costos.periodo == periodo).all()
         facturas = db.query(Facturacion).filter(Facturacion.periodo == periodo).all()
         cartera = db.query(Cartera).all()
-        entregas_toner = db.query(EntregaToner).filter(EntregaToner.periodo == periodo).all()
+        entregas_toner = EntregasTonerRepositorio.obtener_por_periodo(periodo)
 
         facturado_mes = sum(f.total_facturado or 0 for f in facturas)
         recaudado_mes = sum(
