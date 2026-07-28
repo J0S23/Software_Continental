@@ -33,7 +33,7 @@ comentario en el punto donde se generan; no se inventan ni se aproximan):
 from datetime import datetime, timedelta
 
 from base_de_datos import SessionLocal
-from Modulos.Cartera import Cartera
+from Repositorios.CarteraRepositorio import CarteraRepositorio
 from Modulos.Clientes import Clientes
 from Modulos.Contratos import Contratos
 from Modulos.Costos import Costos
@@ -82,7 +82,7 @@ def informe_general(periodo):
         equipos = db.query(Equipos).all()
         costos = db.query(Costos).filter(Costos.periodo == periodo).all()
         facturas = db.query(Facturacion).filter(Facturacion.periodo == periodo).all()
-        cartera = db.query(Cartera).all()
+        cartera = CarteraRepositorio.obtener_todos()
         entregas_toner = EntregasTonerRepositorio.obtener_por_periodo(periodo)
 
         facturado_mes = sum(f.total_facturado or 0 for f in facturas)

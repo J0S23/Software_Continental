@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 
 from base_de_datos import SessionLocal
 from Modulos.AlertaEstado import AlertaEstado
-from Modulos.Cartera import Cartera
+from Repositorios.CarteraRepositorio import CarteraRepositorio
 from Modulos.Contratos import Contratos
 from Modulos.enums import EstadoFactura
 from Modulos.Equipos import Equipos
@@ -87,7 +87,7 @@ def _alertas_facturacion(db, hoy):
 
 def _alertas_cartera(db):
     alertas = []
-    cartera = db.query(Cartera).all()
+    cartera = CarteraRepositorio.obtener_todos()
     clientes_en_mora = {}
 
     for c in cartera:
@@ -182,7 +182,7 @@ def generar_alertas(incluir_descartadas=False):
         alertas = (
             _alertas_contratos(db, hoy)
             + _alertas_facturacion(db, hoy)
-            + _alertas_cartera(db)
+            + _alertas_cartera()
             + _alertas_equipos(db)
             + _alertas_lecturas(db)
         )
