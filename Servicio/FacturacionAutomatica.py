@@ -1,6 +1,6 @@
 #Requiere un contrato con condiciones económicas configuradas y una lectura del período a facturar; de lo contrario, devuelve None
 
-from Modulos.Contratos import Contratos
+from Persistencia.ContratosRepositorio import ContratosRepositorio
 from Persistencia.EquiposRepositorio import EquiposRepositorio
 from Persistencia.FacturacionRepositorio import FacturacionRepositorio
 from Persistencia.LecturasRepositorio import LecturasRepositorio
@@ -90,7 +90,7 @@ def calcular_facturacion(contrato_id, periodo):
     #Incluye "inconsistencias": lista de problemas equipo-contrato detectados (vacia si todo esta bien).
     #No bloquea el calculo aqui, pero generar_facturacion() si la revisa antes de guardar.
 
-    contrato = Contratos.obtener_por_id(contrato_id)
+    contrato = ContratosRepositorio.obtener_por_id(contrato_id)
     if not contrato:
         return None
 
