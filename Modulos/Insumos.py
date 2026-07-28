@@ -1,11 +1,12 @@
 from sqlalchemy import Column, Integer, String, DateTime
 from datetime import datetime
-from base_de_datos import Base, SessionLocal, engine
-from Modulos.TiposInsumo import TipoInsumo
+from base_de_datos import Base, engine
 from Persistencia.TiposInsumoRepositorio import TiposInsumoRepositorio
 
 
 class Insumo(Base):
+    """Solo define columnas. Acceso a datos en Repositorios/InsumosRepositorio.py."""
+
     __tablename__ = "insumos"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -30,46 +31,3 @@ class Insumo(Base):
     @staticmethod
     def crear_tabla():
         Base.metadata.create_all(bind=engine)
-
-    @staticmethod
-    def agregar(tipo_insumo_id, color="", estado=""):
-        """Agrega un insumo a la BD"""
-        db = SessionLocal()
-        try:
-            nuevo_insumo = Insumo(tipo_insumo_id=tipo_insumo_id, color=color, estado=estado)
-            db.add(nuevo_insumo)
-            db.commit()
-            db.refresh(nuevo_insumo)
-            return nuevo_insumo
-        finally:
-            db.close()
-
-    @staticmethod
-    def obtener_todos():
-        """Obtiene todos los insumos"""
-        db = SessionLocal()
-        try:
-            return db.query(Insumo).all()
-        finally:
-            db.close()
-
-    @staticmethod
-    def obtener_por_id(insumo_id):
-        """Obtiene un insumo por ID"""
-        db = SessionLocal()
-        try:
-            return db.query(Insumo).filter(Insumo.id == insumo_id).first()
-        finally:
-            db.close()
-
-    @staticmethod
-    def eliminar(insumo_id):
-        """Elimina un insumo por ID"""
-        db = SessionLocal()
-        try:
-            insumo = db.query(Insumo).filter(Insumo.id == insumo_id).first()
-            if insumo:
-                db.delete(insumo)
-                db.commit()
-        finally:
-            db.close()

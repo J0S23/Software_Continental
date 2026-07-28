@@ -18,8 +18,8 @@ from Modulos.enums import (
 from Modulos.Equipos import Equipos
 from Modulos.Facturacion import Facturacion
 from Modulos.Insumos import Insumo
-from Modulos.TiposInsumo import TipoInsumo
-from Modulos.Repuestos import Repuesto
+from Repositorios.TiposInsumoRepositorio import TiposInsumoRepositorio
+from Repositorios.RepuestosRepositorio import RepuestosRepositorio
 from Modulos.Servicio import Servicio
 from Modulos.Usuarios import Usuarios
 
