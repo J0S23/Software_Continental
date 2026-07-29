@@ -59,6 +59,18 @@ def normalizar_payload(configuracion, datos):
                     detail=f"El campo '{nombre_campo}' debe ser numerico",
                 ) from exc
 
+        if configuracion_campo.get("tipo") == "boolean":
+            valor_normalizado = str(valor).strip().lower()
+            if valor_normalizado in ("si", "sí", "true", "1"):
+                valor = True
+            elif valor_normalizado in ("no", "false", "0"):
+                valor = False
+            else:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"El campo '{nombre_campo}' debe ser 'Si' o 'No'",
+                )
+
         if configuracion_campo.get("tipo") == "date":
             try:
                 valor = datetime.strptime(valor, "%Y-%m-%d")
