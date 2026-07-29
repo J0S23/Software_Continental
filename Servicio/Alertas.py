@@ -1,7 +1,4 @@
 
-#Sin tabla propia, igual que Informes_mensuales y Dashboard: lee los
-#modelos existentes y devuelve alertas calculadas en el momento.
-
 #Bloqueadas por falta de datos en el modelo actual (no se inventan):
 #- Stock bajo de consumibles: Insumos no tiene columna de stock.
 #Equipos con fallas recurrentes / mantenimientos: Servicio (correctivo)
@@ -13,6 +10,7 @@ from base_de_datos import SessionLocal
 from Persistencia.AlertaEstadoRepositorio import AlertaEstadoRepositorio
 from Persistencia.CarteraRepositorio import CarteraRepositorio
 from Persistencia.ContratosRepositorio import ContratosRepositorio
+from Persistencia.ContratoEquipoRepositorio import ContratoEquipoRepositorio
 from Modulos.enums import EstadoFactura
 from Persistencia.EquiposRepositorio import EquiposRepositorio
 from Persistencia.FacturacionRepositorio import FacturacionRepositorio
@@ -132,11 +130,22 @@ def _alertas_toner():
 def _alertas_equipos():
     """Equipos instalados sin contrato activo que los referencie, y
     equipos disponibles sin uso (creados hace mas de 90 dias y aun
-    'disponible')."""
+    'disponible').
+
+    'Con contrato activo' se arma con dos fuentes, para no generar falsos
+    positivos mientras se migra a multiequipo (ver migrar_contratos_multiequipo.py):
+      - contrato_equipos: la fuente de verdad nueva (multiequipo).
+      - Contratos.equipo_id: el campo legado de contratos que aun no se migraron.
+    """
     alertas = []
     equipos = EquiposRepositorio.obtener_todos()
+
+    asignaciones_activas = ContratoEquipoRepositorio.obtener_todos_activos()
+    equipos_con_contrato = {a.equipo_id for a in asignaciones_activas}
+
     contratos_activos = ContratosRepositorio.obtener_activos()
-    equipos_con_contrato = {c.equipo_id for c in contratos_activos if c.equipo_id}
+    equipos_con_contrato |= {c.equipo_id for c in contratos_activos if c.equipo_id}
+
     hoy = datetime.utcnow()
 
     for e in equipos:
