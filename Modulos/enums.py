@@ -58,6 +58,12 @@ class RolUsuario(str, Enum):
     CARTERA = "Cartera"
     CONSULTA_LIMITADA = "Consulta limitada"
 
+class EstadoAprobacion(str, Enum):
+    """Estado de aprobacion de una cuenta de usuario"""
+    PENDIENTE = "pendiente"
+    APROBADO = "aprobado"
+    RECHAZADO = "rechazado"
+
 class TipoEquipo(str, enum.Enum):
     MULTIFUNCIONAL = "multifuncional"
     IMPRESORA = "impresora"
