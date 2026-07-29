@@ -28,9 +28,9 @@ def normalizar_payload(configuracion, datos):
 
         if valor in (None, ""):
             if not configuracion_campo.get("requerido", True):
-                continue
+                continue  # no se incluye la clave: deja que el default del repositorio aplique
             raise HTTPException(status_code=400, detail=f"Falta el campo '{nombre_campo}'")
-
+        
         tipo_enum = enumeraciones.get(nombre_campo)
         if tipo_enum:
             try:
