@@ -10,6 +10,7 @@ from routers import datos, paginas
 from routers.exportacion import router as exportacion_router
 from routers.alertas import router as alertas_router
 from routers.facturacion_automatica import router as facturacion_automatica_router
+from routers.adjuntos import router as adjuntos_router
 from routers.auth import router as auth_router
 
 # Se importan solo para que SQLAlchemy registre estos modelos en Base.metadata
@@ -33,6 +34,7 @@ app.include_router(paginas.router)
 app.include_router(exportacion_router)
 app.include_router(alertas_router)
 app.include_router(facturacion_automatica_router)
+app.include_router(adjuntos_router)
 app.include_router(auth_router)
 app.include_router(datos.router)
 
