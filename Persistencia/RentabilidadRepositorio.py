@@ -3,6 +3,8 @@ from Modulos.Rentabilidad import Rentabilidad
 
 
 class RentabilidadRepositorio:
+    """CRUD de los resultados de rentabilidad calculados por
+    Servicio/RentabilidadAutomatica.py (no calcula nada aqui, solo persiste)."""
 
     @staticmethod
     def agregar(periodo, ingresos=0, costos=0, ganancia=0, porcentaje_rentabilidad=0,

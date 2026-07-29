@@ -3,6 +3,7 @@ from Modulos.Repuestos import Repuesto
 
 
 class RepuestosRepositorio:
+    """CRUD del catalogo de repuestos (nombre + precio de referencia)."""
 
     @staticmethod
     def agregar(nombre, precio=0):

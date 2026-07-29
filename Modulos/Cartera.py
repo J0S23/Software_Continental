@@ -4,7 +4,9 @@ from base_de_datos import Base, engine
 
 
 class Cartera(Base):
-    
+    """Registro de cartera (cuentas por cobrar) de un cliente. Solo define columnas;
+    acceso a datos en Persistencia/CarteraRepositorio.py."""
+
     __tablename__ = "cartera"
 
     id = Column(Integer, primary_key=True, index=True)

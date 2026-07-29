@@ -3,6 +3,7 @@ from Modulos.Contratos import Contratos
 
 
 class ContratosRepositorio:
+    """CRUD de contratos comerciales con clientes."""
 
     @staticmethod
     def agregar(numero_contrato, cliente_id, estado_contrato, tipo_contrato, forma_legalizacion,

@@ -3,6 +3,7 @@ from Modulos.Cartera import Cartera
 
 
 class CarteraRepositorio:
+    """CRUD de cuentas por cobrar (cartera) por cliente."""
 
     @staticmethod
     def agregar(cliente_id, monto, estado):

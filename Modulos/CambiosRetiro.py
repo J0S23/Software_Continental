@@ -4,6 +4,8 @@ from base_de_datos import Base, engine
 
 
 class CambioRetiro(Base):
+    """Historial de cambios de equipo o retiros definitivos (tipo_evento: 'cambio' | 'retiro').
+    Solo define columnas; acceso a datos en Persistencia/CambiosRetiroRepositorio.py."""
 
     __tablename__ = "cambios_retiros"
 

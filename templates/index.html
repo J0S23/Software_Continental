@@ -11,9 +11,74 @@
         <header>
             <h1>Gestor de Datos Continental</h1>
             <p class="subtitle">Gestion de maquinas, clientes y datos operacionales</p>
+            <div class="sesion-info" id="sesionInfo" hidden>
+                Sesión: <span id="sesionEmailLabel"></span>
+            </div>
         </header>
 
-        <main>
+        <section class="auth-section" id="authSection">
+            <div class="auth-card" id="loginCard">
+                <h2>Iniciar sesión</h2>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="loginEmail">Correo</label>
+                        <input type="email" id="loginEmail" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Contraseña</label>
+                        <input type="password" id="loginPassword" name="contrasena" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-success">Ingresar</button>
+                    </div>
+                </form>
+                <p class="auth-switch">
+                    ¿No tienes cuenta?
+                    <button type="button" class="link-btn" id="mostrarRegistroBtn">Regístrate</button>
+                </p>
+            </div>
+
+            <div class="auth-card" id="registroCard" hidden>
+                <h2>Crear cuenta</h2>
+                <form id="registroForm">
+                    <div class="form-group">
+                        <label for="registroEmail">Correo</label>
+                        <input type="email" id="registroEmail" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registroPassword">Contraseña</label>
+                        <input type="password" id="registroPassword" name="contrasena" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registroRol">Rol solicitado</label>
+                        <select id="registroRol" name="rol" required>
+                            <option value="">Selecciona</option>
+                            <option value="Administrador general">Administrador general</option>
+                            <option value="Gerencia">Gerencia</option>
+                            <option value="Subgerencia financiera">Subgerencia financiera</option>
+                            <option value="Coordinación de renta">Coordinación de renta</option>
+                            <option value="Ejecutivo comercial">Ejecutivo comercial</option>
+                            <option value="Servicio técnico">Servicio técnico</option>
+                            <option value="Logística / almacén">Logística / almacén</option>
+                            <option value="Facturación">Facturación</option>
+                            <option value="Cartera">Cartera</option>
+                            <option value="Consulta limitada">Consulta limitada</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-success">Registrarme</button>
+                    </div>
+                </form>
+                <p class="auth-switch">
+                    ¿Ya tienes cuenta?
+                    <button type="button" class="link-btn" id="mostrarLoginBtn">Inicia sesión</button>
+                </p>
+            </div>
+
+            <div id="authMessageArea" aria-live="polite"></div>
+        </section>
+
+        <main hidden id="appMain">
             <div class="content-wrapper">
                 <aside class="sidebar">
                     <h2>Tipos de Datos</h2>

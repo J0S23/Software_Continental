@@ -3,6 +3,8 @@ from Modulos.TiposInsumo import TipoInsumo
 
 
 class TiposInsumoRepositorio:
+    """CRUD del catalogo de tipos de insumo (nombre + precio); cada Insumo
+    individual referencia uno de estos por tipo_insumo_id."""
 
     @staticmethod
     def agregar(nombre, precio=0):

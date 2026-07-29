@@ -3,6 +3,8 @@ from Modulos.Insumos import Insumo
 
 
 class InsumosRepositorio:
+    """CRUD de insumos individuales (unidades de stock); el precio se
+    obtiene indirectamente de su TipoInsumo (ver Modulos/Insumos.py)."""
 
     @staticmethod
     def agregar(tipo_insumo_id, color="", estado=""):

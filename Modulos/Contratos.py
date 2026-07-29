@@ -5,6 +5,8 @@ from base_de_datos import Base, engine
 
 
 class Contratos(Base):
+    """Contrato comercial con un cliente (condiciones, valores base y paginas incluidas).
+    Solo define columnas; acceso a datos en Persistencia/ContratosRepositorio.py."""
 
     __tablename__ = "contratos"
 

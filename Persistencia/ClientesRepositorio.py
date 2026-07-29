@@ -3,6 +3,7 @@ from Modulos.Clientes import Clientes
 
 
 class ClientesRepositorio:
+    """CRUD de clientes. Expuesto via el catalogo generico en catalogo_modelos.py."""
 
     @staticmethod
     def agregar(
