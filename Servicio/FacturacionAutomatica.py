@@ -1,24 +1,39 @@
-#Requiere un contrato con condiciones económicas configuradas y una lectura del período a facturar; de lo contrario, devuelve None
+#Requiere un contrato con condiciones económicas configuradas y al menos una lectura del período a facturar
+# para alguno de sus equipos activos; de lo contrario, devuelve None
 
-from Modulos.Contratos import Contratos
+from Persistencia.ContratosRepositorio import ContratosRepositorio
+from Persistencia.ContratoEquipoRepositorio import ContratoEquipoRepositorio
 from Persistencia.EquiposRepositorio import EquiposRepositorio
 from Persistencia.FacturacionRepositorio import FacturacionRepositorio
 from Persistencia.LecturasRepositorio import LecturasRepositorio
 from Servicio.Informes_mensuales import _parse_periodo
 
 
-def _lectura_actual_y_anterior(contrato_id, periodo):
+class _AsignacionLegado:
+    #Envoltorio minimo para que un contrato que todavia usa el Contratos.equipo_id viejo (sin fila en contrato_equipos) se pueda
+    #procesar con el mismo bucle que las asignaciones reales, mientras se corre migrar_contratos_multiequipo.py una sola vez. Una vez migrado,
+    #ContratoEquipoRepositorio.obtener_por_contrato() ya trae resultados y esta clase deja de usarse para ese contrato.
 
-    #Lectura del periodo pedido y la ultima lectura anterior a ese periodo, ambas del mismo contrato. 
-    #Se usa contrato_id (no equipo_id) porque un contrato puede haber cambiado de equipo (CambiosRetiro) y
-    #lo que importa para facturar es el historial del contrato.
+    def __init__(self, equipo_id, equipo):
+        self.equipo_id = equipo_id
+        self.contador_inicial_bn = equipo.contador_inicial_bn or 0 if equipo else 0
+        self.contador_inicial_color = equipo.contador_inicial_color or 0 if equipo else 0
+
+
+def _lectura_actual_y_anterior(equipo_id, contrato_id, periodo):
+
+    #Lectura del periodo pedido y la ultima lectura anterior a ese periodo, para UN equipo especifico
+    #dentro de un contrato. Se filtra por equipo_id y contrato_id (una lectura ya trae ambos, ver
+    #Modulos/Lecturas.py) porque con multiequipo cada equipo del contrato tiene su propio historial
+    #de contadores y no se pueden mezclar entre si.
 
     mes, anio = _parse_periodo(periodo)
-    lecturas = LecturasRepositorio.obtener_por_contrato(contrato_id)
+    lecturas_equipo = LecturasRepositorio.obtener_por_equipo(equipo_id)
+    lecturas_contrato = [l for l in lecturas_equipo if l.contrato_id == contrato_id]
 
-    lecturas_periodo = [l for l in lecturas if l.periodo == periodo]
+    lecturas_periodo = [l for l in lecturas_contrato if l.periodo == periodo]
     anteriores = [
-        l for l in lecturas
+        l for l in lecturas_contrato
         if l.fecha_lectura and (l.fecha_lectura.year, l.fecha_lectura.month) < (anio, mes)
     ]
 
@@ -27,90 +42,109 @@ def _lectura_actual_y_anterior(contrato_id, periodo):
     return lectura_actual, lectura_anterior
 
 
-def _validar_consistencia_equipo(contrato, lectura):
+def _contador_anterior(lectura_anterior, asignacion):
 
-    #Cruza el equipo de la lectura contra el equipo esperado del contrato, usando DOS fuentes independientes
-    #para no confiar en un solo punto de verdad:
-    #  - Contratos.equipo_id  (que dice el contrato que tiene instalado)
-    #  - Equipos.contrato_id  (que dice el equipo en que contrato esta)
-    #Si un lado se actualizo y el otro no (por ejemplo, se hizo un CambiosRetiro y no se actualizo el
-    #contrato, o viceversa), esta funcion lo detecta en vez de asumir que un solo campo es la verdad.
-    #Devuelve una lista de strings con las inconsistencias encontradas (vacia si todo cuadra). No lanza
-    #excepcion aqui: quien llama (generar_facturacion) decide si eso bloquea la generacion.
-
-    inconsistencias = []
-
-    equipo = EquiposRepositorio.obtener_por_id(lectura.equipo_id)
-    if not equipo:
-        inconsistencias.append(
-            f"La lectura {lectura.id} referencia el equipo {lectura.equipo_id}, que no existe en Equipos."
-        )
-        return inconsistencias
-
-    # Fuente 1: el contrato dice cual es su equipo.
-    if contrato.equipo_id and contrato.equipo_id != lectura.equipo_id:
-        inconsistencias.append(
-            f"El contrato {contrato.id} tiene asignado el equipo {contrato.equipo_id}, "
-            f"pero la lectura es del equipo {lectura.equipo_id}."
-        )
-
-    # Fuente 2: el equipo dice en que contrato esta instalado.
-    if equipo.contrato_id and equipo.contrato_id != contrato.id:
-        inconsistencias.append(
-            f"El equipo {lectura.equipo_id} figura instalado en el contrato {equipo.contrato_id}, "
-            f"no en el contrato {contrato.id}."
-        )
-
-    return inconsistencias
-
-
-def _contador_anterior(lectura_anterior, equipo):
-
-    #Punto de partida para calcular consumo:
-    #  - si hay lectura anterior, se usa su contador (caso normal, mes a mes).
-    #  - si NO hay lectura anterior (primera factura del contrato), se usa el contador_inicial_bn/color del equipo en vez
-    #    de asumir 0, que disparaba un consumo falso e inflado en la primera factura si el equipo ya traia contador
-    #    de fabrica o de un cliente anterior.
-    #  - si tampoco hay equipo (no deberia pasar si ya se valido consistencia, pero por seguridad), se cae a 0 como ultimo recurso.
+    #Punto de partida para calcular consumo de un equipo dentro de un contrato:
+    #  - si hay lectura anterior de ESE equipo en ESE contrato, se usa su contador (caso normal).
+    #  - si NO hay lectura anterior (primera factura del equipo en este contrato), se usa el
+    #    contador_inicial_bn/color de la ASIGNACION (contrato_equipos), que es mas preciso que el
+    #    contador_inicial del equipo en si -- el equipo pudo haber servido otros contratos antes,
+    #    y lo que importa aqui es el punto de partida de ESTE contrato con ESTE equipo.
 
     if lectura_anterior:
         return lectura_anterior.contador_bn or 0, lectura_anterior.contador_color or 0
 
-    if equipo:
-        return equipo.contador_inicial_bn or 0, equipo.contador_inicial_color or 0
+    return asignacion.contador_inicial_bn or 0, asignacion.contador_inicial_color or 0
 
-    return 0, 0
+
+def _asignaciones_del_contrato(contrato):
+    #Equipos activos del contrato segun la tabla contrato_equipos. Si todavia no tiene ninguna fila ahi (contrato no migrado) y el contrato
+    #tiene el Contratos.equipo_id viejo poblado, cae al modo de compatibilidad de un solo equipo para no romper la facturacion mientras se migra.
+
+    asignaciones = ContratoEquipoRepositorio.obtener_por_contrato(contrato.id, solo_activos=True)
+    if asignaciones:
+        return asignaciones
+
+    if contrato.equipo_id:
+        equipo_legado = EquiposRepositorio.obtener_por_id(contrato.equipo_id)
+        return [_AsignacionLegado(contrato.equipo_id, equipo_legado)]
+
+    return []
 
 
 def calcular_facturacion(contrato_id, periodo):
-    #Calcula consumo, paginas adicionales, valor adicional y subtotal/total (sin IVA) para un contrato en un periodo, SIN guardar nada.
+    #Calcula consumo, paginas adicionales, valor adicional y subtotal/total (sin IVA) para un
+    #contrato en un periodo, sumando el consumo de TODOS sus equipos activos. SIN guardar nada.
     #Devuelve None si:
     #- el contrato no existe.
-    #- no hay lectura registrada para ese periodo (no se puede facturar a ciegas).
-    #Incluye "inconsistencias": lista de problemas equipo-contrato detectados (vacia si todo esta bien).
-    #No bloquea el calculo aqui, pero generar_facturacion() si la revisa antes de guardar.
+    #- el contrato no tiene ningun equipo activo asignado (ni en contrato_equipos ni en el
+    #  Contratos.equipo_id legado).
+    #- ninguno de sus equipos activos tiene lectura registrada para ese periodo.
+    #Incluye "inconsistencias" (equipos asignados que ya no existen en Equipos) y
+    #"equipos_sin_lectura" (equipos activos del contrato sin lectura de este periodo). Ninguna de
+    #las dos bloquea el calculo aqui, pero generar_facturacion() si las revisa antes de guardar.
 
-    contrato = Contratos.obtener_por_id(contrato_id)
+    contrato = ContratosRepositorio.obtener_por_id(contrato_id)
     if not contrato:
         return None
 
-    lectura_actual, lectura_anterior = _lectura_actual_y_anterior(contrato_id, periodo)
-    if not lectura_actual:
+    asignaciones = _asignaciones_del_contrato(contrato)
+    if not asignaciones:
         return None
 
-    inconsistencias = _validar_consistencia_equipo(contrato, lectura_actual)
+    consumo_total_bn = 0
+    consumo_total_color = 0
+    detalle_equipos = []
+    equipos_sin_lectura = []
+    inconsistencias = []
 
-    equipo = EquiposRepositorio.obtener_por_id(lectura_actual.equipo_id)
-    contador_anterior_bn, contador_anterior_color = _contador_anterior(lectura_anterior, equipo)
+    for asignacion in asignaciones:
+        equipo = EquiposRepositorio.obtener_por_id(asignacion.equipo_id)
+        if not equipo:
+            inconsistencias.append(
+                f"El equipo {asignacion.equipo_id} asignado al contrato {contrato_id} "
+                "no existe en Equipos."
+            )
+            continue
 
-    consumo_bn = max(0, (lectura_actual.contador_bn or 0) - contador_anterior_bn)
-    consumo_color = max(0, (lectura_actual.contador_color or 0) - contador_anterior_color)
+        lectura_actual, lectura_anterior = _lectura_actual_y_anterior(
+            asignacion.equipo_id, contrato_id, periodo
+        )
+
+        if not lectura_actual:
+            equipos_sin_lectura.append(asignacion.equipo_id)
+            continue
+
+        contador_anterior_bn, contador_anterior_color = _contador_anterior(lectura_anterior, asignacion)
+        consumo_bn = max(0, (lectura_actual.contador_bn or 0) - contador_anterior_bn)
+        consumo_color = max(0, (lectura_actual.contador_color or 0) - contador_anterior_color)
+
+        consumo_total_bn += consumo_bn
+        consumo_total_color += consumo_color
+
+        detalle_equipos.append({
+            "equipo_id": asignacion.equipo_id,
+            "lectura_id": lectura_actual.id,
+            "origen_contador_anterior": "lectura_anterior" if lectura_anterior else "contador_inicial_asignacion",
+            "contador_anterior_bn": contador_anterior_bn,
+            "contador_actual_bn": lectura_actual.contador_bn,
+            "consumo_bn": consumo_bn,
+            "contador_anterior_color": contador_anterior_color,
+            "contador_actual_color": lectura_actual.contador_color,
+            "consumo_color": consumo_color,
+        })
+
+    if not detalle_equipos:
+        # Ningun equipo del contrato tiene lectura de este periodo (o ninguno existe ya en Equipos).
+        return None
 
     paginas_bn_incluidas = contrato.paginas_bn_incluidas or 0
     paginas_color_incluidas = contrato.paginas_color_incluidas or 0
 
-    adicionales_bn = max(0, consumo_bn - paginas_bn_incluidas)
-    adicionales_color = max(0, consumo_color - paginas_color_incluidas)
+    # Las paginas incluidas son una condicion economica del CONTRATO,no de cada equipo por separado: se comparan contra el consumo TOTAL sumado de todos los
+    # equipos activos, igual que ya se hacia (de forma implicita) cuando solo habia un equipo.
+    adicionales_bn = max(0, consumo_total_bn - paginas_bn_incluidas)
+    adicionales_color = max(0, consumo_total_color - paginas_color_incluidas)
 
     valor_adicional_bn = adicionales_bn * (contrato.valor_pagina_adicional_bn or 0)
     valor_adicional_color = adicionales_color * (contrato.valor_pagina_adicional_color or 0)
@@ -122,21 +156,16 @@ def calcular_facturacion(contrato_id, periodo):
         "contrato_id": contrato_id,
         "cliente_id": contrato.cliente_id,
         "periodo": periodo,
-        "lectura_id": lectura_actual.id,
 
-        # util para saber si el contador anterior vino de una lectura previa o del contador inicial del equipo (primera factura del contrato).
-        "origen_contador_anterior": "lectura_anterior" if lectura_anterior else "contador_inicial_equipo",
+        "equipos": detalle_equipos,
+        "equipos_sin_lectura": equipos_sin_lectura,
 
-        "contador_anterior_bn": contador_anterior_bn,
-        "contador_actual_bn": lectura_actual.contador_bn,
-        "consumo_bn": consumo_bn,
+        "consumo_bn": consumo_total_bn,
         "paginas_bn_incluidas": paginas_bn_incluidas,
         "paginas_adicionales_bn": adicionales_bn,
         "valor_adicional_bn": valor_adicional_bn,
 
-        "contador_anterior_color": contador_anterior_color,
-        "contador_actual_color": lectura_actual.contador_color,
-        "consumo_color": consumo_color,
+        "consumo_color": consumo_total_color,
         "paginas_color_incluidas": paginas_color_incluidas,
         "paginas_adicionales_color": adicionales_color,
         "valor_adicional_color": valor_adicional_color,
@@ -156,14 +185,16 @@ def generar_facturacion(
     estado_factura, empresa_factura=None, fecha_vencimiento=None,
     forzar=False,
 ):
-    #Calcula la facturacion del contrato/periodo y crea el registro en Facturacion. 
-    #Devuelve None (sin crear nada) si calcular_facturacion() no pudo calcular por falta de contrato o de lectura.
+    #Calcula la facturacion del contrato/periodo (sumando todos sus equipos activos) y crea el
+    #registro en Facturacion. Devuelve None (sin crear nada) si calcular_facturacion() no pudo
+    #calcular por falta de contrato, equipos o lecturas.
     #Bloquea la creacion (ValueError) si:
     #  - ya existe una factura de este contrato+periodo (evita duplicados).
-    #  - se detectaron inconsistencias equipo-contrato (evita facturar con datos de un equipo
-    #    que ya no corresponde a este contrato).
-    #Ambos bloqueos se pueden saltar con forzar=True, para cuando el usuario ya vio la advertencia
-    #y decide seguir de todas formas (por ejemplo desde un modal de confirmacion en el frontend).
+    #  - se detectaron inconsistencias (equipo asignado que ya no existe en Equipos).
+    #  - falta la lectura de este periodo para alguno de los equipos activos del contrato (evita
+    #    facturar un consumo incompleto sin que el usuario lo sepa).
+    #Los tres bloqueos se pueden saltar con forzar=True, para cuando el usuario ya vio la
+    #advertencia y decide facturar de todas formas solo con los equipos que si tienen lectura.
 
     calculo = calcular_facturacion(contrato_id, periodo)
     if calculo is None:
@@ -179,8 +210,16 @@ def generar_facturacion(
 
         if calculo["inconsistencias"]:
             raise ValueError(
-                "No se genero la factura por inconsistencias equipo-contrato: "
+                "No se genero la factura por inconsistencias en los equipos del contrato: "
                 + " | ".join(calculo["inconsistencias"])
+            )
+
+        if calculo["equipos_sin_lectura"]:
+            raise ValueError(
+                "No se genero la factura: faltan lecturas de este periodo para los equipos "
+                + ", ".join(str(e) for e in calculo["equipos_sin_lectura"])
+                + " del contrato. Usa forzar=True para facturar solo con los equipos que si "
+                "tienen lectura."
             )
 
     return FacturacionRepositorio.agregar(
