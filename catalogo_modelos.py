@@ -245,7 +245,7 @@ CATALOGO_DATOS = {
             campo("valor_adicionales_escaneo", "Adicionales escaneo", "number", requerido=False),
             campo("otros_cargos", "Otros cargos", "number", requerido=False),
             campo("subtotal", "Subtotal", "number", requerido=False),
-            campo("incluye_iva", "Los valores ya incluyen IVA (1=si, 0=no)", "number", requerido=False),
+            campo("incluye_iva", "Los valores ya incluyen IVA", "boolean", ["Si", "No"], requerido=False),
             campo("porcentaje_iva", "Porcentaje de IVA", "number", requerido=False),
             campo("valor_iva", "Valor IVA", "number", requerido=False),
             campo("impuesto_municipal", "Impuesto municipal", "number", requerido=False),

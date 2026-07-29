@@ -1,13 +1,12 @@
-# Calcula alertas operativas al vuelo (no hay tabla de alertas: se recalculan
-# en cada llamada a partir de contratos, facturas, cartera, equipos, lecturas
-# y entregas de toner). El estado de usuario (leida/guardada/descartada) se
-# guarda aparte en AlertaEstadoRepositorio y se vuelve a pegar en generar_alertas().
-#
+#Sin tabla propia, igual que Informes_mensuales y Dashboard: lee los
+#modelos existentes y devuelve alertas calculadas en el momento.
+
 #Bloqueadas por falta de datos en el modelo actual (no se inventan):
 #- Stock bajo de consumibles: Insumos no tiene columna de stock.
 #Equipos con fallas recurrentes / mantenimientos: Servicio (correctivo)
 #no tiene un contador de fallas por equipo todavia
 
+import unicodedata
 from datetime import datetime, timedelta
 
 from base_de_datos import SessionLocal
@@ -37,8 +36,21 @@ def _alerta(tipo, nivel, mensaje, referencia_id=None):
     }
 
 
+# Estados de Cartera.estado que se consideran "sin problema"
+# Cualquier otro valor no vacio (vencida 1-30/31-60/61-90, mayor a 90 dias, cobro juridico, o texto libre) se trata como mora.
+# Antes esto buscaba la palabra literal "mora" en el texto, pero ninguno de los estados sugeridos en el documento contiene esa palabra -- con ese
+# vocabulario la alerta nunca se disparaba. Se corrige invirtiendo el criterio: en vez de listar que SI es mora, se lista que NO lo es.
+ESTADOS_CARTERA_AL_DIA = {"al dia", "acuerdo de pago"}
+
+
+def _normalizar_texto(texto):
+    if not texto:
+        return ""
+    sin_acentos = unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode("ascii")
+    return sin_acentos.strip().lower()
+
+
 def _alertas_contratos(hoy):
-    """Contratos activos vencidos o proximos a vencer (dentro de UMBRAL_VENCIMIENTO_DIAS)."""
     alertas = []
     contratos = ContratosRepositorio.obtener_todos()
 
@@ -66,7 +78,6 @@ def _alertas_contratos(hoy):
 
 
 def _alertas_facturacion(hoy):
-    """Facturas (no pagadas ni anuladas) vencidas o por vencer pronto."""
     alertas = []
     facturas = FacturacionRepositorio.obtener_todos()
 
@@ -91,14 +102,15 @@ def _alertas_facturacion(hoy):
 
 
 def _alertas_cartera():
-    """Clientes con uno o mas registros de cartera en mora."""
     alertas = []
     cartera = CarteraRepositorio.obtener_todos()
     clientes_en_mora = {}
 
     for c in cartera:
-        if "mora" in (c.estado or "").strip().lower():
-            clientes_en_mora[c.cliente_id] = clientes_en_mora.get(c.cliente_id, 0) + 1
+        estado_normalizado = _normalizar_texto(c.estado)
+        if not estado_normalizado or estado_normalizado in ESTADOS_CARTERA_AL_DIA:
+            continue
+        clientes_en_mora[c.cliente_id] = clientes_en_mora.get(c.cliente_id, 0) + 1
 
     for cliente_id, cantidad in clientes_en_mora.items():
         nivel = "critico" if cantidad > 1 else "advertencia"

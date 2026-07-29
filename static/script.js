@@ -153,13 +153,14 @@ function cargarFormulario() {
 }
 
 function crearControl(campo) {
-    if (campo.tipo === "select") {
+    if (campo.tipo === "select" || campo.tipo === "boolean") {
         const select = document.createElement("select");
         select.id = campo.nombre;
         select.name = campo.nombre;
         select.required = campo.requerido !== false;
         select.appendChild(new Option("Selecciona", ""));
-        campo.opciones.forEach((opcion) => select.appendChild(new Option(opcion, opcion)));
+        const opciones = campo.tipo === "boolean" ? (campo.opciones || ["Si", "No"]) : campo.opciones;
+        opciones.forEach((opcion) => select.appendChild(new Option(opcion, opcion)));
         return select;
     }
 
