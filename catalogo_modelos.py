@@ -2,6 +2,7 @@ from fastapi import HTTPException
 
 from Persistencia.ClientesRepositorio import ClientesRepositorio
 from Persistencia.ContratosRepositorio import ContratosRepositorio
+from Persistencia.ContratoEquipoRepositorio import ContratoEquipoRepositorio
 from Persistencia.CambiosRetiroRepositorio import CambiosRetiroRepositorio
 from Persistencia.CostosRepositorio import CostosRepositorio
 from Persistencia.EquiposRespaldoRepositorio import EquiposRespaldoRepositorio
@@ -117,7 +118,8 @@ CATALOGO_DATOS = {
             campo("forma_legalizacion", "Forma de legalizacion"),
             campo("poliza_contrato", "Póliza de contrato", requerido=False),
             campo("poliza_seriedad", "Póliza de seriedad", requerido=False),
-            campo("equipo_id", "Equipo", "number", requerido=False),
+            # Legado: contratos nuevos deberian usar el tipo "contrato_equipos" para asociar uno o varios equipos en vez de este campo unico.
+            campo("equipo_id", "Equipo (legado, usar 'Equipos por Contrato')", "number", requerido=False),
             campo("fecha_inicio", "Fecha de inicio", "date"),
             campo("fecha_fin", "Fecha de fin", "date", requerido=False),
             campo("valor_mensual_base", "Valor mensual base", "number"),
@@ -128,6 +130,22 @@ CATALOGO_DATOS = {
             campo("escaneos_incluidos", "Escaneos incluidos", "number", requerido=False),
             campo("valor_escaneo_adicional", "Valor escaneo adicional", "number", requerido=False),
             # "mantenimiento" no se expone: siempre queda Preventivo por defecto (se fija una sola vez).
+        ],
+    },
+    "contrato_equipos": {
+        "etiqueta": "Equipos por Contrato",
+        "modelo": ContratoEquipoRepositorio,
+        "campos": [
+            campo("contrato_id", "Contrato", "number"),
+            campo("equipo_id", "Equipo", "number"),
+            campo("sede", "Sede", requerido=False),
+            campo("area_uso", "Area de uso", requerido=False),
+            campo("contador_inicial_bn", "Contador inicial B/N", "number", requerido=False),
+            campo("contador_inicial_color", "Contador inicial color", "number", requerido=False),
+            campo("usuario_responsable", "Usuario responsable", requerido=False),
+            campo("observaciones", "Observaciones", requerido=False),
+            # "estado_actual" no se expone: crear aqui siempre deja la asignacion en "activo". Para retirar un equipo del contrato
+            # (conservando historial), usa ContratoEquipoRepositorio.retirar(), no el PUT generico.
         ],
     },
     "repuestos": {
