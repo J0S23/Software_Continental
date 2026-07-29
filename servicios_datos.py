@@ -28,7 +28,6 @@ def normalizar_payload(configuracion, datos):
 
         if valor in (None, ""):
             if not configuracion_campo.get("requerido", True):
-                valores[nombre_campo] = None
                 continue
             raise HTTPException(status_code=400, detail=f"Falta el campo '{nombre_campo}'")
 
