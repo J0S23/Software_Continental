@@ -6,6 +6,9 @@ from Persistencia.EquiposRepositorio import EquiposRepositorio
 
 
 class EquiposRespaldoRepositorio:
+    """Asignaciones temporales de equipo de respaldo mientras el principal
+    esta en reparacion. agregar()/finalizar() sincronizan el estado de ambos
+    equipos en EquiposRepositorio (mismo patron que ContratoEquipoRepositorio)."""
 
     @staticmethod
     def _asignacion_activa_de(db, equipo_id):

@@ -4,6 +4,8 @@ from Modulos.enums import TipoCosto
 
 
 class CostosRepositorio:
+    """CRUD de costos asociados a clientes/contratos/equipos, usado para
+    calcular rentabilidad (Servicio/RentabilidadAutomatica.py) e informes."""
 
     # Costos automaticos sugeridos (seccion 11.3): valores estandar de
     # referencia para agilizar el registro de un costo nuevo. Hoy son
@@ -29,7 +31,7 @@ class CostosRepositorio:
         soporte=None, observaciones=None, repuesto_id=None,
     ):
         if valor_total is None:
-            valor_total = cantidad * valor_unitario
+            valor_total = cantidad * valor_unitario  # se calcula solo si no lo mandan explicito
 
         db = SessionLocal()
         try:

@@ -1,3 +1,5 @@
+# Enumeraciones compartidas por todos los Modulos/*.py y Persistencia/*.py.
+# Heredan de str para que se serialicen directo a JSON con su .value.
 from enum import Enum
 import enum
 
@@ -65,6 +67,7 @@ class EstadoAprobacion(str, Enum):
     RECHAZADO = "rechazado"
 
 class TipoEquipo(str, enum.Enum):
+    """Categoria de equipo fisico (impresora, escaner, etc)."""
     MULTIFUNCIONAL = "multifuncional"
     IMPRESORA = "impresora"
     ESCANER = "escaner"
@@ -72,6 +75,7 @@ class TipoEquipo(str, enum.Enum):
     OTRO = "otro"
 
 class EstadoEquipo(str, enum.Enum):
+    """Ciclo de vida del equipo fisico (no confundir con el estado de su asignacion a un contrato)."""
     DISPONIBLE = "disponible"
     INSTALADO = "instalado"
     EN_MANTENIMIENTO = "en_mantenimiento"
@@ -82,6 +86,7 @@ class EstadoEquipo(str, enum.Enum):
 
 
 class EmpresaFacturadora(str, Enum):
+    """Empresa a nombre de la cual se emite la factura (soporte multiempresa)."""
     CONTINENTAL_LTDA = "Continental Ltda."
     OTRA = "Otra"
 

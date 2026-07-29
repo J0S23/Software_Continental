@@ -4,6 +4,9 @@ from base_de_datos import Base, engine
 
 
 class Equipos(Base):
+    """Equipo fisico (impresora/multifuncional/etc). cliente_id/contrato_id son cache
+    de la asignacion activa actual (ver Modulos/ContratoEquipo.py para el historial).
+    Solo define columnas; acceso a datos en Persistencia/EquiposRepositorio.py."""
 
     __tablename__ = "equipos"
 

@@ -1,3 +1,4 @@
+# Configuracion global compartida por toda la app: rutas base y clave secreta.
 import os
 from pathlib import Path
 

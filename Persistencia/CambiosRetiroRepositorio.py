@@ -6,6 +6,8 @@ from Persistencia.EquiposRepositorio import EquiposRepositorio
 
 
 class CambiosRetiroRepositorio:
+    """Historial de cambios/retiros de equipo. agregar() ademas actualiza el
+    estado del equipo (y del reemplazo, si aplica) en EquiposRepositorio."""
 
     @staticmethod
     def agregar(
@@ -44,6 +46,8 @@ class CambiosRetiroRepositorio:
             db.close()
 
         if actualizar_estado_equipo:
+            # "retiro" da de baja el equipo; "cambio" lo manda a mantenimiento
+            # y deja el equipo de reemplazo (si hay) como instalado.
             nuevo_estado = "retirado" if tipo_evento == "retiro" else "en_mantenimiento"
             EquiposRepositorio.actualizar(equipo_id, estado_equipo=nuevo_estado)
             if tipo_evento == "cambio" and equipo_reemplazo_id:

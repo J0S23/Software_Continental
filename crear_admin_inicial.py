@@ -1,3 +1,6 @@
+# Script de linea de comandos (no se importa desde app.py) para crear el primer
+# usuario Administrador general, ya aprobado, cuando la tabla de usuarios esta vacia
+# de administradores. Se ejecuta manualmente: python crear_admin_inicial.py
 import getpass
 
 from passlib.context import CryptContext
@@ -9,6 +12,7 @@ contexto_password = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def main():
+    # Evita crear un segundo administrador general por accidente.
     usuarios = UsuariosRepositorio.obtener_todos()
     if any(u.rol == RolUsuario.ADMINISTRADOR_GENERAL for u in usuarios):
         print("Ya existe un usuario con rol Administrador general. No se crea ninguno.")
@@ -19,6 +23,8 @@ def main():
 
     password_hash = contexto_password.hash(password)
 
+    # Se crea con estado_aprobacion=APROBADO para que pueda iniciar sesion de inmediato,
+    # sin pasar por el flujo normal de aprobacion de registros.
     UsuariosRepositorio.agregar(
         nombre_usuario=email,
         email=email,

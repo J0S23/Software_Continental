@@ -6,6 +6,9 @@ from .enums import EmpresaFacturadora
 
 
 class Facturacion(Base):
+    """Factura emitida a un cliente por un periodo/contrato, con el desglose de
+    valores base, adicionales, impuestos y total. Solo define columnas; acceso
+    a datos en Persistencia/FacturacionRepositorio.py."""
 
     __tablename__ = "facturacion"
 

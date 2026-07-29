@@ -4,6 +4,8 @@ from Modulos.enums import EstadoAprobacion
 
 
 class UsuariosRepositorio:
+    """CRUD de usuarios, usado por el flujo de registro/login (routers/auth.py)
+    y por crear_admin_inicial.py."""
 
     @staticmethod
     def agregar(nombre_usuario, email, rol, estado, password_hash=None, estado_aprobacion=EstadoAprobacion.PENDIENTE):

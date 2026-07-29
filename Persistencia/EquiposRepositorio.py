@@ -3,6 +3,9 @@ from Modulos.Equipos import Equipos
 
 
 class EquiposRepositorio:
+    """CRUD de equipos fisicos. actualizar() es el punto usado por otros
+    repositorios (ContratoEquipoRepositorio, CambiosRetiroRepositorio,
+    EquiposRespaldoRepositorio) para sincronizar estado_equipo/contrato_id."""
 
     @staticmethod
     def agregar(numero_serie, tipo_equipo, tecnologia, color, estado_equipo, estado_tecnico,

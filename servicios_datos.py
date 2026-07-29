@@ -1,3 +1,8 @@
+# Capa generica que usa routers/datos.py para hacer CRUD sobre CUALQUIER tipo
+# definido en catalogo_modelos.CATALOGO_DATOS, sin escribir un endpoint por
+# entidad. Valida/convierte el payload segun la config de cada "campo" y
+# delega en el repositorio del modelo si tiene metodos propios (obtener_todos,
+# agregar, actualizar, eliminar), o en SQLAlchemy directo si no los tiene.
 from datetime import datetime
 from enum import Enum as PythonEnum
 
@@ -19,6 +24,9 @@ def obtener_modelo(configuracion):
 
 
 def normalizar_payload(configuracion, datos):
+    # Recorre SOLO los campos definidos en el catalogo para ese tipo (ignora
+    # cualquier clave extra que venga en `datos`), valida obligatoriedad y
+    # convierte tipos (enum/number/date) antes de pasarlos al repositorio.
     valores = {}
     enumeraciones = obtener_enumeraciones(configuracion)
 
@@ -30,11 +38,11 @@ def normalizar_payload(configuracion, datos):
             if not configuracion_campo.get("requerido", True):
                 continue  # no se incluye la clave: deja que el default del repositorio aplique
             raise HTTPException(status_code=400, detail=f"Falta el campo '{nombre_campo}'")
-        
+
         tipo_enum = enumeraciones.get(nombre_campo)
         if tipo_enum:
             try:
-                valor = tipo_enum(valor)
+                valor = tipo_enum(valor)  # castea el string recibido al Enum correspondiente
             except ValueError as exc:
                 opciones = ", ".join(item.value for item in tipo_enum)
                 raise HTTPException(
@@ -66,6 +74,8 @@ def normalizar_payload(configuracion, datos):
 
 
 def serializar(registro, campos):
+    # Convierte un registro (ORM u objeto de repositorio propio) a dict JSON-friendly,
+    # traduciendo valores Enum a su .value.
     datos = {"id": registro.id}
 
     for configuracion_campo in campos:
@@ -75,6 +85,11 @@ def serializar(registro, campos):
 
     return datos
 
+
+# Las funciones CRUD de aqui abajo primero intentan usar los metodos propios
+# del repositorio (obtener_todos/agregar/actualizar/eliminar); si el modelo no
+# los define, caen a un CRUD generico via SQLAlchemy. Asi conviven modelos con
+# repositorio a medida y modelos ORM simples bajo la misma capa.
 
 def listar_registros(modelo):
     if hasattr(modelo, "obtener_todos"):
@@ -120,6 +135,8 @@ def actualizar_registro(modelo, registro_id, valores):
 
 def eliminar_registro(modelo, registro_id):
     if hasattr(modelo, "eliminar"):
+        # Se verifica existencia ANTES de eliminar porque el metodo propio
+        # `eliminar` no siempre informa si realmente borro algo.
         obtener_por_id = getattr(modelo, "obtener_por_id", None)
         existe = obtener_por_id(registro_id) is not None if obtener_por_id else True
         modelo.eliminar(registro_id)

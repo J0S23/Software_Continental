@@ -1,3 +1,5 @@
+# Sirve la pagina principal (SPA/HTML) de la app; el resto de assets estaticos
+# los sirve el mount de /static y /vista en app.py.
 from fastapi import APIRouter
 from fastapi.responses import FileResponse
 

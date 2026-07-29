@@ -1,3 +1,8 @@
+# Catalogo central: describe, por cada "tipo" de dato (clientes, equipos,
+# contratos, etc.), que repositorio lo maneja y que campos acepta el frontend
+# generico. routers/datos.py y servicios_datos.py usan esta configuracion para
+# exponer un CRUD generico (GET/POST/PUT/DELETE /api/{tipo}) sin necesitar un
+# router dedicado por entidad.
 from fastapi import HTTPException
 
 from Persistencia.ClientesRepositorio import ClientesRepositorio
@@ -26,6 +31,8 @@ from Persistencia.UsuariosRepositorio import UsuariosRepositorio
 
 
 def campo(nombre, etiqueta, tipo="text", opciones=None, requerido=True):
+    # Describe un campo de formulario: lo usa tanto el frontend (para renderizar
+    # el input) como servicios_datos.normalizar_payload (para validar/convertir).
     configuracion = {
         "nombre": nombre,
         "etiqueta": etiqueta,
@@ -41,6 +48,7 @@ def campo(nombre, etiqueta, tipo="text", opciones=None, requerido=True):
 
 
 def opciones_enum(tipo_enum):
+    # Lista de valores validos (strings) para un campo tipo "select" respaldado por un Enum.
     return [item.value for item in tipo_enum]
 
 
@@ -321,14 +329,17 @@ CATALOGO_DATOS = {
 
 
 def obtener_tipos():
+    # {clave_tipo: etiqueta legible} para poblar menus/selectores del frontend.
     return {clave: configuracion["etiqueta"] for clave, configuracion in CATALOGO_DATOS.items()}
 
 
 def obtener_configuracion_frontend():
+    # {clave_tipo: lista de campos} que el frontend usa para generar formularios.
     return {clave: configuracion["campos"] for clave, configuracion in CATALOGO_DATOS.items()}
 
 
 def obtener_configuracion_tipo(tipo):
+    # Busqueda case-insensitive de la config de un tipo; 404 si no existe en el catalogo.
     clave = tipo.lower()
 
     if clave not in CATALOGO_DATOS:

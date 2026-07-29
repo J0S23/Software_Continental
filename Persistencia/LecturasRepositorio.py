@@ -3,6 +3,8 @@ from Modulos.Lecturas import Lecturas
 
 
 class LecturasRepositorio:
+    """CRUD de lecturas de contadores de equipos, base para calcular paginas
+    adicionales a facturar (ver Servicio/FacturacionAutomatica.py)."""
 
     @staticmethod
     def agregar(equipo_id, medio_lectura, estado_lectura,

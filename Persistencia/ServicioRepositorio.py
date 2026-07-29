@@ -3,6 +3,7 @@ from Modulos.Servicio import Servicio
 
 
 class ServicioRepositorio:
+    """CRUD de servicios (mantenimientos/prestaciones) ofrecidos a un cliente/equipo."""
 
     @staticmethod
     def agregar(cliente_id, equipo_id, nombre_servicio, descripcion="", precio=0,

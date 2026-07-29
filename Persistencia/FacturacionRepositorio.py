@@ -3,6 +3,8 @@ from Modulos.Facturacion import Facturacion
 
 
 class FacturacionRepositorio:
+    """CRUD de facturas. agregar() calcula subtotal/IVA/total cuando no
+    vienen explicitos, para no obligar al llamador a hacer la aritmetica."""
 
     @staticmethod
     def agregar(periodo, cliente_id, contrato_id, numero_factura, fecha_factura, estado_factura,
@@ -21,11 +23,14 @@ class FacturacionRepositorio:
 
         if valor_iva is None:
             if incluye_iva:
+                # subtotal ya incluye IVA: se extrae el IVA implicito (formula inversa).
                 valor_iva = subtotal - (subtotal / (1 + porcentaje_iva / 100)) if porcentaje_iva else 0
             else:
+                # subtotal no incluye IVA: se calcula y se suma aparte.
                 valor_iva = subtotal * (porcentaje_iva / 100) if porcentaje_iva else 0
 
         if total_facturado is None:
+            # Si incluye_iva, subtotal ya trae el IVA adentro; si no, hay que sumarlo.
             base_con_iva = subtotal if incluye_iva else subtotal + valor_iva
             total_facturado = (
                 base_con_iva + impuesto_municipal + impuesto_departamental

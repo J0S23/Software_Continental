@@ -1,3 +1,6 @@
+# CRUD generico para cualquier tipo definido en catalogo_modelos.CATALOGO_DATOS:
+# GET/POST/PUT/DELETE /api/{tipo}[/{registro_id}]. El {tipo} en la URL (p. ej.
+# "clientes", "equipos") selecciona la configuracion y el repositorio a usar.
 from fastapi import APIRouter, HTTPException, Request
 
 from catalogo_modelos import (
@@ -31,6 +34,8 @@ async def get_configuracion():
 
 @router.get("/api/{tipo}")
 async def obtener_registros(tipo: str):
+    # Catch-all de 2 segmentos: por eso app.py registra este router al final,
+    # despues de exportacion/alertas/facturacion_automatica.
     configuracion = obtener_configuracion_tipo(tipo)
     modelo = obtener_modelo(configuracion)
     campos = obtener_campos(configuracion)
