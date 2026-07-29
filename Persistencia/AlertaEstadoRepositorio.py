@@ -5,6 +5,9 @@ from Modulos.AlertaEstado import AlertaEstado
 
 
 class AlertaEstadoRepositorio:
+    """Guarda el estado (leida/guardada/descartada) de las alertas que
+    Servicio/Alertas.py calcula al vuelo, ya que las alertas en si no
+    tienen tabla propia. Ver Modulos/AlertaEstado.py para el detalle."""
 
     @staticmethod
     def obtener_todos():

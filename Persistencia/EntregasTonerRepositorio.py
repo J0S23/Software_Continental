@@ -6,6 +6,7 @@ from Persistencia.TiposInsumoRepositorio import TiposInsumoRepositorio
 
 
 class EntregasTonerRepositorio:
+    """CRUD de entregas de insumos (toner, etc.) a clientes/equipos."""
 
     @staticmethod
     def agregar(
@@ -16,6 +17,7 @@ class EntregasTonerRepositorio:
         fecha_entrega=None, periodo=None,
     ):
         if costo_unitario is None:
+            # Si no viene explicito, se toma el precio actual del tipo de insumo.
             tipo = TiposInsumoRepositorio.obtener_por_id(tipo_insumo_id)
             costo_unitario = tipo.precio if tipo else 0
 
@@ -23,7 +25,7 @@ class EntregasTonerRepositorio:
             costo_total = cantidad * costo_unitario
 
         fecha_entrega = fecha_entrega or datetime.utcnow()
-        periodo = periodo or f"{fecha_entrega.month:02d}-{fecha_entrega.year}"
+        periodo = periodo or f"{fecha_entrega.month:02d}-{fecha_entrega.year}"  # "MM-YYYY"
 
         db = SessionLocal()
         try:

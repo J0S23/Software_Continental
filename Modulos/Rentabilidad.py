@@ -4,6 +4,9 @@ from base_de_datos import Base, engine
 
 
 class Rentabilidad(Base):
+    """Resultado de rentabilidad por contrato/cliente y periodo (ingresos vs.
+    costos). Calculado por Servicio/RentabilidadAutomatica.py. Solo define
+    columnas; acceso a datos en Persistencia/RentabilidadRepositorio.py."""
 
     __tablename__ = "rentabilidad"
 

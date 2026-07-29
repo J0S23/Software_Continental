@@ -3,6 +3,7 @@ from Modulos.Sedes import Sedes
 
 
 class SedesRepositorio:
+    """CRUD de sedes (sucursales/ubicaciones de la empresa)."""
 
     @staticmethod
     def agregar(nombre_sede, ciudad, direccion="", telefono="", gerente="", estado_sede="Activa"):

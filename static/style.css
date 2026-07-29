@@ -41,6 +41,54 @@ header h1 {
     font-size: 1rem;
 }
 
+.sesion-info {
+    margin-top: 10px;
+    color: #d9e2ec;
+    font-size: 0.9rem;
+}
+
+.auth-section {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 24px;
+}
+
+.auth-card {
+    max-width: 380px;
+    width: 100%;
+    padding: 20px;
+    border: 1px solid #d8dee6;
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.auth-card h2 {
+    margin-bottom: 14px;
+    color: #263445;
+    font-size: 1.2rem;
+}
+
+.auth-card .form-group {
+    margin-bottom: 14px;
+}
+
+.auth-switch {
+    margin-top: 14px;
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+.link-btn {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #2563eb;
+    cursor: pointer;
+    font-weight: 700;
+    text-decoration: underline;
+}
+
 main {
     flex: 1;
     padding: 24px;

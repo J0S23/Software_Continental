@@ -1,4 +1,8 @@
-
+# Calcula alertas operativas al vuelo (no hay tabla de alertas: se recalculan
+# en cada llamada a partir de contratos, facturas, cartera, equipos, lecturas
+# y entregas de toner). El estado de usuario (leida/guardada/descartada) se
+# guarda aparte en AlertaEstadoRepositorio y se vuelve a pegar en generar_alertas().
+#
 #Bloqueadas por falta de datos en el modelo actual (no se inventan):
 #- Stock bajo de consumibles: Insumos no tiene columna de stock.
 #Equipos con fallas recurrentes / mantenimientos: Servicio (correctivo)
@@ -34,6 +38,7 @@ def _alerta(tipo, nivel, mensaje, referencia_id=None):
 
 
 def _alertas_contratos(hoy):
+    """Contratos activos vencidos o proximos a vencer (dentro de UMBRAL_VENCIMIENTO_DIAS)."""
     alertas = []
     contratos = ContratosRepositorio.obtener_todos()
 
@@ -61,6 +66,7 @@ def _alertas_contratos(hoy):
 
 
 def _alertas_facturacion(hoy):
+    """Facturas (no pagadas ni anuladas) vencidas o por vencer pronto."""
     alertas = []
     facturas = FacturacionRepositorio.obtener_todos()
 
@@ -85,6 +91,7 @@ def _alertas_facturacion(hoy):
 
 
 def _alertas_cartera():
+    """Clientes con uno o mas registros de cartera en mora."""
     alertas = []
     cartera = CarteraRepositorio.obtener_todos()
     clientes_en_mora = {}

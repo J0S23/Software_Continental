@@ -4,6 +4,9 @@ from base_de_datos import Base, engine
 
 
 class Lecturas(Base):
+    """Lectura de contadores (blanco/negro y color) de un equipo en un periodo,
+    base para calcular paginas adicionales a facturar. Solo define columnas;
+    acceso a datos en Persistencia/LecturasRepositorio.py."""
 
     __tablename__ = "lecturas"
 
