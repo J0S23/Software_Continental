@@ -88,3 +88,50 @@ def leer_sesion(token_sesion: str):
         return serializador_sesion.loads(token_sesion, max_age=DURACION_SESION_SEGUNDOS)
     except BadSignature:
         return None
+
+
+def _serializar_usuario(usuario):
+    # No incluye password_hash: este endpoint lo consume el admin, no hace falta exponerlo.
+    return {
+        "id": usuario.id,
+        "nombre_usuario": usuario.nombre_usuario,
+        "email": usuario.email,
+        "rol": usuario.rol.value if usuario.rol else None,
+        "estado": usuario.estado,
+        "estado_aprobacion": usuario.estado_aprobacion.value if usuario.estado_aprobacion else None,
+    }
+
+
+class AprobarRequest(BaseModel):
+    rol: RolUsuario
+
+
+# Sin proteccion todavia (cualquiera puede llamar estos 3 endpoints); la
+# restriccion a administradores se agrega en el Paso 8.
+
+@router.get("/pendientes")
+async def obtener_pendientes():
+    pendientes = UsuariosRepositorio.obtener_pendientes()
+    return {"success": True, "usuarios": [_serializar_usuario(u) for u in pendientes]}
+
+
+@router.post("/{usuario_id}/aprobar")
+async def aprobar_usuario(usuario_id: int, datos: AprobarRequest):
+    # El admin decide el rol final al aprobar (puede diferir del que el
+    # usuario pidio en el registro).
+    usuario = UsuariosRepositorio.actualizar(
+        usuario_id, rol=datos.rol, estado_aprobacion=EstadoAprobacion.APROBADO
+    )
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    return {"success": True, "message": "Usuario aprobado", "usuario": _serializar_usuario(usuario)}
+
+
+@router.post("/{usuario_id}/rechazar")
+async def rechazar_usuario(usuario_id: int):
+    usuario = UsuariosRepositorio.actualizar(usuario_id, estado_aprobacion=EstadoAprobacion.RECHAZADO)
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    return {"success": True, "message": "Usuario rechazado", "usuario": _serializar_usuario(usuario)}
