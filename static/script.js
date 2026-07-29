@@ -6,8 +6,72 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("tipoSelector").addEventListener("change", cambiarTipo);
     document.getElementById("formDatos").addEventListener("submit", agregarDato);
     document.getElementById("limpiarBtn").addEventListener("click", limpiarFormulario);
-    cargarTipos();
+
+    document.getElementById("loginForm").addEventListener("submit", iniciarSesion);
+    document.getElementById("registroForm").addEventListener("submit", registrarUsuario);
+    document.getElementById("mostrarRegistroBtn").addEventListener("click", () => mostrarAuthCard("registro"));
+    document.getElementById("mostrarLoginBtn").addEventListener("click", () => mostrarAuthCard("login"));
+    // La app (main) queda oculta hasta iniciar sesion; cargarTipos() se llama
+    // recien cuando el login responde bien (ver mostrarSesionActiva).
 });
+
+function mostrarAuthCard(cual) {
+    document.getElementById("loginCard").hidden = cual !== "login";
+    document.getElementById("registroCard").hidden = cual !== "registro";
+}
+
+async function iniciarSesion(event) {
+    event.preventDefault();
+
+    const email = document.getElementById("loginEmail").value;
+    const contrasena = document.getElementById("loginPassword").value;
+
+    try {
+        const response = await fetch("/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, contrasena }),
+        });
+        const data = await leerRespuesta(response);
+        mostrarSesionActiva(data.email, data.rol);
+    } catch (error) {
+        mostrarMensaje(error.message, "error", "authMessageArea");
+    }
+}
+
+async function registrarUsuario(event) {
+    event.preventDefault();
+
+    const email = document.getElementById("registroEmail").value;
+    const contrasena = document.getElementById("registroPassword").value;
+    const rol = document.getElementById("registroRol").value;
+
+    try {
+        const response = await fetch("/auth/registro", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, contrasena, rol }),
+        });
+        await leerRespuesta(response);
+
+        mostrarMensaje("Registro recibido, pendiente de aprobación por un administrador.", "info", "authMessageArea");
+        document.getElementById("registroForm").reset();
+        mostrarAuthCard("login");
+    } catch (error) {
+        mostrarMensaje(error.message, "error", "authMessageArea");
+    }
+}
+
+function mostrarSesionActiva(email, rol) {
+    document.getElementById("authSection").hidden = true;
+    document.getElementById("appMain").hidden = false;
+
+    const sesionInfo = document.getElementById("sesionInfo");
+    sesionInfo.hidden = false;
+    document.getElementById("sesionEmailLabel").textContent = `${email} (${rol})`;
+
+    cargarTipos();
+}
 
 async function cargarTipos() {
     try {
@@ -228,8 +292,8 @@ function limpiarFormulario() {
     document.getElementById("formDatos").reset();
 }
 
-function mostrarMensaje(mensaje, tipo = "info") {
-    const messageArea = document.getElementById("messageArea");
+function mostrarMensaje(mensaje, tipo = "info", contenedorId = "messageArea") {
+    const messageArea = document.getElementById(contenedorId);
     const div = document.createElement("div");
     div.className = `message ${tipo}`;
     div.textContent = mensaje;

@@ -1,6 +1,6 @@
 # Registro, login y sesion de usuarios. La sesion se guarda en una cookie
 # firmada (no en el servidor), asi que no hace falta tabla de sesiones.
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from itsdangerous import URLSafeTimedSerializer, BadSignature
 from passlib.context import CryptContext
 from pydantic import BaseModel
@@ -90,6 +90,34 @@ def leer_sesion(token_sesion: str):
         return None
 
 
+def get_current_user(request: Request):
+    """Dependencia de FastAPI: lee la cookie de sesion, la valida y devuelve
+    el Usuarios correspondiente. Lanza 401 si no hay cookie, si es invalida/
+    expirada o si el usuario ya no existe. Usar como Depends(get_current_user)
+    en cualquier endpoint que deba exigir sesion iniciada."""
+    token_sesion = request.cookies.get(NOMBRE_COOKIE_SESION)
+    if not token_sesion:
+        raise HTTPException(status_code=401, detail="No has iniciado sesión")
+
+    datos_sesion = leer_sesion(token_sesion)
+    if not datos_sesion:
+        raise HTTPException(status_code=401, detail="Sesión inválida o expirada")
+
+    usuario = UsuariosRepositorio.obtener_por_id(datos_sesion["usuario_id"])
+    if not usuario:
+        raise HTTPException(status_code=401, detail="Sesión inválida o expirada")
+
+    return usuario
+
+
+def requerir_administrador(usuario=Depends(get_current_user)):
+    """Dependencia que ademas exige rol Administrador general. Usarla en vez
+    de get_current_user cuando el endpoint es de administracion."""
+    if usuario.rol != RolUsuario.ADMINISTRADOR_GENERAL:
+        raise HTTPException(status_code=403, detail="Requiere rol Administrador general")
+    return usuario
+
+
 def _serializar_usuario(usuario):
     # No incluye password_hash: este endpoint lo consume el admin, no hace falta exponerlo.
     return {
@@ -106,9 +134,6 @@ class AprobarRequest(BaseModel):
     rol: RolUsuario
 
 
-# Sin proteccion todavia (cualquiera puede llamar estos 3 endpoints); la
-# restriccion a administradores se agrega en el Paso 8.
-
 @router.get("/pendientes")
 async def obtener_pendientes():
     pendientes = UsuariosRepositorio.obtener_pendientes()
@@ -116,7 +141,7 @@ async def obtener_pendientes():
 
 
 @router.post("/{usuario_id}/aprobar")
-async def aprobar_usuario(usuario_id: int, datos: AprobarRequest):
+async def aprobar_usuario(usuario_id: int, datos: AprobarRequest, admin=Depends(requerir_administrador)):
     # El admin decide el rol final al aprobar (puede diferir del que el
     # usuario pidio en el registro).
     usuario = UsuariosRepositorio.actualizar(
@@ -129,7 +154,7 @@ async def aprobar_usuario(usuario_id: int, datos: AprobarRequest):
 
 
 @router.post("/{usuario_id}/rechazar")
-async def rechazar_usuario(usuario_id: int):
+async def rechazar_usuario(usuario_id: int, admin=Depends(requerir_administrador)):
     usuario = UsuariosRepositorio.actualizar(usuario_id, estado_aprobacion=EstadoAprobacion.RECHAZADO)
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
