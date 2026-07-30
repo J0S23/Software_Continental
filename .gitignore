@@ -34,3 +34,6 @@ htmlcov/
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# Adjuntos subidos por los usuarios
+adjuntos/
