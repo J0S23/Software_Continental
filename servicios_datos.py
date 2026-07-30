@@ -110,7 +110,7 @@ def listar_registros(modelo):
         return sesion.query(modelo).all()
 
 
-def crear_registro(modelo, valores):
+def crear_registro(modelo, valores, usuario_id=None):
     if hasattr(modelo, "agregar"):
         return modelo.agregar(**valores)
 
@@ -127,7 +127,7 @@ def buscar_registro(modelo, registro_id):
         return sesion.get(modelo, registro_id)
 
 
-def actualizar_registro(modelo, registro_id, valores):
+def actualizar_registro(modelo, registro_id, valores, usuario_id=None):
     if hasattr(modelo, "actualizar"):
         return modelo.actualizar(registro_id, **valores)
 
@@ -145,7 +145,7 @@ def actualizar_registro(modelo, registro_id, valores):
         return registro
 
 
-def eliminar_registro(modelo, registro_id):
+def eliminar_registro(modelo, registro_id, usuario_id=None):
     if hasattr(modelo, "eliminar"):
         # Se verifica existencia ANTES de eliminar porque el metodo propio
         # `eliminar` no siempre informa si realmente borro algo.
