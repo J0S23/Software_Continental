@@ -9,6 +9,7 @@ from enum import Enum as PythonEnum
 from fastapi import HTTPException
 
 from base_de_datos import SesionLocal
+from Persistencia.HistorialRepositorio import HistorialRepositorio
 
 
 def obtener_campos(configuracion):
@@ -110,16 +111,51 @@ def listar_registros(modelo):
         return sesion.query(modelo).all()
 
 
-def crear_registro(modelo, valores, usuario_id=None):
-    if hasattr(modelo, "agregar"):
-        return modelo.agregar(**valores)
+def _valor_historial(valor):
+    # Los campos String de Historial no aceptan Enum ni datetime directamente.
+    if valor is None:
+        return None
+    if isinstance(valor, PythonEnum):
+        valor = valor.value
+    return str(valor)
 
-    with SesionLocal() as sesion:
-        registro = modelo(**valores)
-        sesion.add(registro)
-        sesion.commit()
-        sesion.refresh(registro)
-        return registro
+
+def _registrar_cambios_historial(tipo_entidad, entidad_id, registro_anterior, valores_nuevos, usuario_id):
+    if not registro_anterior:
+        return
+    for nombre_campo, valor_nuevo in valores_nuevos.items():
+        valor_anterior = getattr(registro_anterior, nombre_campo, None)
+        if valor_anterior == valor_nuevo:
+            continue
+        HistorialRepositorio.registrar(
+            tipo_entidad=tipo_entidad,
+            entidad_id=entidad_id,
+            accion="actualizar",
+            usuario_id=usuario_id,
+            campo=nombre_campo,
+            valor_anterior=_valor_historial(valor_anterior),
+            valor_nuevo=_valor_historial(valor_nuevo),
+        )
+
+
+def crear_registro(modelo, valores, usuario_id=None, tipo_entidad=None):
+    if hasattr(modelo, "agregar"):
+        registro = modelo.agregar(**valores)
+    else:
+        with SesionLocal() as sesion:
+            registro = modelo(**valores)
+            sesion.add(registro)
+            sesion.commit()
+            sesion.refresh(registro)
+
+    HistorialRepositorio.registrar(
+        tipo_entidad=tipo_entidad,
+        entidad_id=registro.id,
+        accion="crear",
+        usuario_id=usuario_id,
+    )
+
+    return registro
 
 
 def buscar_registro(modelo, registro_id):
@@ -127,8 +163,11 @@ def buscar_registro(modelo, registro_id):
         return sesion.get(modelo, registro_id)
 
 
-def actualizar_registro(modelo, registro_id, valores, usuario_id=None):
+def actualizar_registro(modelo, registro_id, valores, usuario_id=None, tipo_entidad=None):
     if hasattr(modelo, "actualizar"):
+        obtener_por_id = getattr(modelo, "obtener_por_id", None)
+        registro_anterior = obtener_por_id(registro_id) if obtener_por_id else None
+        _registrar_cambios_historial(tipo_entidad, registro_id, registro_anterior, valores, usuario_id)
         return modelo.actualizar(registro_id, **valores)
 
     with SesionLocal() as sesion:
@@ -136,6 +175,8 @@ def actualizar_registro(modelo, registro_id, valores, usuario_id=None):
 
         if not registro:
             return None
+
+        _registrar_cambios_historial(tipo_entidad, registro_id, registro, valores, usuario_id)
 
         for nombre_campo, valor in valores.items():
             setattr(registro, nombre_campo, valor)
@@ -145,12 +186,19 @@ def actualizar_registro(modelo, registro_id, valores, usuario_id=None):
         return registro
 
 
-def eliminar_registro(modelo, registro_id, usuario_id=None):
+def eliminar_registro(modelo, registro_id, usuario_id=None, tipo_entidad=None):
     if hasattr(modelo, "eliminar"):
         # Se verifica existencia ANTES de eliminar porque el metodo propio
         # `eliminar` no siempre informa si realmente borro algo.
         obtener_por_id = getattr(modelo, "obtener_por_id", None)
         existe = obtener_por_id(registro_id) is not None if obtener_por_id else True
+        if existe:
+            HistorialRepositorio.registrar(
+                tipo_entidad=tipo_entidad,
+                entidad_id=registro_id,
+                accion="eliminar",
+                usuario_id=usuario_id,
+            )
         modelo.eliminar(registro_id)
         return existe
 
@@ -158,6 +206,12 @@ def eliminar_registro(modelo, registro_id, usuario_id=None):
         registro = sesion.get(modelo, registro_id)
         if not registro:
             return False
+        HistorialRepositorio.registrar(
+            tipo_entidad=tipo_entidad,
+            entidad_id=registro_id,
+            accion="eliminar",
+            usuario_id=usuario_id,
+        )
         sesion.delete(registro)
         sesion.commit()
         return True
