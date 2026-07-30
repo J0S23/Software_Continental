@@ -19,12 +19,18 @@ from Persistencia.EquiposRepositorio import EquiposRepositorio
 from Persistencia.FacturacionRepositorio import FacturacionRepositorio
 from Persistencia.LecturasRepositorio import LecturasRepositorio
 from Persistencia.EntregasTonerRepositorio import EntregasTonerRepositorio
+from Persistencia.ServicioRepositorio import ServicioRepositorio
+from Persistencia.MantenimientosPreventivosRepositorio import MantenimientosPreventivosRepositorio
+from Modulos.enums import TipoMantenimiento
 
 UMBRAL_VENCIMIENTO_DIAS = (90, 60, 30)
 UMBRAL_FACTURA_PROXIMA_DIAS = 7
 # Dias minimos esperados entre dos entregas de toner al mismo equipo.
 # Valor de partida razonable, no un dato del documento de requerimientos, se ajusta si se tiene una referencia real de rendimiento de toner.
 UMBRAL_DIAS_ENTREGA_TONER = 20
+UMBRAL_FALLAS_RECURRENTES = 3       # correctivos acumulados por equipo para alertar
+UMBRAL_FALLAS_CRITICO = 5
+UMBRAL_DIAS_SIN_PREVENTIVO = 180    # equipo instalado sin preventivo 'realizado' en este lapso
 
 def _alerta(tipo, nivel, mensaje, referencia_id=None):
     return {
@@ -228,6 +234,77 @@ def _alertas_lecturas():
 
     return alertas
 
+def _alertas_mantenimiento_correctivo():
+    """Equipos con fallas recurrentes: cuenta correctivos (Servicio con
+    mantenimiento=CORRECTIVO) acumulados por equipo. No filtra por periodo:
+    'recurrente' se evalua sobre el historial completo del equipo."""
+    alertas = []
+    correctivos = ServicioRepositorio.obtener_todos()
+
+    conteo_por_equipo = {}
+    for s in correctivos:
+        if s.mantenimiento != TipoMantenimiento.CORRECTIVO or not s.equipo_id:
+            continue
+        conteo_por_equipo[s.equipo_id] = conteo_por_equipo.get(s.equipo_id, 0) + 1
+
+    for equipo_id, cantidad in conteo_por_equipo.items():
+        if cantidad < UMBRAL_FALLAS_RECURRENTES:
+            continue
+        nivel = "critico" if cantidad >= UMBRAL_FALLAS_CRITICO else "advertencia"
+        alertas.append(_alerta(
+            "equipo_fallas_recurrentes", nivel,
+            f"El equipo {equipo_id} acumula {cantidad} correctivo(s) registrados.",
+            equipo_id,
+        ))
+
+    return alertas
+
+
+def _alertas_mantenimiento_preventivo(hoy):
+    """Preventivos programados que ya vencieron sin marcarse 'realizado' ni
+    'cancelado', y equipos instalados sin ningun preventivo 'realizado' en
+    los ultimos UMBRAL_DIAS_SIN_PREVENTIVO dias."""
+    alertas = []
+
+    vencidos = MantenimientosPreventivosRepositorio.obtener_vencidos_sin_realizar(hoy)
+    for m in vencidos:
+        alertas.append(_alerta(
+            "preventivo_vencido", "advertencia",
+            f"El preventivo del equipo {m.equipo_id} programado para "
+            f"{m.fecha_programada.strftime('%d/%m/%Y')} no se ha realizado.",
+            m.id,
+        ))
+
+    equipos = EquiposRepositorio.obtener_todos()
+    todos_preventivos = MantenimientosPreventivosRepositorio.obtener_todos()
+
+    ultima_realizada_por_equipo = {}
+    for m in todos_preventivos:
+        if m.estado != "realizado" or not m.fecha_realizada:
+            continue
+        actual = ultima_realizada_por_equipo.get(m.equipo_id)
+        if not actual or m.fecha_realizada > actual:
+            ultima_realizada_por_equipo[m.equipo_id] = m.fecha_realizada
+
+    for e in equipos:
+        if (e.estado_equipo or "").strip().lower() != "instalado":
+            continue
+        ultima = ultima_realizada_por_equipo.get(e.id)
+        dias_sin_preventivo = (hoy - ultima).days if ultima else None
+
+        if ultima is None or dias_sin_preventivo > UMBRAL_DIAS_SIN_PREVENTIVO:
+            detalle = (
+                f"lleva {dias_sin_preventivo} dia(s) sin preventivo" if ultima
+                else "no tiene preventivos registrados"
+            )
+            alertas.append(_alerta(
+                "equipo_sin_preventivo", "advertencia",
+                f"El equipo {e.numero_serie} esta instalado y {detalle}.",
+                e.id,
+            ))
+
+    return alertas
+
 
 def generar_alertas(incluir_descartadas=False):
     hoy = datetime.utcnow()
@@ -239,6 +316,8 @@ def generar_alertas(incluir_descartadas=False):
         + _alertas_equipos()
         + _alertas_lecturas()
         + _alertas_toner()
+        + _alertas_mantenimiento_correctivo()
+        + _alertas_mantenimiento_preventivo(hoy)
     )
 
     estados_por_clave = {

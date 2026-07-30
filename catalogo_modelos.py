@@ -13,6 +13,7 @@ from Persistencia.CostosRepositorio import CostosRepositorio
 from Persistencia.EquiposRespaldoRepositorio import EquiposRespaldoRepositorio
 from Persistencia.LecturasRepositorio import LecturasRepositorio
 from Persistencia.EntregasTonerRepositorio import EntregasTonerRepositorio
+from Persistencia.MantenimientosPreventivosRepositorio import MantenimientosPreventivosRepositorio
 from Modulos.enums import (
     EstadoCliente,
     TipoCliente,
@@ -179,7 +180,43 @@ CATALOGO_DATOS = {
             campo("toner_respaldo_sitio", "Toner respaldo sitio", requerido=False),
             campo("equipo_respaldo_incluido", "Equipo respaldo incluido", requerido=False),
             campo("estado", "Estado", requerido=False),
+            #Mantenimiento Correctivo , solo si mantenimiento=CORRECTIVO
+            campo("contrato_id", "Contrato", "number", requerido=False),
+            campo("fecha_solicitud", "Fecha de solicitud", "date", requerido=False),
+            campo("falla_reportada", "Falla reportada", requerido=False),
+            campo("prioridad", "Prioridad", "select", ["alta", "media", "baja"], requerido=False),
+            campo("fecha_atencion", "Fecha de atencion", "date", requerido=False),
+            campo("fecha_solucion", "Fecha de solucion", "date", requerido=False),
+            campo("diagnostico", "Diagnostico", requerido=False),
+            campo("costo_repuestos", "Costo de repuestos", "number", requerido=False),
+            campo("costo_mano_obra", "Costo de mano de obra", "number", requerido=False),
+            campo("costo_desplazamiento", "Costo de desplazamiento", "number", requerido=False),
+            campo("requiere_respaldo", "Requiere equipo de respaldo", requerido=False),
+            campo("estado_caso", "Estado del caso", "select",
+                  ["abierto", "en_proceso", "cerrado", "pendiente_repuesto", "pendiente_autorizacion"],
+                  requerido=False),
             # "mantenimiento" no se expone: siempre queda Correctivo por defecto.
+        ],
+    },
+    "mantenimientos_preventivos": {
+        "etiqueta": "Mantenimientos Preventivos",
+        "modelo": MantenimientosPreventivosRepositorio,
+        "campos": [
+            campo("equipo_id", "Equipo", "number"),
+            campo("cliente_id", "Cliente", "number", requerido=False),
+            campo("contrato_id", "Contrato", "number", requerido=False),
+            campo("periodo", "Periodo (MM-YYYY)", requerido=False),
+            campo("fecha_programada", "Fecha programada", "date"),
+            campo("fecha_realizada", "Fecha realizada", "date", requerido=False),
+            campo("tecnico_asignado", "Tecnico asignado", requerido=False),
+            campo("actividades_realizadas", "Actividades realizadas", requerido=False),
+            campo("repuestos_utilizados", "Repuestos utilizados", requerido=False),
+            campo("contador_bn", "Contador B/N", "number", requerido=False),
+            campo("contador_color", "Contador color", "number", requerido=False),
+            campo("frecuencia_preventivo", "Frecuencia de preventivo", requerido=False),
+            campo("estado", "Estado", "select",
+                  ["programado", "realizado", "pendiente", "reprogramado", "cancelado"], requerido=False),
+            campo("observaciones", "Observaciones", requerido=False),
         ],
     },
     "costos": {

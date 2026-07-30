@@ -37,6 +37,8 @@ from Persistencia.EquiposRepositorio import EquiposRepositorio
 from Persistencia.FacturacionRepositorio import FacturacionRepositorio
 from Persistencia.EntregasTonerRepositorio import EntregasTonerRepositorio
 from Servicio.Informes_mensuales import _parse_periodo, informe_general, informe_por_cliente
+from Persistencia.ServicioRepositorio import ServicioRepositorio
+from Modulos.enums import TipoMantenimiento
 
 # Limites de dias de mora para agrupar cartera por antiguedad.
 RANGOS_ANTIGUEDAD_CARTERA = (
@@ -205,12 +207,24 @@ def serie_cartera_por_edad(periodo_final, meses=6):
 
 
 def serie_correctivos_por_equipo(periodo_final, meses=6):
-    """Bloqueado: el proyecto no tiene modelo de mantenimiento correctivo
-    (punto 8 de Informes_mensuales)."""
-    return [
-        {"periodo": periodo, "correctivos_por_equipo": None}
-        for periodo in _periodos_hacia_atras(periodo_final, meses)
-    ]
+    """Correctivos agrupados por equipo, mes a mes."""
+    from datetime import datetime as _dt
+    serie = []
+    for periodo in _periodos_hacia_atras(periodo_final, meses):
+        mes, anio = _parse_periodo(periodo)
+        correctivos = [
+            s for s in ServicioRepositorio.obtener_todos()
+            if s.mantenimiento == TipoMantenimiento.CORRECTIVO
+            and s.equipo_id
+            and (s.fecha_solicitud or s.fecha_creacion)
+            and (s.fecha_solicitud or s.fecha_creacion).month == mes
+            and (s.fecha_solicitud or s.fecha_creacion).year == anio
+        ]
+        por_equipo = {}
+        for c in correctivos:
+            por_equipo[c.equipo_id] = por_equipo.get(c.equipo_id, 0) + 1
+        serie.append({"periodo": periodo, "correctivos_por_equipo": por_equipo})
+    return serie
 
 
 def serie_consumo_paginas_por_cliente(periodo_final, meses=6):
