@@ -7,10 +7,10 @@ class TiposInsumoRepositorio:
     individual referencia uno de estos por tipo_insumo_id."""
 
     @staticmethod
-    def agregar(nombre, precio=0):
+    def agregar(nombre, precio=0, stock_minimo=0):
         db = SessionLocal()
         try:
-            nuevo_tipo = TipoInsumo(nombre=nombre, precio=precio)
+            nuevo_tipo = TipoInsumo(nombre=nombre, precio=precio, stock_minimo=stock_minimo)
             db.add(nuevo_tipo)
             db.commit()
             db.refresh(nuevo_tipo)
