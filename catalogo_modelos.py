@@ -14,6 +14,7 @@ from Persistencia.EquiposRespaldoRepositorio import EquiposRespaldoRepositorio
 from Persistencia.LecturasRepositorio import LecturasRepositorio
 from Persistencia.EntregasTonerRepositorio import EntregasTonerRepositorio
 from Persistencia.MantenimientosPreventivosRepositorio import MantenimientosPreventivosRepositorio
+from Persistencia.RentabilidadRepositorio import RentabilidadRepositorio
 from Modulos.enums import (
     EstadoCliente,
     TipoCliente,
@@ -360,6 +361,24 @@ CATALOGO_DATOS = {
                   ["pendiente", "registrada", "validada", "observada", "facturada"]),
             campo("contador_bn", "Contador B/N", "number"),
             campo("contador_color", "Contador color", "number"),
+        ],
+    },
+    "rentabilidad": {
+        "etiqueta": "Rentabilidad",
+        "modelo": RentabilidadRepositorio,
+        "campos": [
+            # No requeridos: en la practica estos registros los crea
+            # Servicio/RentabilidadAutomatica.generar_rentabilidad(), no el
+            # formulario generico. Se exponen aqui sobre todo para que
+            # /api/exportar/rentabilidad/excel funcione con la misma
+            # infraestructura generica que el resto de tipos.
+            campo("periodo", "Periodo (MM-YYYY)", requerido=False),
+            campo("contrato_id", "Contrato", "number", requerido=False),
+            campo("cliente_id", "Cliente", "number", requerido=False),
+            campo("ingresos", "Ingresos", "number", requerido=False),
+            campo("costos", "Costos", "number", requerido=False),
+            campo("ganancia", "Ganancia", "number", requerido=False),
+            campo("porcentaje_rentabilidad", "Porcentaje de rentabilidad", "number", requerido=False),
         ],
     },
 }
