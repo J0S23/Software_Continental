@@ -16,6 +16,9 @@ class TipoInsumo(Base):
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String, unique=True, index=True)
     precio = Column(Float, default=0)
+    #stock_minimo se usa junto con InsumosRepositorio.contar_disponibles_agrupado()
+    #en Servicio/Alertas._alertas_stock para la alerta de stock bajo. Un tipo con stock_minimo en 0 o None no genera alerta (se asume que aun no se configuro el minimo para ese consumible).
+    stock_minimo = Column(Float, nullable=True, default=0)
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
 
     @staticmethod
