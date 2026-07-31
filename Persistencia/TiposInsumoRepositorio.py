@@ -69,21 +69,3 @@ class TiposInsumoRepositorio:
             return False
         finally:
             db.close()
-
-    @staticmethod
-    def contar_disponibles_agrupado():
-        #Devuelve {tipo_insumo_id: cantidad_disponible}, contando solo las unidades con estado 'disponible' (o sin estado). La necesita
-        #Servicio/Alertas._alertas_stock para comparar contra TipoInsumo.stock_minimo sin hacer una query por tipo.
-        db = SessionLocal()
-        try:
-            insumos = db.query(Insumo).all()
-        finally:
-            db.close()
-
-        conteo = {}
-        for insumo in insumos:
-            estado_normalizado = (insumo.estado or "").strip().lower()
-            if estado_normalizado and estado_normalizado != "disponible":
-                continue
-            conteo[insumo.tipo_insumo_id] = conteo.get(insumo.tipo_insumo_id, 0) + 1
-        return conteo
