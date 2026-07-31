@@ -2,9 +2,9 @@
 #modelos existentes y devuelve alertas calculadas en el momento.
 
 #Bloqueadas por falta de datos en el modelo actual (no se inventan):
-#- Stock bajo de consumibles: Insumos no tiene columna de stock.
-#Equipos con fallas recurrentes / mantenimientos: Servicio (correctivo)
-#no tiene un contador de fallas por equipo todavia
+#Equipos con fallas recurrentes / mantenimientos: ya resuelto (ver
+#_alertas_mantenimiento_correctivo). Stock bajo de consumibles: ya resuelto
+#(ver _alertas_stock, requiere que TipoInsumo.stock_minimo este configurado).
 
 import unicodedata
 from datetime import datetime, timedelta
@@ -22,6 +22,8 @@ from Persistencia.EntregasTonerRepositorio import EntregasTonerRepositorio
 from Persistencia.ServicioRepositorio import ServicioRepositorio
 from Persistencia.MantenimientosPreventivosRepositorio import MantenimientosPreventivosRepositorio
 from Modulos.enums import TipoMantenimiento
+from Persistencia.TiposInsumoRepositorio import TiposInsumoRepositorio
+from Persistencia.InsumosRepositorio import InsumosRepositorio
 
 UMBRAL_VENCIMIENTO_DIAS = (90, 60, 30)
 UMBRAL_FACTURA_PROXIMA_DIAS = 7
@@ -305,6 +307,31 @@ def _alertas_mantenimiento_preventivo(hoy):
 
     return alertas
 
+def _alertas_stock():
+    #Stock bajo de consumibles compara las unidades de Insumo en estado 'disponible' contra TipoInsumo.stock_minimo. Un tipo sin
+    #stock_minimo definido (None o 0) no genera alerta, porque no hay con quecomparar -- no se asume un minimo arbitrario.
+    alertas = []
+    tipos = TiposInsumoRepositorio.obtener_todos()
+    disponibles_por_tipo = InsumosRepositorio.contar_disponibles_agrupado()
+
+    for tipo in tipos:
+        minimo = tipo.stock_minimo or 0
+        if minimo <= 0:
+            continue
+
+        disponible = disponibles_por_tipo.get(tipo.id, 0)
+        if disponible >= minimo:
+            continue
+
+        nivel = "critico" if disponible == 0 else "advertencia"
+        alertas.append(_alerta(
+            "stock_bajo", nivel,
+            f"El consumible '{tipo.nombre}' tiene {disponible} unidad(es) disponible(s) "
+            f"(minimo definido: {int(minimo)}).",
+            tipo.id,
+        ))
+
+    return alertas
 
 def generar_alertas(incluir_descartadas=False):
     hoy = datetime.utcnow()
@@ -318,6 +345,7 @@ def generar_alertas(incluir_descartadas=False):
         + _alertas_toner()
         + _alertas_mantenimiento_correctivo()
         + _alertas_mantenimiento_preventivo(hoy)
+        + _alertas_stock()
     )
 
     estados_por_clave = {

@@ -114,6 +114,7 @@ CATALOGO_DATOS = {
         "campos": [
             campo("nombre", "Nombre"),
             campo("precio", "Precio", "number"),
+            campo("stock_minimo", "Stock minimo", "number", requerido=False),
         ],
     },
     "contratos": {
