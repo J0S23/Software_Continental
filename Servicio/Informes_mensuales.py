@@ -44,6 +44,9 @@ from Persistencia.FacturacionRepositorio import FacturacionRepositorio
 from Persistencia.LecturasRepositorio import LecturasRepositorio
 from Persistencia.RentabilidadRepositorio import RentabilidadRepositorio
 from Persistencia.EntregasTonerRepositorio import EntregasTonerRepositorio
+from Persistencia.ServicioRepositorio import ServicioRepositorio
+from Persistencia.MantenimientosPreventivosRepositorio import MantenimientosPreventivosRepositorio
+from Modulos.enums import TipoMantenimiento
 
 # Que tipos de costo cuentan como "costos tecnicos" para el informe tecnico.
 TIPOS_COSTO_TECNICOS = [
@@ -121,6 +124,19 @@ def informe_general(periodo):
     if contratos_por_vencer:
         recomendaciones.append(f"{len(contratos_por_vencer)} contrato(s) vencen en los proximos 60 dias.")
 
+    correctivos_mes = [
+        s for s in ServicioRepositorio.obtener_todos()
+        if s.mantenimiento == TipoMantenimiento.CORRECTIVO
+        and _en_periodo(s.fecha_solicitud or s.fecha_creacion, mes, anio)
+    ]
+    conteo_fallas_equipo_general = {}
+    for c in correctivos_mes:
+        if c.equipo_id:
+            conteo_fallas_equipo_general[c.equipo_id] = conteo_fallas_equipo_general.get(c.equipo_id, 0) + 1
+    equipos_fallas_recurrentes = [
+        eid for eid, n in conteo_fallas_equipo_general.items() if n >= 3
+    ]
+
     return {
         "periodo": periodo,
         "total_contratos": len(contratos),
@@ -136,12 +152,12 @@ def informe_general(periodo):
         "paginas_color": None,
         "paginas_adicionales": None,
         "toneres_entregados": toneres_entregados,
-        "preventivos_del_mes": None,
-        "correctivos_del_mes": None,
+        "preventivos_del_mes": len(MantenimientosPreventivosRepositorio.obtener_por_periodo(periodo)),
+        "correctivos_del_mes": len(correctivos_mes),
         "contratos_por_vencer": len(contratos_por_vencer),
         "contratos_baja_rentabilidad": None,
         "clientes_en_mora": len(clientes_en_mora_ids),
-        "equipos_fallas_recurrentes": None,
+        "equipos_fallas_recurrentes": len(equipos_fallas_recurrentes),
         "recomendaciones": recomendaciones,
     }
 
@@ -306,13 +322,37 @@ def informe_cartera(periodo):
 
 
 def informe_tecnico(periodo):
-    """Equipos/repuestos mas frecuentes y costos tecnicos del periodo.
+    #Correctivos/preventivos del periodo, tiempos promedio, equipos con mas fallas, repuestos mas usados y costos tecnicos del periodo.
+    mes, anio = _parse_periodo(periodo)
 
-    Bloqueado: el proyecto no tiene modelo de mantenimiento preventivo/
-    correctivo (punto 8 del docstring del modulo), asi que no se pueden
-    calcular correctivos, preventivos, fallas por equipo ni tiempos de
-    respuesta/solucion.
-    """
+    correctivos = [
+        s for s in ServicioRepositorio.obtener_todos()
+        if s.mantenimiento == TipoMantenimiento.CORRECTIVO
+        and _en_periodo(s.fecha_solicitud or s.fecha_creacion, mes, anio)
+    ]
+
+    tiempos_respuesta = [
+        (c.fecha_atencion - c.fecha_solicitud).days
+        for c in correctivos if c.fecha_atencion and c.fecha_solicitud
+    ]
+    tiempos_solucion = [
+        (c.fecha_solucion - c.fecha_solicitud).days
+        for c in correctivos if c.fecha_solucion and c.fecha_solicitud
+    ]
+
+    conteo_fallas_equipo = {}
+    for c in correctivos:
+        if c.equipo_id:
+            conteo_fallas_equipo[c.equipo_id] = conteo_fallas_equipo.get(c.equipo_id, 0) + 1
+    equipos_con_mas_fallas = sorted(
+        conteo_fallas_equipo.items(), key=lambda item: item[1], reverse=True
+    )[:5]
+
+    preventivos = MantenimientosPreventivosRepositorio.obtener_por_periodo(periodo)
+    preventivos_por_estado = {}
+    for p in preventivos:
+        preventivos_por_estado[p.estado] = preventivos_por_estado.get(p.estado, 0) + 1
+
     costos_repuesto = CostosRepositorio.obtener_por_periodo_y_tipo(periodo, TipoCosto.REPUESTO)
     conteo_repuestos = {}
     for c in costos_repuesto:
@@ -329,11 +369,11 @@ def informe_tecnico(periodo):
 
     return {
         "periodo": periodo,
-        "correctivos_del_mes": None,
-        "preventivos_por_estado": None,
-        "tiempo_promedio_respuesta": None,
-        "tiempo_promedio_solucion": None,
-        "equipos_con_mas_fallas": None,
+        "correctivos_del_mes": len(correctivos),
+        "preventivos_por_estado": preventivos_por_estado,
+        "tiempo_promedio_respuesta": (sum(tiempos_respuesta) / len(tiempos_respuesta)) if tiempos_respuesta else None,
+        "tiempo_promedio_solucion": (sum(tiempos_solucion) / len(tiempos_solucion)) if tiempos_solucion else None,
+        "equipos_con_mas_fallas": [{"equipo_id": eid, "fallas": n} for eid, n in equipos_con_mas_fallas],
         "repuestos_mas_usados": [{"descripcion": desc, "cantidad": cant} for desc, cant in repuestos_mas_usados],
         "costos_tecnicos_por_contrato": costos_tecnicos_por_contrato,
     }

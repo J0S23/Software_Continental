@@ -55,7 +55,7 @@ async def agregar_registro(tipo: str, request: Request, usuario=Depends(get_curr
     campos = obtener_campos(configuracion)
     datos = await request.json()
     valores = normalizar_payload(configuracion, datos)
-    registro = crear_registro(modelo, valores)
+    registro = crear_registro(modelo, valores, usuario_id=usuario.id)
 
     return {
         "success": True,
@@ -71,7 +71,7 @@ async def editar_registro(tipo: str, registro_id: int, request: Request, usuario
     campos = obtener_campos(configuracion)
     datos = await request.json()
     valores = normalizar_payload(configuracion, datos)
-    registro = actualizar_registro(modelo, registro_id, valores)
+    registro = actualizar_registro(modelo, registro_id, valores, usuario_id=usuario.id)
 
     if not registro:
         raise HTTPException(status_code=404, detail="Registro no encontrado")
@@ -88,7 +88,7 @@ async def eliminar_registro(tipo: str, registro_id: int, usuario=Depends(get_cur
     configuracion = obtener_configuracion_tipo(tipo)
     modelo = obtener_modelo(configuracion)
 
-    if not borrar_registro(modelo, registro_id):
+    if not borrar_registro(modelo, registro_id, usuario_id=usuario.id):
         raise HTTPException(status_code=404, detail="Registro no encontrado")
 
     return {"success": True, "message": "Registro eliminado"}
