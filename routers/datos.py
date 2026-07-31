@@ -3,6 +3,7 @@
 # "clientes", "equipos") selecciona la configuracion y el repositorio a usar.
 from fastapi import APIRouter, Depends, HTTPException, Request
 
+from Persistencia.HistorialRepositorio import HistorialRepositorio
 from catalogo_modelos import (
     obtener_configuracion_tipo,
     obtener_configuracion_frontend,
@@ -55,7 +56,7 @@ async def agregar_registro(tipo: str, request: Request, usuario=Depends(get_curr
     campos = obtener_campos(configuracion)
     datos = await request.json()
     valores = normalizar_payload(configuracion, datos)
-    registro = crear_registro(modelo, valores, usuario_id=usuario.id)
+    registro = crear_registro(modelo, valores, usuario_id=usuario.id, tipo_entidad=tipo)
 
     return {
         "success": True,
@@ -71,7 +72,7 @@ async def editar_registro(tipo: str, registro_id: int, request: Request, usuario
     campos = obtener_campos(configuracion)
     datos = await request.json()
     valores = normalizar_payload(configuracion, datos)
-    registro = actualizar_registro(modelo, registro_id, valores, usuario_id=usuario.id)
+    registro = actualizar_registro(modelo, registro_id, valores, usuario_id=usuario.id, tipo_entidad=tipo)
 
     if not registro:
         raise HTTPException(status_code=404, detail="Registro no encontrado")
@@ -88,7 +89,22 @@ async def eliminar_registro(tipo: str, registro_id: int, usuario=Depends(get_cur
     configuracion = obtener_configuracion_tipo(tipo)
     modelo = obtener_modelo(configuracion)
 
-    if not borrar_registro(modelo, registro_id, usuario_id=usuario.id):
+    if not borrar_registro(modelo, registro_id, usuario_id=usuario.id, tipo_entidad=tipo):
         raise HTTPException(status_code=404, detail="Registro no encontrado")
 
     return {"success": True, "message": "Registro eliminado"}
+
+@router.get("/api/historial/{tipo}/{entidad_id}")
+async def obtener_historial(tipo: str, entidad_id: int):
+    registros = HistorialRepositorio.obtener_por_entidad(tipo, entidad_id)
+    return {
+        "success": True,
+        "historial": [
+            {
+                "id": r.id, "accion": r.accion, "campo": r.campo,
+                "valor_anterior": r.valor_anterior, "valor_nuevo": r.valor_nuevo,
+                "usuario_id": r.usuario_id, "fecha": r.fecha.isoformat() if r.fecha else None,
+            }
+            for r in registros
+        ],
+    }
