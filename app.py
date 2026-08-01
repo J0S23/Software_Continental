@@ -8,6 +8,9 @@ from base_de_datos import crear_tablas
 from configuracion import RUTA_STATIC, RUTA_VISTA
 from routers import datos, paginas
 from routers.exportacion import router as exportacion_router
+from routers.informes import router as informes_router
+from routers.dashboard import router as dashboard_router
+from routers.importacion import router as importacion_router
 from routers.alertas import router as alertas_router
 from routers.facturacion_automatica import router as facturacion_automatica_router
 from routers.adjuntos import router as adjuntos_router
@@ -27,11 +30,17 @@ app.mount("/static", StaticFiles(directory=RUTA_STATIC), name="static")
 # html=True permite servir index.html de una carpeta al pedir su ruta directorio.
 app.mount("/vista", StaticFiles(directory=RUTA_VISTA, html=True), name="vista")
 app.include_router(paginas.router)
-# exportacion/alertas/facturacion_automatica van antes que datos.router porque
-# datos.router define un catch-all GET /api/{tipo}: si se registrara primero,
-# interceptaria rutas de 2 segmentos como /api/alertas antes de llegar a su
-# propio router (Starlette resuelve las rutas en orden de registro).
+# exportacion/informes/dashboard/importacion/alertas/facturacion_automatica van
+# antes que datos.router porque datos.router define un catch-all GET /api/{tipo}:
+# si se registrara primero, interceptaria rutas de 2 segmentos como /api/alertas
+# antes de llegar a su propio router (Starlette resuelve las rutas en orden de
+# registro). Los routers nuevos usan rutas de 3+ segmentos (/api/informes/{periodo},
+# /api/importar/{tipo}) asi que en realidad no colisionan con el catch-all de
+# 2 segmentos, pero se registran aqui igual por consistencia con el resto.
 app.include_router(exportacion_router)
+app.include_router(informes_router)
+app.include_router(dashboard_router)
+app.include_router(importacion_router)
 app.include_router(alertas_router)
 app.include_router(facturacion_automatica_router)
 app.include_router(adjuntos_router)
