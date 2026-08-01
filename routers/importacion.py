@@ -1,7 +1,16 @@
-# Importacion masiva desde Excel, reutiliza la misma capa generica que el CRUD manual
-# (catalogo_modelos + servicios_datos.normalizar_payload/crear_registro), asi
-# que cada fila se valida y se registra en Historial exactamente igual que si
-# se hubiera creado una por una desde el formulario -- no hay logica de validacion duplicada aqui.
+# Importacion masiva desde Excel (seccion 23: "importar lecturas/clientes/
+# equipos desde Excel"). Reutiliza la capa generica de datos (catalogo_modelos
+# + servicios_datos.crear_registro), asi que cada fila creada queda registrada
+# en Historial exactamente igual que si se hubiera creado una por una desde
+# el formulario.
+#
+# A proposito NO reutiliza servicios_datos.normalizar_payload tal cual: ese
+# validador es estricto (bloquea la fila si falta un campo 'requerido'), pero
+# en una carga masiva es comun que el usuario solo tenga a mano parte de los
+# datos y quiera completarlos despues. _normalizar_fila_importacion() abajo
+# es una version relajada especifica para este router: nunca bloquea una fila
+# por un campo faltante, sin importar si el catalogo lo marca como requerido.
+import inspect
 import io
 from datetime import date, datetime
 
@@ -12,16 +21,24 @@ from openpyxl.styles import Font, PatternFill
 
 from catalogo_modelos import obtener_configuracion_tipo
 from routers.auth import get_current_user
-from servicios_datos import crear_registro, normalizar_payload, obtener_campos, obtener_modelo
+from servicios_datos import crear_registro, obtener_campos, obtener_enumeraciones, obtener_modelo
 
 router = APIRouter()
 
+# Restringido a los 3 tipos que pide la seccion 23 del documento (los que mas
+# volumen de carga manual tienen). No se generaliza a "cualquier tipo del
+# catalogo" a proposito: entidades como usuarios o facturacion no deberian
+# poblarse por lote sin mas control.
+TIPOS_IMPORTABLES = {"lecturas", "clientes", "equipos"}
+
 # Restringido a los 3 tipos que mas volumen de carga manual tienen. No se generaliza a "cualquier tipo del
 # catalogo" a proposito: entidades como usuarios o facturacion no deberian poblarse por lote sin mas control.
-TIPOS_IMPORTABLES = {"lecturas", "clientes", "equipos"}
+TIPOS_CAMPO_TEXTO_LIBRE = {"text", "select"}
 
 ESTILO_ENCABEZADO_FONT = Font(bold=True, color="FFFFFF")
 ESTILO_ENCABEZADO_FILL = PatternFill(start_color="263445", end_color="263445", fill_type="solid")
+
+PLACEHOLDER_FALTANTE = "N.A"
 
 
 def _validar_tipo_importable(tipo):
@@ -35,11 +52,10 @@ def _validar_tipo_importable(tipo):
 
 
 def _valor_desde_excel(configuracion_campo, valor):
-    """Convierte lo que openpyxl trae de una celda al formato que espera
-    servicios_datos.normalizar_payload, segun el tipo de campo del catalogo.
-    Sin esto, una celda de fecha (que openpyxl entrega como datetime, no como
-    texto 'YYYY-MM-DD') o un booleano nativo de Excel siempre fallarian la
-    validacion aunque el dato sea correcto."""
+    #Convierte lo que openpyxl trae de una celda a un formato uniforme (string/numero/bool crudo) antes de pasarlo por
+    #_normalizar_fila_importacion. Sin esto, una celda de fecha (que openpyxl entrega como datetime, no como texto 'YYYY-MM-DD')
+    #o un booleano nativo de Excel siempre fallarian la validacion aunque el dato sea correcto.
+    
     if valor is None or valor == "":
         return None
 
@@ -57,11 +73,98 @@ def _valor_desde_excel(configuracion_campo, valor):
     return valor
 
 
+def _normalizar_fila_importacion(configuracion, datos):
+    #Version relajada de servicios_datos.normalizar_payload, solo para importacion. Diferencias con la version estricta del CRUD manual:
+      #- Un campo 'requerido' que falte NUNCA bloquea la fila.
+      #- Si el campo faltante es de texto libre (o un 'select' sin Enum de Python detras, ej. prioridad/estado_lectura), se guarda "N.A" para
+      #  que quede visible en la tabla que se dejo pendiente.
+      #- Si el campo faltante es numero/fecha/booleano/select-con-Enum, se omite: el modelo aplica su propio default o queda NULL (no se puede
+      #  guardar "N.A" en una columna Float/DateTime/Enum sin romper el tipo).
+    #Los campos que SI vienen con valor se validan/convierten exactamente gual que en normalizar_payload (mismo casteo de enum/numero/booleano/fecha),
+    #asi que un dato mal escrito sigue reportandose como error de fila -- esto solo relaja lo FALTANTE, no lo INVALIDO.
+    
+    valores = {}
+    enumeraciones = obtener_enumeraciones(configuracion)
+
+    for configuracion_campo in obtener_campos(configuracion):
+        nombre_campo = configuracion_campo["nombre"]
+        valor = datos.get(nombre_campo)
+        tipo_campo = configuracion_campo.get("tipo", "text")
+        tipo_enum = enumeraciones.get(nombre_campo)
+
+        if valor in (None, ""):
+            es_texto_libre = tipo_campo in TIPOS_CAMPO_TEXTO_LIBRE and not tipo_enum
+            if es_texto_libre:
+                valores[nombre_campo] = PLACEHOLDER_FALTANTE
+            # numero / fecha / booleano / select-con-enum faltante: no se
+            # envia, toma el default (o NULL) que ya tiene esa columna.
+            continue
+
+        if tipo_enum:
+            try:
+                valor = tipo_enum(valor)
+            except ValueError as exc:
+                opciones = ", ".join(item.value for item in tipo_enum)
+                raise ValueError(f"Valor invalido para '{nombre_campo}'. Usa: {opciones}") from exc
+
+        if tipo_campo == "number":
+            try:
+                valor = float(valor)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"El campo '{nombre_campo}' debe ser numerico") from exc
+
+        if tipo_campo == "boolean":
+            valor_normalizado = str(valor).strip().lower()
+            if valor_normalizado in ("si", "sí", "true", "1"):
+                valor = True
+            elif valor_normalizado in ("no", "false", "0"):
+                valor = False
+            else:
+                raise ValueError(f"El campo '{nombre_campo}' debe ser 'Si' o 'No'")
+
+        if tipo_campo == "date":
+            try:
+                valor = datetime.strptime(valor, "%Y-%m-%d")
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"El campo '{nombre_campo}' debe tener formato de fecha YYYY-MM-DD") from exc
+
+        valores[nombre_campo] = valor
+
+    return valores
+
+
+def _completar_argumentos_repositorio(modelo, valores):
+    #_normalizar_fila_importacion() omite a proposito los campos numero/fecha/booleano/select-con-enum que faltan (para no forzar un tipo
+    #invalido con 'N.A'). Pero si el repositorio.agregar() de ese tipo exige ese parametro SIN un valor por defecto propio
+    #(ej.ClientesRepositorio.agregar(tipo_cliente, estado_cliente, ...) sin default), omitirlo del todo rompe la llamada con un 
+    #TypeError de Python, no con un error de validacion legible.
+
+    #Se resuelve de forma generica con inspect en vez de listar caso por caso que campo es requerido en que repositorio: cualquier parametro de
+    #agregar() sin valor por defecto que no haya llegado en 'valores' se completa con None. Los parametros que SI tienen su propio default en el
+    #repositorio (ej. precio=0) se dejan intactos, para que se use ese default en vez de forzar None.
+
+    if not hasattr(modelo, "agregar"):
+        # Fallback ORM directo (servicios_datos.crear_registro usa
+        # modelo(**valores) en ese caso): SQLAlchemy no exige todos los
+        # kwargs, asi que no hace falta completar nada aqui.
+        return valores
+
+    firma = inspect.signature(modelo.agregar)
+    for nombre_parametro, parametro in firma.parameters.items():
+        si_es_requerido_sin_default = (
+            parametro.default is inspect.Parameter.empty
+            and parametro.kind in (inspect.Parameter.POSITIONAL_OR_KEYWORD, inspect.Parameter.KEYWORD_ONLY)
+        )
+        if si_es_requerido_sin_default and nombre_parametro not in valores:
+            valores[nombre_parametro] = None
+    return valores
+
+
 @router.get("/api/importar/{tipo}/plantilla")
 async def descargar_plantilla_importacion(tipo: str, usuario=Depends(get_current_user)):
-    """Excel con solo la fila de encabezados (los nombres de campo exactos
-    que espera el importador), para que el usuario no tenga que adivinar
-    como se llama cada columna."""
+    #Excel con solo la fila de encabezados (los nombres de campo exactos que espera el importador), para que el usuario no tenga que
+    #adivinar como se llama cada columna. Las columnas se pueden dejar en blanco: ver_normalizar_fila_importacion para que pasa con cada tipo de campo.
+    
     configuracion = _validar_tipo_importable(tipo)
     campos = obtener_campos(configuracion)
 
@@ -90,9 +193,10 @@ async def descargar_plantilla_importacion(tipo: str, usuario=Depends(get_current
 
 @router.post("/api/importar/{tipo}")
 async def importar_desde_excel(tipo: str, archivo: UploadFile = File(...), usuario=Depends(get_current_user)):
-    """Crea un registro por cada fila con datos del Excel. No detiene el
-    proceso ante una fila invalida: la reporta en 'errores' y sigue con las
-    demas. Fila vacia (todas las celdas en blanco) se ignora en silencio."""
+    #Crea un registro por cada fila con datos del Excel. No detiene el proceso ante una fila invalida: la reporta en 'errores'
+    #y sigue con las demas. Fila vacia (todas las celdas en blanco) se ignora en silencio.
+    #Los campos faltantes (no invalidos, solo ausentes) NO cuentan como error: se completan con "N.A" o se dejan en su default, ver _normalizar_fila_importacion.
+    
     configuracion = _validar_tipo_importable(tipo)
     modelo = obtener_modelo(configuracion)
     campos = obtener_campos(configuracion)
@@ -136,11 +240,13 @@ async def importar_desde_excel(tipo: str, archivo: UploadFile = File(...), usuar
             continue  # fila completamente vacia, no cuenta como error
 
         try:
-            valores = normalizar_payload(configuracion, datos_fila)
+            valores = _normalizar_fila_importacion(configuracion, datos_fila)
+            valores = _completar_argumentos_repositorio(modelo, valores)
             crear_registro(modelo, valores, usuario_id=usuario.id, tipo_entidad=tipo)
             creados += 1
-        except HTTPException as exc:
-            errores.append({"fila": numero_fila, "error": exc.detail})
+        except (ValueError, HTTPException) as exc:
+            mensaje = exc.detail if isinstance(exc, HTTPException) else str(exc)
+            errores.append({"fila": numero_fila, "error": mensaje})
         except Exception as exc:
             errores.append({"fila": numero_fila, "error": str(exc)})
 
