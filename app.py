@@ -1,8 +1,18 @@
 # Punto de entrada de la aplicacion FastAPI: monta archivos estaticos,
 # registra los routers (en el orden correcto) y arranca uvicorn.
+import logging
+
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 # --- Rate limiting (slowapi) ---
 # _rate_limit_exceeded_handler: convierte la excepcion RateLimitExceeded (la que lanza el decorador @limiter.limit(...) 
@@ -34,6 +44,39 @@ from Modulos.Sedes import Sedes  # noqa: F401
 crear_tablas()
 
 app = FastAPI(title="Gestor de Datos Continental")
+
+
+# Estandariza la forma de toda respuesta de error HTTPException (usada en
+# todos los routers) para que el frontend siempre reciba "success" ademas
+# de "detail", sin cambiar los status_code ni los mensajes existentes.
+# Se registra sobre la clase base de Starlette (no fastapi.HTTPException,
+# que es una subclase) porque errores que el propio enrutador levanta
+# internamente (404 por ruta inexistente, 405 por metodo no permitido) son
+# instancias de la clase base: si el handler se registrara sobre la
+# subclase de fastapi, esos casos no calzarian por MRO y caerian al
+# handler por defecto de FastAPI, sin el campo "success".
+@app.exception_handler(StarletteHTTPException)
+async def manejador_http_exception(request: Request, exc: StarletteHTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"success": False, "detail": exc.detail},
+    )
+
+
+# Red de seguridad para cualquier excepcion no anticipada (bugs, fallos de
+# DB, etc.): se registra completa en el log para diagnostico, pero al
+# cliente solo se le devuelve un mensaje generico (nunca str(exc)) para no
+# filtrar detalles internos (rutas, queries, stack).
+@app.exception_handler(Exception)
+async def manejador_excepcion_no_controlada(request: Request, exc: Exception):
+    logger.exception(
+        "Error no controlado en %s %s", request.method, request.url.path, exc_info=exc
+    )
+    return JSONResponse(
+        status_code=500,
+        content={"success": False, "detail": "Ocurrió un error interno. Contacta al administrador."},
+    )
+
 
 # --- Rate limiting (slowapi), continuacion ---
 # app.state.limiter: el decorador @limiter.limit(...) en routers/auth.py busca el Limiter aqui (en app.state) cuando corre; si no esta, revienta.
