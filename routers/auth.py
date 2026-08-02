@@ -10,6 +10,7 @@ from passlib.context import CryptContext
 from pydantic import BaseModel, EmailStr, field_validator
 
 
+from base_de_datos import logger
 from configuracion import SECRET_KEY, limiter
 from Modulos.enums import RolUsuario, EstadoAprobacion
 from Persistencia.UsuariosRepositorio import UsuariosRepositorio
@@ -42,6 +43,10 @@ def _verificar_bloqueo_email(email):
             return
         if time.time() < intento["bloqueado_hasta"]:
             minutos_restantes = int((intento["bloqueado_hasta"] - time.time()) / 60) + 1
+            logger.warning(
+                f"Intento de login para {email} mientras el correo esta bloqueado "
+                f"(quedan {minutos_restantes} minuto(s) de bloqueo)"
+            )
             raise HTTPException(
                 status_code=429,
                 detail=(
@@ -54,6 +59,7 @@ def _verificar_bloqueo_email(email):
 
 
 def _registrar_intento_fallido(email):
+    logger.warning(f"Intento de login fallido para {email}")
     with _lock_intentos:
         intento = _intentos_fallidos_por_email.setdefault(email, {"conteo": 0, "bloqueado_hasta": None})
         intento["conteo"] += 1

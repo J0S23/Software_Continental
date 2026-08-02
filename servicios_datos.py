@@ -8,7 +8,7 @@ from enum import Enum as PythonEnum
 
 from fastapi import HTTPException
 
-from base_de_datos import SesionLocal
+from base_de_datos import SesionLocal, logger
 from Persistencia.HistorialRepositorio import HistorialRepositorio
 
 
@@ -166,8 +166,12 @@ def crear_registro(modelo, valores, usuario_id=None, tipo_entidad=None):
 
         sesion.commit()
         return registro
-    except Exception:
+    except Exception as exc:
         sesion.rollback()
+        logger.error(
+            "Fallo al crear registro tipo_entidad=%s usuario_id=%s: %s",
+            tipo_entidad, usuario_id, exc,
+        )
         raise
     finally:
         sesion.close()
@@ -196,8 +200,12 @@ def actualizar_registro(modelo, registro_id, valores, usuario_id=None, tipo_enti
 
         sesion.commit()
         return registro
-    except Exception:
+    except Exception as exc:
         sesion.rollback()
+        logger.error(
+            "Fallo al actualizar registro tipo_entidad=%s registro_id=%s usuario_id=%s: %s",
+            tipo_entidad, registro_id, usuario_id, exc,
+        )
         raise
     finally:
         sesion.close()
@@ -235,8 +243,12 @@ def eliminar_registro(modelo, registro_id, usuario_id=None, tipo_entidad=None):
 
         sesion.commit()
         return existe
-    except Exception:
+    except Exception as exc:
         sesion.rollback()
+        logger.error(
+            "Fallo al eliminar registro tipo_entidad=%s registro_id=%s usuario_id=%s: %s",
+            tipo_entidad, registro_id, usuario_id, exc,
+        )
         raise
     finally:
         sesion.close()

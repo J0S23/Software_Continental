@@ -1,18 +1,12 @@
 # Punto de entrada de la aplicacion FastAPI: monta archivos estaticos,
 # registra los routers (en el orden correcto) y arranca uvicorn.
-import logging
+import time
 
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-)
-logger = logging.getLogger(__name__)
 
 # --- Rate limiting (slowapi) ---
 # _rate_limit_exceeded_handler: convierte la excepcion RateLimitExceeded (la que lanza el decorador @limiter.limit(...) 
@@ -22,7 +16,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
-from base_de_datos import crear_tablas
+from base_de_datos import crear_tablas, logger
 from configuracion import RUTA_STATIC, RUTA_VISTA, limiter
 from routers import datos, paginas
 from routers.exportacion import router as exportacion_router
@@ -76,6 +70,21 @@ async def manejador_excepcion_no_controlada(request: Request, exc: Exception):
         status_code=500,
         content={"success": False, "detail": "Ocurrió un error interno. Contacta al administrador."},
     )
+
+
+# Log de accesos: un renglon por request con metodo, ruta, codigo de
+# respuesta y duracion. A proposito NO se registra el body (puede traer
+# contraseñas u otros datos sensibles, ej. /auth/login, /auth/registro).
+@app.middleware("http")
+async def middleware_log_accesos(request: Request, call_next):
+    inicio = time.perf_counter()
+    response = await call_next(request)
+    duracion_ms = (time.perf_counter() - inicio) * 1000
+    logger.info(
+        "%s %s -> %s (%.1fms)",
+        request.method, request.url.path, response.status_code, duracion_ms,
+    )
+    return response
 
 
 # --- Rate limiting (slowapi), continuacion ---
