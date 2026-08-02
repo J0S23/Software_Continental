@@ -1,11 +1,14 @@
 # Registro, login y sesion de usuarios. La sesion se guarda en una cookie
 # firmada (no en el servidor), asi que no hace falta tabla de sesiones.
+import threading
+import time
+
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from itsdangerous import URLSafeTimedSerializer, BadSignature
 from passlib.context import CryptContext
 from pydantic import BaseModel
 
-from configuracion import SECRET_KEY
+from configuracion import SECRET_KEY, limiter
 from Modulos.enums import RolUsuario, EstadoAprobacion
 from Persistencia.UsuariosRepositorio import UsuariosRepositorio
 
@@ -18,6 +21,48 @@ serializador_sesion = URLSafeTimedSerializer(SECRET_KEY, salt="sesion-usuario")
 
 NOMBRE_COOKIE_SESION = "session"
 DURACION_SESION_SEGUNDOS = 60 * 60 * 8
+
+# --- Bloqueo por email tras intentos fallidos de login ---
+# En memoria (no distribuido entre procesos/instancias): suficiente para un
+# despliegue de un solo worker. Si en produccion se corre con varios workers
+# o replicas, esto habria que moverlo a Redis para que el conteo se comparta.
+MAX_INTENTOS_FALLIDOS = 5
+VENTANA_BLOQUEO_SEGUNDOS = 15 * 60  # 15 minutos bloqueado tras exceder el maximo
+
+_intentos_fallidos_por_email = {}
+_lock_intentos = threading.Lock()
+
+
+def _verificar_bloqueo_email(email):
+    with _lock_intentos:
+        intento = _intentos_fallidos_por_email.get(email)
+        if not intento or not intento.get("bloqueado_hasta"):
+            return
+        if time.time() < intento["bloqueado_hasta"]:
+            minutos_restantes = int((intento["bloqueado_hasta"] - time.time()) / 60) + 1
+            raise HTTPException(
+                status_code=429,
+                detail=(
+                    f"Demasiados intentos fallidos para este correo. "
+                    f"Intenta de nuevo en {minutos_restantes} minuto(s)."
+                ),
+            )
+        # El bloqueo ya expiro: se limpia para no arrastrar estado viejo.
+        _intentos_fallidos_por_email.pop(email, None)
+
+
+def _registrar_intento_fallido(email):
+    with _lock_intentos:
+        intento = _intentos_fallidos_por_email.setdefault(email, {"conteo": 0, "bloqueado_hasta": None})
+        intento["conteo"] += 1
+        if intento["conteo"] >= MAX_INTENTOS_FALLIDOS:
+            intento["bloqueado_hasta"] = time.time() + VENTANA_BLOQUEO_SEGUNDOS
+            intento["conteo"] = 0
+
+
+def _limpiar_intentos_fallidos(email):
+    with _lock_intentos:
+        _intentos_fallidos_por_email.pop(email, None)
 
 
 class RegistroRequest(BaseModel):
@@ -52,9 +97,13 @@ async def registro(datos: RegistroRequest):
 
 
 @router.post("/login")
-async def login(datos: LoginRequest, response: Response):
+@limiter.limit("10/minute")
+async def login(request: Request, datos: LoginRequest, response: Response):
+    _verificar_bloqueo_email(datos.email)
+
     usuario = UsuariosRepositorio.obtener_por_email(datos.email)
     if not usuario or not usuario.password_hash or not contexto_password.verify(datos.contrasena, usuario.password_hash):
+        _registrar_intento_fallido(datos.email)
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
     if usuario.estado_aprobacion != EstadoAprobacion.APROBADO:
@@ -63,6 +112,8 @@ async def login(datos: LoginRequest, response: Response):
         else:
             mensaje = "Tu registro aún está pendiente de aprobación."
         raise HTTPException(status_code=403, detail=mensaje)
+
+    _limpiar_intentos_fallidos(datos.email)
 
     # El contenido va firmado pero legible (no cifrado): no meter datos sensibles aqui.
     token_sesion = serializador_sesion.dumps({
