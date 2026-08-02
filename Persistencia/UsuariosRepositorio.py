@@ -8,8 +8,8 @@ class UsuariosRepositorio:
     y por crear_admin_inicial.py."""
 
     @staticmethod
-    def agregar(nombre_usuario, email, rol, estado, password_hash=None, estado_aprobacion=EstadoAprobacion.PENDIENTE):
-        db = SessionLocal()
+    def agregar(nombre_usuario, email, rol, estado, password_hash=None, estado_aprobacion=EstadoAprobacion.PENDIENTE, sesion=None):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             nuevo_usuario = Usuarios(
                 nombre_usuario=nombre_usuario,
@@ -20,11 +20,15 @@ class UsuariosRepositorio:
                 estado_aprobacion=estado_aprobacion,
             )
             db.add(nuevo_usuario)
-            db.commit()
-            db.refresh(nuevo_usuario)
+            if sesion is None:
+                db.commit()
+                db.refresh(nuevo_usuario)
+            else:
+                db.flush()
             return nuevo_usuario
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
     def obtener_todos():
@@ -59,31 +63,39 @@ class UsuariosRepositorio:
             db.close()
 
     @staticmethod
-    def actualizar(usuario_id, **campos):
+    def actualizar(usuario_id, sesion=None, **campos):
         """No existia en el Modulos/Usuarios.py original -- mismo motivo
         que en ServicioRepositorio."""
-        db = SessionLocal()
+        db = sesion if sesion is not None else SessionLocal()
         try:
             usuario = db.query(Usuarios).filter(Usuarios.id == usuario_id).first()
             if not usuario:
                 return None
             for nombre_campo, valor in campos.items():
                 setattr(usuario, nombre_campo, valor)
-            db.commit()
-            db.refresh(usuario)
+            if sesion is None:
+                db.commit()
+                db.refresh(usuario)
+            else:
+                db.flush()
             return usuario
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
-    def eliminar(usuario_id):
-        db = SessionLocal()
+    def eliminar(usuario_id, sesion=None):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             usuario = db.query(Usuarios).filter(Usuarios.id == usuario_id).first()
             if usuario:
                 db.delete(usuario)
-                db.commit()
+                if sesion is None:
+                    db.commit()
+                else:
+                    db.flush()
                 return True
             return False
         finally:
-            db.close()
+            if sesion is None:
+                db.close()

@@ -7,16 +7,20 @@ class TiposInsumoRepositorio:
     individual referencia uno de estos por tipo_insumo_id."""
 
     @staticmethod
-    def agregar(nombre, precio=0, stock_minimo=0):
-        db = SessionLocal()
+    def agregar(nombre, precio=0, stock_minimo=0, sesion=None):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             nuevo_tipo = TipoInsumo(nombre=nombre, precio=precio, stock_minimo=stock_minimo)
             db.add(nuevo_tipo)
-            db.commit()
-            db.refresh(nuevo_tipo)
+            if sesion is None:
+                db.commit()
+                db.refresh(nuevo_tipo)
+            else:
+                db.flush()
             return nuevo_tipo
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
     def obtener_todos():
@@ -43,29 +47,37 @@ class TiposInsumoRepositorio:
             db.close()
 
     @staticmethod
-    def actualizar(tipo_insumo_id, **campos):
-        db = SessionLocal()
+    def actualizar(tipo_insumo_id, sesion=None, **campos):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             tipo = db.query(TipoInsumo).filter(TipoInsumo.id == tipo_insumo_id).first()
             if not tipo:
                 return None
             for nombre_campo, valor in campos.items():
                 setattr(tipo, nombre_campo, valor)
-            db.commit()
-            db.refresh(tipo)
+            if sesion is None:
+                db.commit()
+                db.refresh(tipo)
+            else:
+                db.flush()
             return tipo
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
-    def eliminar(tipo_insumo_id):
-        db = SessionLocal()
+    def eliminar(tipo_insumo_id, sesion=None):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             tipo = db.query(TipoInsumo).filter(TipoInsumo.id == tipo_insumo_id).first()
             if tipo:
                 db.delete(tipo)
-                db.commit()
+                if sesion is None:
+                    db.commit()
+                else:
+                    db.flush()
                 return True
             return False
         finally:
-            db.close()
+            if sesion is None:
+                db.close()

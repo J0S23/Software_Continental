@@ -120,7 +120,7 @@ def _valor_historial(valor):
     return str(valor)
 
 
-def _registrar_cambios_historial(tipo_entidad, entidad_id, registro_anterior, valores_nuevos, usuario_id):
+def _registrar_cambios_historial(tipo_entidad, entidad_id, registro_anterior, valores_nuevos, usuario_id, sesion=None):
     if not registro_anterior:
         return
     for nombre_campo, valor_nuevo in valores_nuevos.items():
@@ -135,27 +135,42 @@ def _registrar_cambios_historial(tipo_entidad, entidad_id, registro_anterior, va
             campo=nombre_campo,
             valor_anterior=_valor_historial(valor_anterior),
             valor_nuevo=_valor_historial(valor_nuevo),
+            sesion=sesion,
         )
 
 
 def crear_registro(modelo, valores, usuario_id=None, tipo_entidad=None):
-    if hasattr(modelo, "agregar"):
-        registro = modelo.agregar(**valores)
-    else:
-        with SesionLocal() as sesion:
+    # Una sola sesion/transaccion para el registro y su entrada de historial:
+    # si cualquiera de las dos falla, ninguna queda guardada (ver except).
+    sesion = SesionLocal()
+    # Sin esto, tras el commit() de mas abajo el ORM "expira" los atributos
+    # del objeto devuelto; como la sesion se cierra en el finally, cualquier
+    # lectura posterior (p. ej. serializar() en routers/datos.py) reventaria
+    # con DetachedInstanceError.
+    sesion.expire_on_commit = False
+    try:
+        if hasattr(modelo, "agregar"):
+            registro = modelo.agregar(**valores, sesion=sesion)
+        else:
             registro = modelo(**valores)
             sesion.add(registro)
-            sesion.commit()
-            sesion.refresh(registro)
+            sesion.flush()  # asigna el id antes de usarlo en el historial
 
-    HistorialRepositorio.registrar(
-        tipo_entidad=tipo_entidad,
-        entidad_id=registro.id,
-        accion="crear",
-        usuario_id=usuario_id,
-    )
+        HistorialRepositorio.registrar(
+            tipo_entidad=tipo_entidad,
+            entidad_id=registro.id,
+            accion="crear",
+            usuario_id=usuario_id,
+            sesion=sesion,
+        )
 
-    return registro
+        sesion.commit()
+        return registro
+    except Exception:
+        sesion.rollback()
+        raise
+    finally:
+        sesion.close()
 
 
 def buscar_registro(modelo, registro_id):
@@ -164,54 +179,64 @@ def buscar_registro(modelo, registro_id):
 
 
 def actualizar_registro(modelo, registro_id, valores, usuario_id=None, tipo_entidad=None):
-    if hasattr(modelo, "actualizar"):
-        obtener_por_id = getattr(modelo, "obtener_por_id", None)
-        registro_anterior = obtener_por_id(registro_id) if obtener_por_id else None
-        _registrar_cambios_historial(tipo_entidad, registro_id, registro_anterior, valores, usuario_id)
-        return modelo.actualizar(registro_id, **valores)
-
-    with SesionLocal() as sesion:
-        registro = sesion.get(modelo, registro_id)
-
-        if not registro:
-            return None
-
-        _registrar_cambios_historial(tipo_entidad, registro_id, registro, valores, usuario_id)
-
-        for nombre_campo, valor in valores.items():
-            setattr(registro, nombre_campo, valor)
+    sesion = SesionLocal()
+    sesion.expire_on_commit = False
+    try:
+        if hasattr(modelo, "actualizar"):
+            obtener_por_id = getattr(modelo, "obtener_por_id", None)
+            registro_anterior = obtener_por_id(registro_id) if obtener_por_id else None
+            _registrar_cambios_historial(tipo_entidad, registro_id, registro_anterior, valores, usuario_id, sesion=sesion)
+            registro = modelo.actualizar(registro_id, sesion=sesion, **valores)
+        else:
+            registro = sesion.get(modelo, registro_id)
+            if registro:
+                _registrar_cambios_historial(tipo_entidad, registro_id, registro, valores, usuario_id, sesion=sesion)
+                for nombre_campo, valor in valores.items():
+                    setattr(registro, nombre_campo, valor)
 
         sesion.commit()
-        sesion.refresh(registro)
         return registro
+    except Exception:
+        sesion.rollback()
+        raise
+    finally:
+        sesion.close()
 
 
 def eliminar_registro(modelo, registro_id, usuario_id=None, tipo_entidad=None):
-    if hasattr(modelo, "eliminar"):
-        # Se verifica existencia ANTES de eliminar porque el metodo propio
-        # `eliminar` no siempre informa si realmente borro algo.
-        obtener_por_id = getattr(modelo, "obtener_por_id", None)
-        existe = obtener_por_id(registro_id) is not None if obtener_por_id else True
-        if existe:
-            HistorialRepositorio.registrar(
-                tipo_entidad=tipo_entidad,
-                entidad_id=registro_id,
-                accion="eliminar",
-                usuario_id=usuario_id,
-            )
-        modelo.eliminar(registro_id)
-        return existe
+    sesion = SesionLocal()
+    try:
+        if hasattr(modelo, "eliminar"):
+            # Se verifica existencia ANTES de eliminar porque el metodo propio
+            # `eliminar` no siempre informa si realmente borro algo.
+            obtener_por_id = getattr(modelo, "obtener_por_id", None)
+            existe = obtener_por_id(registro_id) is not None if obtener_por_id else True
+            if existe:
+                HistorialRepositorio.registrar(
+                    tipo_entidad=tipo_entidad,
+                    entidad_id=registro_id,
+                    accion="eliminar",
+                    usuario_id=usuario_id,
+                    sesion=sesion,
+                )
+                modelo.eliminar(registro_id, sesion=sesion)
+        else:
+            registro = sesion.get(modelo, registro_id)
+            existe = registro is not None
+            if existe:
+                HistorialRepositorio.registrar(
+                    tipo_entidad=tipo_entidad,
+                    entidad_id=registro_id,
+                    accion="eliminar",
+                    usuario_id=usuario_id,
+                    sesion=sesion,
+                )
+                sesion.delete(registro)
 
-    with SesionLocal() as sesion:
-        registro = sesion.get(modelo, registro_id)
-        if not registro:
-            return False
-        HistorialRepositorio.registrar(
-            tipo_entidad=tipo_entidad,
-            entidad_id=registro_id,
-            accion="eliminar",
-            usuario_id=usuario_id,
-        )
-        sesion.delete(registro)
         sesion.commit()
-        return True
+        return existe
+    except Exception:
+        sesion.rollback()
+        raise
+    finally:
+        sesion.close()

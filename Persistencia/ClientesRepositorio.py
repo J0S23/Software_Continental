@@ -10,9 +10,9 @@ class ClientesRepositorio:
         tipo_cliente, estado_cliente, condicion_pago, estado_cartera_cliente,
         nombre, cliente_id, telefono=None, celular=None, nit=None, ciudad=None,
         departamento=None, direccion_principal=None, correo=None,
-        vendedor_comercial=None, multiempresa=None,
+        vendedor_comercial=None, multiempresa=None, sesion=None,
     ):
-        db = SessionLocal()
+        db = sesion if sesion is not None else SessionLocal()
         try:
             nuevo_cliente = Clientes(
                 tipo_cliente=tipo_cliente, estado_cliente=estado_cliente,
@@ -23,11 +23,15 @@ class ClientesRepositorio:
                 correo=correo, vendedor_comercial=vendedor_comercial,
             )
             db.add(nuevo_cliente)
-            db.commit()
-            db.refresh(nuevo_cliente)
+            if sesion is None:
+                db.commit()
+                db.refresh(nuevo_cliente)
+            else:
+                db.flush()
             return nuevo_cliente
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
     def obtener_todos():
@@ -46,29 +50,37 @@ class ClientesRepositorio:
             db.close()
 
     @staticmethod
-    def actualizar(cliente_id, **valores):
-        db = SessionLocal()
+    def actualizar(cliente_id, sesion=None, **valores):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             cliente = db.query(Clientes).filter(Clientes.id == cliente_id).first()
             if not cliente:
                 return None
             for campo, valor in valores.items():
                 setattr(cliente, campo, valor)
-            db.commit()
-            db.refresh(cliente)
+            if sesion is None:
+                db.commit()
+                db.refresh(cliente)
+            else:
+                db.flush()
             return cliente
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
-    def eliminar(cliente_id):
-        db = SessionLocal()
+    def eliminar(cliente_id, sesion=None):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             cliente = db.query(Clientes).filter(Clientes.id == cliente_id).first()
             if cliente:
                 db.delete(cliente)
-                db.commit()
+                if sesion is None:
+                    db.commit()
+                else:
+                    db.flush()
                 return True
             return False
         finally:
-            db.close()
+            if sesion is None:
+                db.close()

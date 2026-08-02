@@ -14,7 +14,7 @@ class EntregasTonerRepositorio:
         contrato_id=None, cantidad=1, costo_unitario=None, costo_total=None,
         persona_recibe="", motivo="", contador_bn=None, contador_color=None,
         observaciones="", evidencia_recibido=None,
-        fecha_entrega=None, periodo=None,
+        fecha_entrega=None, periodo=None, sesion=None,
     ):
         if costo_unitario is None:
             # Si no viene explicito, se toma el precio actual del tipo de insumo.
@@ -27,7 +27,7 @@ class EntregasTonerRepositorio:
         fecha_entrega = fecha_entrega or datetime.utcnow()
         periodo = periodo or f"{fecha_entrega.month:02d}-{fecha_entrega.year}"  # "MM-YYYY"
 
-        db = SessionLocal()
+        db = sesion if sesion is not None else SessionLocal()
         try:
             nueva_entrega = EntregaToner(
                 fecha_entrega=fecha_entrega, periodo=periodo,
@@ -39,11 +39,15 @@ class EntregasTonerRepositorio:
                 observaciones=observaciones, evidencia_recibido=evidencia_recibido,
             )
             db.add(nueva_entrega)
-            db.commit()
-            db.refresh(nueva_entrega)
+            if sesion is None:
+                db.commit()
+                db.refresh(nueva_entrega)
+            else:
+                db.flush()
             return nueva_entrega
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
     def obtener_todos():
@@ -118,29 +122,37 @@ class EntregasTonerRepositorio:
             db.close()
 
     @staticmethod
-    def actualizar(entrega_id, **campos):
-        db = SessionLocal()
+    def actualizar(entrega_id, sesion=None, **campos):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             entrega = db.query(EntregaToner).filter(EntregaToner.id == entrega_id).first()
             if not entrega:
                 return None
             for nombre_campo, valor in campos.items():
                 setattr(entrega, nombre_campo, valor)
-            db.commit()
-            db.refresh(entrega)
+            if sesion is None:
+                db.commit()
+                db.refresh(entrega)
+            else:
+                db.flush()
             return entrega
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
-    def eliminar(entrega_id):
-        db = SessionLocal()
+    def eliminar(entrega_id, sesion=None):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             entrega = db.query(EntregaToner).filter(EntregaToner.id == entrega_id).first()
             if entrega:
                 db.delete(entrega)
-                db.commit()
+                if sesion is None:
+                    db.commit()
+                else:
+                    db.flush()
                 return True
             return False
         finally:
-            db.close()
+            if sesion is None:
+                db.close()

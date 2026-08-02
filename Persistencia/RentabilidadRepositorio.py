@@ -8,8 +8,8 @@ class RentabilidadRepositorio:
 
     @staticmethod
     def agregar(periodo, ingresos=0, costos=0, ganancia=0, porcentaje_rentabilidad=0,
-                contrato_id=None, cliente_id=None):
-        db = SessionLocal()
+                contrato_id=None, cliente_id=None, sesion=None):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             nuevo_registro = Rentabilidad(
                 periodo=periodo, contrato_id=contrato_id, cliente_id=cliente_id,
@@ -17,11 +17,15 @@ class RentabilidadRepositorio:
                 porcentaje_rentabilidad=porcentaje_rentabilidad,
             )
             db.add(nuevo_registro)
-            db.commit()
-            db.refresh(nuevo_registro)
+            if sesion is None:
+                db.commit()
+                db.refresh(nuevo_registro)
+            else:
+                db.flush()
             return nuevo_registro
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
     def obtener_todos():
@@ -66,14 +70,18 @@ class RentabilidadRepositorio:
             db.close()
 
     @staticmethod
-    def eliminar(rentabilidad_id):
-        db = SessionLocal()
+    def eliminar(rentabilidad_id, sesion=None):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             registro = db.query(Rentabilidad).filter(Rentabilidad.id == rentabilidad_id).first()
             if registro:
                 db.delete(registro)
-                db.commit()
+                if sesion is None:
+                    db.commit()
+                else:
+                    db.flush()
                 return True
             return False
         finally:
-            db.close()
+            if sesion is None:
+                db.close()

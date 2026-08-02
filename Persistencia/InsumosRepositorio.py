@@ -7,16 +7,20 @@ class InsumosRepositorio:
     obtiene indirectamente de su TipoInsumo (ver Modulos/Insumos.py)."""
 
     @staticmethod
-    def agregar(tipo_insumo_id, color="", estado=""):
-        db = SessionLocal()
+    def agregar(tipo_insumo_id, color="", estado="", sesion=None):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             nuevo_insumo = Insumo(tipo_insumo_id=tipo_insumo_id, color=color, estado=estado)
             db.add(nuevo_insumo)
-            db.commit()
-            db.refresh(nuevo_insumo)
+            if sesion is None:
+                db.commit()
+                db.refresh(nuevo_insumo)
+            else:
+                db.flush()
             return nuevo_insumo
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
     def obtener_todos():
@@ -45,32 +49,40 @@ class InsumosRepositorio:
             db.close()
 
     @staticmethod
-    def actualizar(insumo_id, **campos):
-        db = SessionLocal()
+    def actualizar(insumo_id, sesion=None, **campos):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             insumo = db.query(Insumo).filter(Insumo.id == insumo_id).first()
             if not insumo:
                 return None
             for nombre_campo, valor in campos.items():
                 setattr(insumo, nombre_campo, valor)
-            db.commit()
-            db.refresh(insumo)
+            if sesion is None:
+                db.commit()
+                db.refresh(insumo)
+            else:
+                db.flush()
             return insumo
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
-    def eliminar(insumo_id):
-        db = SessionLocal()
+    def eliminar(insumo_id, sesion=None):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             insumo = db.query(Insumo).filter(Insumo.id == insumo_id).first()
             if insumo:
                 db.delete(insumo)
-                db.commit()
+                if sesion is None:
+                    db.commit()
+                else:
+                    db.flush()
                 return True
             return False
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
     def contar_disponibles_agrupado():

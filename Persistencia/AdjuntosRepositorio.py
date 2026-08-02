@@ -8,8 +8,8 @@ class AdjuntosRepositorio:
     @staticmethod
     def agregar(tipo_entidad, entidad_id, nombre_original, nombre_archivo,
                 tipo_documento=None, content_type=None, tamano_bytes=None,
-                subido_por=None, observaciones=None):
-        db = SessionLocal()
+                subido_por=None, observaciones=None, sesion=None):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             nuevo_adjunto = Adjunto(
                 tipo_entidad=tipo_entidad, entidad_id=entidad_id,
@@ -19,11 +19,15 @@ class AdjuntosRepositorio:
                 observaciones=observaciones,
             )
             db.add(nuevo_adjunto)
-            db.commit()
-            db.refresh(nuevo_adjunto)
+            if sesion is None:
+                db.commit()
+                db.refresh(nuevo_adjunto)
+            else:
+                db.flush()
             return nuevo_adjunto
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
     def obtener_todos():
@@ -56,17 +60,21 @@ class AdjuntosRepositorio:
             db.close()
 
     @staticmethod
-    def eliminar(adjunto_id):
+    def eliminar(adjunto_id, sesion=None):
         #Devuelve el nombre_archivo (para que el router borre el archivo fisico) en vez de un bool, porque a diferencia del resto de
         #repositorios aqui SI hace falta un dato del registro despues de borrarlo de la base de datos.
-        db = SessionLocal()
+        db = sesion if sesion is not None else SessionLocal()
         try:
             adjunto = db.query(Adjunto).filter(Adjunto.id == adjunto_id).first()
             if not adjunto:
                 return None
             nombre_archivo = adjunto.nombre_archivo
             db.delete(adjunto)
-            db.commit()
+            if sesion is None:
+                db.commit()
+            else:
+                db.flush()
             return nombre_archivo
         finally:
-            db.close()
+            if sesion is None:
+                db.close()

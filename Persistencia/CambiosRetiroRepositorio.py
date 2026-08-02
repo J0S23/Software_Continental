@@ -23,8 +23,9 @@ class CambiosRetiroRepositorio:
         observaciones="",
         fecha_evento=None,
         actualizar_estado_equipo=True,
+        sesion=None,
     ):
-        db = SessionLocal()
+        db = sesion if sesion is not None else SessionLocal()
         try:
             nuevo_evento = CambioRetiro(
                 equipo_id=equipo_id,
@@ -40,10 +41,14 @@ class CambiosRetiroRepositorio:
                 fecha_evento=fecha_evento or datetime.utcnow(),
             )
             db.add(nuevo_evento)
-            db.commit()
-            db.refresh(nuevo_evento)
+            if sesion is None:
+                db.commit()
+                db.refresh(nuevo_evento)
+            else:
+                db.flush()
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
         if actualizar_estado_equipo:
             # "retiro" da de baja el equipo; "cambio" lo manda a mantenimiento
@@ -85,32 +90,40 @@ class CambiosRetiroRepositorio:
             db.close()
 
     @staticmethod
-    def actualizar(evento_id, **campos):
+    def actualizar(evento_id, sesion=None, **campos):
         """No existia en el Modulos/CambiosRetiro.py original -- se agrega
         para que servicios_datos.actualizar_registro no caiga al fallback
         de sesion.get(modelo, ...) con un repositorio (que no es ORM)."""
-        db = SessionLocal()
+        db = sesion if sesion is not None else SessionLocal()
         try:
             evento = db.query(CambioRetiro).filter(CambioRetiro.id == evento_id).first()
             if not evento:
                 return None
             for nombre_campo, valor in campos.items():
                 setattr(evento, nombre_campo, valor)
-            db.commit()
-            db.refresh(evento)
+            if sesion is None:
+                db.commit()
+                db.refresh(evento)
+            else:
+                db.flush()
             return evento
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
-    def eliminar(evento_id):
-        db = SessionLocal()
+    def eliminar(evento_id, sesion=None):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             evento = db.query(CambioRetiro).filter(CambioRetiro.id == evento_id).first()
             if evento:
                 db.delete(evento)
-                db.commit()
+                if sesion is None:
+                    db.commit()
+                else:
+                    db.flush()
                 return True
             return False
         finally:
-            db.close()
+            if sesion is None:
+                db.close()

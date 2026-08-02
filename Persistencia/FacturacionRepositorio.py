@@ -14,7 +14,7 @@ class FacturacionRepositorio:
         incluye_iva=False, porcentaje_iva=0, valor_iva=None,
         impuesto_municipal=0, impuesto_departamental=0, impuesto_pro_deporte=0,
         retenciones=0, total_facturado=None, fecha_envio=None, medio_envio=None,
-        observaciones=None):
+        observaciones=None, sesion=None):
         if subtotal is None:
             subtotal = (
                 valor_mensual_base + valor_adicionales_bn + valor_adicionales_color
@@ -37,7 +37,7 @@ class FacturacionRepositorio:
                 + impuesto_pro_deporte - retenciones
             )
 
-        db = SessionLocal()
+        db = sesion if sesion is not None else SessionLocal()
         try:
             nueva_factura = Facturacion(
                 periodo=periodo, cliente_id=cliente_id, contrato_id=contrato_id,
@@ -54,11 +54,15 @@ class FacturacionRepositorio:
                 observaciones=observaciones,
             )
             db.add(nueva_factura)
-            db.commit()
-            db.refresh(nueva_factura)
+            if sesion is None:
+                db.commit()
+                db.refresh(nueva_factura)
+            else:
+                db.flush()
             return nueva_factura
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
     def obtener_todos():
@@ -111,29 +115,37 @@ class FacturacionRepositorio:
             db.close()
 
     @staticmethod
-    def actualizar(factura_id, **campos):
-        db = SessionLocal()
+    def actualizar(factura_id, sesion=None, **campos):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             factura = db.query(Facturacion).filter(Facturacion.id == factura_id).first()
             if not factura:
                 return None
             for nombre_campo, valor in campos.items():
                 setattr(factura, nombre_campo, valor)
-            db.commit()
-            db.refresh(factura)
+            if sesion is None:
+                db.commit()
+                db.refresh(factura)
+            else:
+                db.flush()
             return factura
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
-    def eliminar(factura_id):
-        db = SessionLocal()
+    def eliminar(factura_id, sesion=None):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             factura = db.query(Facturacion).filter(Facturacion.id == factura_id).first()
             if factura:
                 db.delete(factura)
-                db.commit()
+                if sesion is None:
+                    db.commit()
+                else:
+                    db.flush()
                 return True
             return False
         finally:
-            db.close()
+            if sesion is None:
+                db.close()

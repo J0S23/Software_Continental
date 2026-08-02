@@ -29,11 +29,11 @@ class ContratoEquipoRepositorio:
         contrato_id, equipo_id, sede=None, area_uso=None,
         contador_inicial_bn=0, contador_inicial_color=0,
         usuario_responsable=None, observaciones=None, fecha_instalacion=None,
-        actualizar_estado_equipo=True,
+        actualizar_estado_equipo=True, sesion=None,
     ):
         #Asocia un equipo a un contrato. Bloquea (ValueError) si el equipo ya tiene una asignacion activa -- un equipo fisico solo
         #puede estar instalado en un contrato a la vez, ya sea el mismo contrato (duplicado) u otro (hay que retirarlo de ahi primero).
-        
+
         ya_activo = ContratoEquipoRepositorio.obtener_activo_por_equipo(equipo_id)
         if ya_activo and ya_activo.contrato_id != contrato_id:
             raise ValueError(
@@ -46,7 +46,7 @@ class ContratoEquipoRepositorio:
                 f"(asignacion {ya_activo.id})."
             )
 
-        db = SessionLocal()
+        db = sesion if sesion is not None else SessionLocal()
         try:
             nueva_asignacion = ContratoEquipo(
                 contrato_id=contrato_id, equipo_id=equipo_id, sede=sede, area_uso=area_uso,
@@ -55,10 +55,14 @@ class ContratoEquipoRepositorio:
                 estado_actual="activo", fecha_instalacion=fecha_instalacion or datetime.utcnow(),
             )
             db.add(nueva_asignacion)
-            db.commit()
-            db.refresh(nueva_asignacion)
+            if sesion is None:
+                db.commit()
+                db.refresh(nueva_asignacion)
+            else:
+                db.flush()
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
         if actualizar_estado_equipo:
             EquiposRepositorio.actualizar(equipo_id, contrato_id=contrato_id, estado_equipo="instalado")
@@ -138,32 +142,40 @@ class ContratoEquipoRepositorio:
             db.close()
 
     @staticmethod
-    def actualizar(asignacion_id, **campos):
+    def actualizar(asignacion_id, sesion=None, **campos):
         #CRUD generico (para servicios_datos.py / PUT del frontend). No dispara los efectos secundarios de agregar()/retirar():
         #si se usa para cambiar estado_actual a 'retirado' desde el frontend generico, Equipos.contrato_id NO se limpia automaticamente. Usa retirar()
         #para el flujo de negocio completo (o expon un endpoint dedicado que lo llame).
-        db = SessionLocal()
+        db = sesion if sesion is not None else SessionLocal()
         try:
             asignacion = db.query(ContratoEquipo).filter(ContratoEquipo.id == asignacion_id).first()
             if not asignacion:
                 return None
             for nombre_campo, valor in campos.items():
                 setattr(asignacion, nombre_campo, valor)
-            db.commit()
-            db.refresh(asignacion)
+            if sesion is None:
+                db.commit()
+                db.refresh(asignacion)
+            else:
+                db.flush()
             return asignacion
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
-    def eliminar(asignacion_id):
-        db = SessionLocal()
+    def eliminar(asignacion_id, sesion=None):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             asignacion = db.query(ContratoEquipo).filter(ContratoEquipo.id == asignacion_id).first()
             if asignacion:
                 db.delete(asignacion)
-                db.commit()
+                if sesion is None:
+                    db.commit()
+                else:
+                    db.flush()
                 return True
             return False
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
