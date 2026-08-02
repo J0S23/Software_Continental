@@ -6,7 +6,8 @@ import time
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from itsdangerous import URLSafeTimedSerializer, BadSignature
 from passlib.context import CryptContext
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
+
 
 from configuracion import SECRET_KEY, limiter
 from Modulos.enums import RolUsuario, EstadoAprobacion
@@ -66,13 +67,13 @@ def _limpiar_intentos_fallidos(email):
 
 
 class RegistroRequest(BaseModel):
-    email: str
+    email: EmailStr
     contrasena: str
     rol: RolUsuario
 
 
 class LoginRequest(BaseModel):
-    email: str
+    email: EmailStr
     contrasena: str
 
 
