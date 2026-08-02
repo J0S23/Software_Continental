@@ -1,6 +1,10 @@
-# Configuracion global compartida por toda la app: rutas base y clave secreta.
+# Configuracion global compartida por toda la app: rutas base, clave secreta
+# y limiter de rate limiting (slowapi).
 import os
 from pathlib import Path
+
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 BASE_DIR = Path(__file__).resolve().parent
 RUTA_STATIC = BASE_DIR / "static"
@@ -17,3 +21,8 @@ if not SECRET_KEY:
         "en tu .env) -- ya no se permite un valor por defecto, porque firma "
         "las cookies de sesion y un valor conocido permite forjarlas."
     )
+
+# Limiter global de slowapi (clave = IP del cliente). Se registra en app.py
+# via app.state.limiter + SlowAPIMiddleware; se usa en routers/auth.py con
+# el decorador @limiter.limit(...) sobre /auth/login.
+limiter = Limiter(key_func=get_remote_address)
