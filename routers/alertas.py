@@ -1,9 +1,10 @@
 from typing import Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from Persistencia.AlertaEstadoRepositorio import AlertaEstadoRepositorio
+from routers.auth import get_current_user
 from Servicio.Alertas import generar_alertas
 
 router = APIRouter()
@@ -34,12 +35,12 @@ class EstadoAlertaRequest(BaseModel):
 
 
 @router.get("/api/alertas")
-async def obtener_alertas(incluir_descartadas: bool = False):
+async def obtener_alertas(incluir_descartadas: bool = False, usuario=Depends(get_current_user)):
     return generar_alertas(incluir_descartadas=incluir_descartadas)
 
 
 @router.post("/api/alertas/estado")
-async def actualizar_estado_alerta(datos: EstadoAlertaRequest):
+async def actualizar_estado_alerta(datos: EstadoAlertaRequest, usuario=Depends(get_current_user)):
     """Marca una alerta como leida/guardada/descartada (upsert). Los campos
     que no se envian no se modifican."""
     estado = AlertaEstadoRepositorio.marcar(
@@ -55,6 +56,6 @@ async def actualizar_estado_alerta(datos: EstadoAlertaRequest):
 
 
 @router.get("/api/alertas/guardadas")
-async def obtener_alertas_guardadas():
+async def obtener_alertas_guardadas(usuario=Depends(get_current_user)):
     guardadas = AlertaEstadoRepositorio.obtener_guardadas()
     return {"success": True, "alertas": [_serializar_estado(estado) for estado in guardadas]}

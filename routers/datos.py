@@ -9,6 +9,7 @@ from catalogo_modelos import (
     obtener_configuracion_frontend,
     obtener_tipos,
 )
+from Modulos.Permisos import verificar_permiso_escritura, verificar_permiso_eliminar
 from routers.auth import get_current_user
 from servicios_datos import (
     actualizar_registro,
@@ -35,7 +36,7 @@ async def get_configuracion():
 
 
 @router.get("/api/{tipo}")
-async def obtener_registros(tipo: str):
+async def obtener_registros(tipo: str, usuario=Depends(get_current_user)):
     # Catch-all de 2 segmentos: por eso app.py registra este router al final,
     # despues de exportacion/alertas/facturacion_automatica.
     configuracion = obtener_configuracion_tipo(tipo)
@@ -48,9 +49,9 @@ async def obtener_registros(tipo: str):
         "datos": [serializar(registro, campos) for registro in registros],
     }
 
-
 @router.post("/api/{tipo}")
 async def agregar_registro(tipo: str, request: Request, usuario=Depends(get_current_user)):
+    verificar_permiso_escritura(tipo, usuario)
     configuracion = obtener_configuracion_tipo(tipo)
     modelo = obtener_modelo(configuracion)
     campos = obtener_campos(configuracion)
@@ -67,6 +68,7 @@ async def agregar_registro(tipo: str, request: Request, usuario=Depends(get_curr
 
 @router.put("/api/{tipo}/{registro_id}")
 async def editar_registro(tipo: str, registro_id: int, request: Request, usuario=Depends(get_current_user)):
+    verificar_permiso_escritura(tipo, usuario)
     configuracion = obtener_configuracion_tipo(tipo)
     modelo = obtener_modelo(configuracion)
     campos = obtener_campos(configuracion)
@@ -86,6 +88,7 @@ async def editar_registro(tipo: str, registro_id: int, request: Request, usuario
 
 @router.delete("/api/{tipo}/{registro_id}")
 async def eliminar_registro(tipo: str, registro_id: int, usuario=Depends(get_current_user)):
+    verificar_permiso_eliminar(usuario)
     configuracion = obtener_configuracion_tipo(tipo)
     modelo = obtener_modelo(configuracion)
 
@@ -95,7 +98,7 @@ async def eliminar_registro(tipo: str, registro_id: int, usuario=Depends(get_cur
     return {"success": True, "message": "Registro eliminado"}
 
 @router.get("/api/historial/{tipo}/{entidad_id}")
-async def obtener_historial(tipo: str, entidad_id: int):
+async def obtener_historial(tipo: str, entidad_id: int, usuario=Depends(get_current_user)):
     registros = HistorialRepositorio.obtener_por_entidad(tipo, entidad_id)
     return {
         "success": True,

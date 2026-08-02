@@ -20,6 +20,7 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font, PatternFill
 
 from catalogo_modelos import obtener_configuracion_tipo
+from Modulos.Permisos import verificar_permiso_escritura
 from routers.auth import get_current_user
 from servicios_datos import crear_registro, obtener_campos, obtener_enumeraciones, obtener_modelo
 
@@ -196,8 +197,8 @@ async def importar_desde_excel(tipo: str, archivo: UploadFile = File(...), usuar
     #Crea un registro por cada fila con datos del Excel. No detiene el proceso ante una fila invalida: la reporta en 'errores'
     #y sigue con las demas. Fila vacia (todas las celdas en blanco) se ignora en silencio.
     #Los campos faltantes (no invalidos, solo ausentes) NO cuentan como error: se completan con "N.A" o se dejan en su default, ver _normalizar_fila_importacion.
-    
     configuracion = _validar_tipo_importable(tipo)
+    verificar_permiso_escritura(tipo, usuario)
     modelo = obtener_modelo(configuracion)
     campos = obtener_campos(configuracion)
     campos_por_nombre = {c["nombre"]: c for c in campos}

@@ -4,8 +4,16 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
+# --- Rate limiting (slowapi) ---
+# _rate_limit_exceeded_handler: convierte la excepcion RateLimitExceeded (la que lanza el decorador @limiter.limit(...) 
+# en routers/auth.py cuando se excede el limite) en una respuesta HTTP 429 limpia. Sin registrarlo, esa excepcion no tiene 
+# quien la atrape y FastAPI la deja subir como un 500.
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+
 from base_de_datos import crear_tablas
-from configuracion import RUTA_STATIC, RUTA_VISTA
+from configuracion import RUTA_STATIC, RUTA_VISTA, limiter
 from routers import datos, paginas
 from routers.exportacion import router as exportacion_router
 from routers.informes import router as informes_router
@@ -26,6 +34,17 @@ from Modulos.Sedes import Sedes  # noqa: F401
 crear_tablas()
 
 app = FastAPI(title="Gestor de Datos Continental")
+
+# --- Rate limiting (slowapi), continuacion ---
+# app.state.limiter: el decorador @limiter.limit(...) en routers/auth.py busca el Limiter aqui (en app.state) cuando corre; si no esta, revienta.
+# add_exception_handler: conecta RateLimitExceeded con el handler de arriba.
+# SlowAPIMiddleware: es lo que realmente cuenta las peticiones por IP y decide cuando disparar RateLimitExceeded 
+# (sin este middleware el decorador no tiene efecto, aunque este puesto en el endpoint).
+# Las 3 lineas van juntas y en este orden porque cada una depende de que la anterior ya haya corrido.
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
+
 app.mount("/static", StaticFiles(directory=RUTA_STATIC), name="static")
 # html=True permite servir index.html de una carpeta al pedir su ruta directorio.
 app.mount("/vista", StaticFiles(directory=RUTA_VISTA, html=True), name="vista")

@@ -96,13 +96,13 @@ async def subir_adjunto(
 
 
 @router.get("/api/adjuntos")
-async def listar_adjuntos(tipo_entidad: str, entidad_id: int):
+async def listar_adjuntos(tipo_entidad: str, entidad_id: int, usuario=Depends(get_current_user)):
     adjuntos = AdjuntosRepositorio.obtener_por_entidad(tipo_entidad, entidad_id)
     return {"success": True, "adjuntos": [_serializar(a) for a in adjuntos]}
 
 
 @router.get("/api/adjuntos/{adjunto_id}/descargar")
-async def descargar_adjunto(adjunto_id: int):
+async def descargar_adjunto(adjunto_id: int, usuario=Depends(get_current_user)):
     adjunto = AdjuntosRepositorio.obtener_por_id(adjunto_id)
     if not adjunto:
         raise HTTPException(status_code=404, detail="Adjunto no encontrado")
