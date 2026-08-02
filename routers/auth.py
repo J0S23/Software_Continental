@@ -2,11 +2,12 @@
 # firmada (no en el servidor), asi que no hace falta tabla de sesiones.
 import threading
 import time
+import re
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from itsdangerous import URLSafeTimedSerializer, BadSignature
 from passlib.context import CryptContext
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 
 
 from configuracion import SECRET_KEY, limiter
@@ -70,6 +71,26 @@ class RegistroRequest(BaseModel):
     email: EmailStr
     contrasena: str
     rol: RolUsuario
+
+    @field_validator("contrasena")
+    @classmethod
+    def validar_complejidad_contrasena(cls, valor):
+        errores = []
+        if len(valor) < 8:
+            errores.append("al menos 8 caracteres")
+        if not re.search(r"[A-Z]", valor):
+            errores.append("al menos una mayuscula")
+        if not re.search(r"[a-z]", valor):
+            errores.append("al menos una minuscula")
+        if not re.search(r"\d", valor):
+            errores.append("al menos un numero")
+        if not re.search(r"[^\w\s]", valor):
+            errores.append("al menos un caracter especial (ej. ! @ # $ %)")
+
+        if errores:
+            raise ValueError(f"La contraseña debe tener {', '.join(errores)}")
+
+        return valor
 
 
 class LoginRequest(BaseModel):
