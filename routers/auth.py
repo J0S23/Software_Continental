@@ -135,10 +135,9 @@ class AprobarRequest(BaseModel):
 
 
 @router.get("/pendientes")
-async def obtener_pendientes():
+async def obtener_pendientes(admin=Depends(requerir_administrador)):
     pendientes = UsuariosRepositorio.obtener_pendientes()
     return {"success": True, "usuarios": [_serializar_usuario(u) for u in pendientes]}
-
 
 @router.post("/{usuario_id}/aprobar")
 async def aprobar_usuario(usuario_id: int, datos: AprobarRequest, admin=Depends(requerir_administrador)):
