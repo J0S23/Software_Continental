@@ -4,6 +4,7 @@ import time
 
 import uvicorn
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -17,7 +18,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from base_de_datos import crear_tablas, logger
-from configuracion import RUTA_STATIC, RUTA_VISTA, limiter
+from configuracion import ORIGENES_PERMITIDOS, RUTA_STATIC, RUTA_VISTA, limiter
 from routers import datos, paginas
 from routers.exportacion import router as exportacion_router
 from routers.informes import router as informes_router
@@ -96,6 +97,20 @@ async def middleware_log_accesos(request: Request, call_next):
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
+
+# CORS: se agrega DESPUES de SlowAPIMiddleware a proposito. En Starlette el
+# middleware agregado mas tarde envuelve (queda mas afuera) al agregado
+# antes, y por lo tanto se ejecuta PRIMERO en cada request -- el orden de
+# add_middleware() es el inverso al de ejecucion. Poniendolo aqui, CORS
+# queda como la capa mas externa: responde el preflight OPTIONS antes de
+# que la request llegue al rate limiter o a cualquier otro middleware.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ORIGENES_PERMITIDOS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["*"],
+)
 
 app.mount("/static", StaticFiles(directory=RUTA_STATIC), name="static")
 # html=True permite servir index.html de una carpeta al pedir su ruta directorio.
