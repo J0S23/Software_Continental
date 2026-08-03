@@ -36,16 +36,18 @@ async def get_configuracion():
 
 
 @router.get("/api/{tipo}")
-async def obtener_registros(tipo: str, usuario=Depends(get_current_user)):
+async def obtener_registros(tipo: str, skip: int = 0, limit: int = 100, usuario=Depends(get_current_user)):
     # Catch-all de 2 segmentos: por eso app.py registra este router al final,
     # despues de exportacion/alertas/facturacion_automatica.
     configuracion = obtener_configuracion_tipo(tipo)
     modelo = obtener_modelo(configuracion)
     campos = obtener_campos(configuracion)
-    registros = listar_registros(modelo)
+    total = len(listar_registros(modelo))
+    registros = listar_registros(modelo, skip=skip, limit=limit)
 
     return {
         "success": True,
+        "total": total,
         "datos": [serializar(registro, campos) for registro in registros],
     }
 

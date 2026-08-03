@@ -262,6 +262,32 @@ main {
     overflow-x: auto;
 }
 
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 14px;
+}
+
+/* Sin esto, el atributo "hidden" (que actualizarControlesPaginacion() pone/
+   quita por JS) no ocultaria el elemento: una regla propia con "display"
+   explicito le gana en la cascada a la regla por defecto del navegador
+   "[hidden] { display: none }". */
+.pagination-controls[hidden] {
+    display: none;
+}
+
+.pagination-controls span {
+    color: #4a5568;
+    font-size: 0.9rem;
+}
+
+.pagination-controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;

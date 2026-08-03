@@ -104,11 +104,14 @@ def serializar(registro, campos):
 # los define, caen a un CRUD generico via SQLAlchemy. Asi conviven modelos con
 # repositorio a medida y modelos ORM simples bajo la misma capa.
 
-def listar_registros(modelo):
+def listar_registros(modelo, skip=0, limit=None):
     if hasattr(modelo, "obtener_todos"):
-        return modelo.obtener_todos()
-    with SesionLocal() as sesion:
-        return sesion.query(modelo).all()
+        registros = modelo.obtener_todos()
+    else:
+        with SesionLocal() as sesion:
+            registros = sesion.query(modelo).all()
+
+    return registros[skip:skip + limit] if limit is not None else registros[skip:]
 
 
 def _valor_historial(valor):

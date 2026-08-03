@@ -2,10 +2,18 @@ let tipos = {};
 let tipoActual = "";
 let configuracion = {};
 
+// Paginacion de la tabla de registros: limit fijo, skip se mueve de a una
+// pagina por click. totalRegistros lo informa el backend en cada respuesta.
+const LIMITE_PAGINA = 100;
+let skipActual = 0;
+let totalRegistros = 0;
+
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("tipoSelector").addEventListener("change", cambiarTipo);
     document.getElementById("formDatos").addEventListener("submit", agregarDato);
     document.getElementById("limpiarBtn").addEventListener("click", limpiarFormulario);
+    document.getElementById("paginaAnteriorBtn").addEventListener("click", irPaginaAnterior);
+    document.getElementById("paginaSiguienteBtn").addEventListener("click", irPaginaSiguiente);
 
     document.getElementById("loginForm").addEventListener("submit", iniciarSesion);
     document.getElementById("registroForm").addEventListener("submit", registrarUsuario);
@@ -114,6 +122,7 @@ function seleccionarTipo(tipo) {
 
 async function cambiarTipo() {
     tipoActual = document.getElementById("tipoSelector").value;
+    skipActual = 0; // cada tipo tiene su propia paginacion, siempre arranca en la primera pagina
     document.querySelectorAll(".tipo-btn").forEach((btn) => {
         btn.classList.toggle("active", btn.textContent === tipos[tipoActual]);
     });
@@ -204,12 +213,39 @@ async function agregarDato(event) {
 
 async function obtenerDatos() {
     try {
-        const response = await fetch(`/api/${tipoActual}`);
+        const response = await fetch(`/api/${tipoActual}?skip=${skipActual}&limit=${LIMITE_PAGINA}`);
         const data = await leerRespuesta(response);
+        totalRegistros = data.total ?? data.datos.length;
         llenarTabla(data.datos);
+        actualizarControlesPaginacion();
     } catch (error) {
         mostrarMensaje(error.message, "error");
     }
+}
+
+function actualizarControlesPaginacion() {
+    const controles = document.getElementById("paginationControls");
+    controles.hidden = totalRegistros <= LIMITE_PAGINA;
+
+    const desde = totalRegistros === 0 ? 0 : skipActual + 1;
+    const hasta = Math.min(skipActual + LIMITE_PAGINA, totalRegistros);
+    document.getElementById("paginacionInfo").textContent = `${desde}-${hasta} de ${totalRegistros}`;
+
+    document.getElementById("paginaAnteriorBtn").disabled = skipActual === 0;
+    document.getElementById("paginaSiguienteBtn").disabled = skipActual + LIMITE_PAGINA >= totalRegistros;
+}
+
+async function irPaginaAnterior() {
+    skipActual = Math.max(0, skipActual - LIMITE_PAGINA);
+    await obtenerDatos();
+}
+
+async function irPaginaSiguiente() {
+    if (skipActual + LIMITE_PAGINA >= totalRegistros) {
+        return;
+    }
+    skipActual += LIMITE_PAGINA;
+    await obtenerDatos();
 }
 
 function llenarTabla(datos) {
