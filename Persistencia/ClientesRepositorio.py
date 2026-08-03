@@ -50,10 +50,14 @@ class ClientesRepositorio:
             db.close()
 
     @staticmethod
-    def actualizar(cliente_id, sesion=None, **valores):
+    def actualizar(registro_id, sesion=None, **valores):
+        # El parametro NO puede llamarse "cliente_id": esa es tambien la clave
+        # del campo de negocio "Cliente ID" (ver catalogo_modelos.py), que
+        # siempre viene incluido en **valores -- con ese nombre chocaba con
+        # el propio positional y tiraba TypeError en cada PUT /api/clientes.
         db = sesion if sesion is not None else SessionLocal()
         try:
-            cliente = db.query(Clientes).filter(Clientes.id == cliente_id).first()
+            cliente = db.query(Clientes).filter(Clientes.id == registro_id).first()
             if not cliente:
                 return None
             for campo, valor in valores.items():
