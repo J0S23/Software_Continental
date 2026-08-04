@@ -6,19 +6,23 @@ class SedesRepositorio:
     """CRUD de sedes (sucursales/ubicaciones de la empresa)."""
 
     @staticmethod
-    def agregar(nombre_sede, ciudad, direccion="", telefono="", gerente="", estado_sede="Activa"):
-        db = SessionLocal()
+    def agregar(nombre_sede, ciudad, direccion="", telefono="", gerente="", estado_sede="Activa", sesion=None):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             nueva_sede = Sedes(
                 nombre_sede=nombre_sede, ciudad=ciudad, direccion=direccion,
                 telefono=telefono, gerente=gerente, estado_sede=estado_sede,
             )
             db.add(nueva_sede)
-            db.commit()
-            db.refresh(nueva_sede)
+            if sesion is None:
+                db.commit()
+                db.refresh(nueva_sede)
+            else:
+                db.flush()
             return nueva_sede
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
     def obtener_todos():
@@ -37,29 +41,37 @@ class SedesRepositorio:
             db.close()
 
     @staticmethod
-    def actualizar(sede_id, **campos):
-        db = SessionLocal()
+    def actualizar(sede_id, sesion=None, **campos):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             sede = db.query(Sedes).filter(Sedes.id == sede_id).first()
             if not sede:
                 return None
             for nombre_campo, valor in campos.items():
                 setattr(sede, nombre_campo, valor)
-            db.commit()
-            db.refresh(sede)
+            if sesion is None:
+                db.commit()
+                db.refresh(sede)
+            else:
+                db.flush()
             return sede
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
-    def eliminar(sede_id):
-        db = SessionLocal()
+    def eliminar(sede_id, sesion=None):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             sede = db.query(Sedes).filter(Sedes.id == sede_id).first()
             if sede:
                 db.delete(sede)
-                db.commit()
+                if sesion is None:
+                    db.commit()
+                else:
+                    db.flush()
                 return True
             return False
         finally:
-            db.close()
+            if sesion is None:
+                db.close()

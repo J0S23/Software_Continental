@@ -32,6 +32,13 @@ if not SECRET_KEY:
         "conocido permite forjarlas."
     )
 
+# Origenes permitidos para CORS. A diferencia de CONTINENTAL_SECRET_KEY, esta
+# si tiene un default (no rompe nada si falta): cubre el uso local actual
+# (frontend servido por la misma app en 127.0.0.1/localhost:5000).
+ORIGENES_PERMITIDOS = os.environ.get(
+    "CONTINENTAL_CORS_ORIGENS", "http://127.0.0.1:5000,http://localhost:5000"
+).split(",")
+
 # Limiter global de slowapi (clave = IP del cliente). Se registra en app.py
 # via app.state.limiter + SlowAPIMiddleware; se usa en routers/auth.py con
 # el decorador @limiter.limit(...) sobre /auth/login.

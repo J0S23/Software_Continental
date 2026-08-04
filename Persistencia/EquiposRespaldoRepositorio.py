@@ -29,9 +29,9 @@ class EquiposRespaldoRepositorio:
     def agregar(
         cliente_id, equipo_principal_id, equipo_respaldo_id, motivo, tecnico_responsable,
         contrato_id=None, contador_inicial_respaldo=None, fecha_estimada_retiro=None,
-        costo_asociado=0, observaciones="", actualizar_estado_equipo=True,
+        costo_asociado=0, observaciones="", actualizar_estado_equipo=True, sesion=None,
     ):
-        db = SessionLocal()
+        db = sesion if sesion is not None else SessionLocal()
         try:
             ya_respaldado = EquiposRespaldoRepositorio._asignacion_activa_de(db, equipo_principal_id)
             if ya_respaldado:
@@ -64,10 +64,14 @@ class EquiposRespaldoRepositorio:
                 observaciones=observaciones, estado_asignacion="activo",
             )
             db.add(nueva_asignacion)
-            db.commit()
-            db.refresh(nueva_asignacion)
+            if sesion is None:
+                db.commit()
+                db.refresh(nueva_asignacion)
+            else:
+                db.flush()
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
         if actualizar_estado_equipo:
             EquiposRepositorio.actualizar(equipo_respaldo_id, estado_equipo="instalado")
@@ -129,34 +133,42 @@ class EquiposRespaldoRepositorio:
             db.close()
 
     @staticmethod
-    def actualizar(asignacion_id, **campos):
+    def actualizar(asignacion_id, sesion=None, **campos):
         """No existia en el Modulos/EquiposRespaldo.py original -- 'finalizar'
         es la operacion de negocio especifica para cerrar una asignacion
         (y sigue siendo el camino recomendado para eso). Este 'actualizar'
         generico es solo para que el CRUD generico del frontend
         (servicios_datos.py) tenga a donde caer si llega un PUT."""
-        db = SessionLocal()
+        db = sesion if sesion is not None else SessionLocal()
         try:
             asignacion = db.query(EquipoRespaldo).filter(EquipoRespaldo.id == asignacion_id).first()
             if not asignacion:
                 return None
             for nombre_campo, valor in campos.items():
                 setattr(asignacion, nombre_campo, valor)
-            db.commit()
-            db.refresh(asignacion)
+            if sesion is None:
+                db.commit()
+                db.refresh(asignacion)
+            else:
+                db.flush()
             return asignacion
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
-    def eliminar(asignacion_id):
-        db = SessionLocal()
+    def eliminar(asignacion_id, sesion=None):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             asignacion = db.query(EquipoRespaldo).filter(EquipoRespaldo.id == asignacion_id).first()
             if asignacion:
                 db.delete(asignacion)
-                db.commit()
+                if sesion is None:
+                    db.commit()
+                else:
+                    db.flush()
                 return True
             return False
         finally:
-            db.close()
+            if sesion is None:
+                db.close()

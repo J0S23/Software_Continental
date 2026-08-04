@@ -10,8 +10,8 @@ class ContratosRepositorio:
         fecha_inicio, fecha_fin=None, poliza_contrato="", poliza_seriedad="", equipo_id=None,
         valor_mensual_base=0, paginas_bn_incluidas=0, paginas_color_incluidas=0,
         valor_pagina_adicional_bn=0, valor_pagina_adicional_color=0,
-        escaneos_incluidos=0, valor_escaneo_adicional=0):
-        db = SessionLocal()
+        escaneos_incluidos=0, valor_escaneo_adicional=0, sesion=None):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             nuevo_contrato = Contratos(
                 numero_contrato=numero_contrato, cliente_id=cliente_id,
@@ -28,11 +28,15 @@ class ContratosRepositorio:
                 valor_escaneo_adicional=valor_escaneo_adicional,
             )
             db.add(nuevo_contrato)
-            db.commit()
-            db.refresh(nuevo_contrato)
+            if sesion is None:
+                db.commit()
+                db.refresh(nuevo_contrato)
+            else:
+                db.flush()
             return nuevo_contrato
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
     def obtener_todos():
@@ -69,29 +73,37 @@ class ContratosRepositorio:
             db.close()
 
     @staticmethod
-    def actualizar(contrato_id, **valores):
-        db = SessionLocal()
+    def actualizar(contrato_id, sesion=None, **valores):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             contrato = db.query(Contratos).filter(Contratos.id == contrato_id).first()
             if not contrato:
                 return None
             for campo, valor in valores.items():
                 setattr(contrato, campo, valor)
-            db.commit()
-            db.refresh(contrato)
+            if sesion is None:
+                db.commit()
+                db.refresh(contrato)
+            else:
+                db.flush()
             return contrato
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
-    def eliminar(contrato_id):
-        db = SessionLocal()
+    def eliminar(contrato_id, sesion=None):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             contrato = db.query(Contratos).filter(Contratos.id == contrato_id).first()
             if contrato:
                 db.delete(contrato)
-                db.commit()
+                if sesion is None:
+                    db.commit()
+                else:
+                    db.flush()
                 return True
             return False
         finally:
-            db.close()
+            if sesion is None:
+                db.close()

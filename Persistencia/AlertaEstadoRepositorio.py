@@ -79,14 +79,14 @@ class AlertaEstadoRepositorio:
             db.close()
 
     @staticmethod
-    def actualizar(alerta_estado_id, **campos):
+    def actualizar(alerta_estado_id, sesion=None, **campos):
         """No existia en el Modulos/AlertaEstado.py original -- 'marcar' es
         el camino de negocio (upsert por tipo+referencia_id), pero se agrega
         este generico por id para que servicios_datos.py tenga a donde caer
         si este modulo llega a exponerse alguna vez en el CRUD generico del
         frontend (hoy no esta en catalogo_modelos.py, igual que Servicio y
         Usuarios)."""
-        db = SessionLocal()
+        db = sesion if sesion is not None else SessionLocal()
         try:
             estado = db.query(AlertaEstado).filter(AlertaEstado.id == alerta_estado_id).first()
             if not estado:
@@ -94,22 +94,30 @@ class AlertaEstadoRepositorio:
             for nombre_campo, valor in campos.items():
                 setattr(estado, nombre_campo, valor)
             estado.fecha_actualizacion = datetime.utcnow()
-            db.commit()
-            db.refresh(estado)
+            if sesion is None:
+                db.commit()
+                db.refresh(estado)
+            else:
+                db.flush()
             return estado
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
-    def eliminar(alerta_estado_id):
+    def eliminar(alerta_estado_id, sesion=None):
         """Tampoco existia antes -- mismo motivo que 'actualizar' arriba."""
-        db = SessionLocal()
+        db = sesion if sesion is not None else SessionLocal()
         try:
             estado = db.query(AlertaEstado).filter(AlertaEstado.id == alerta_estado_id).first()
             if estado:
                 db.delete(estado)
-                db.commit()
+                if sesion is None:
+                    db.commit()
+                else:
+                    db.flush()
                 return True
             return False
         finally:
-            db.close()
+            if sesion is None:
+                db.close()

@@ -24,6 +24,7 @@ class Clientes(Base):
     direccion_principal = Column(String, nullable=True)
     correo = Column(String, nullable=True)
     vendedor_comercial = Column(String, nullable=True)
+    notas_internas = Column(String, nullable=True)
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
 
     @staticmethod

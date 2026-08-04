@@ -11,8 +11,8 @@ class EquiposRepositorio:
     def agregar(numero_serie, tipo_equipo, tecnologia, color, estado_equipo, estado_tecnico,
                 recomendacion_tecnica="", modelo="", toner="", rend_orig=None, rend_gen=None,
                 contador_inicial_bn=0, contador_inicial_color=0,
-                cliente_id=None, contrato_id=None):
-        db = SessionLocal()
+                cliente_id=None, contrato_id=None, sesion=None):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             nuevo_equipo = Equipos(
                 numero_serie=numero_serie, tipo_equipo=tipo_equipo, tecnologia=tecnologia,
@@ -23,11 +23,15 @@ class EquiposRepositorio:
                 cliente_id=cliente_id, contrato_id=contrato_id,
             )
             db.add(nuevo_equipo)
-            db.commit()
-            db.refresh(nuevo_equipo)
+            if sesion is None:
+                db.commit()
+                db.refresh(nuevo_equipo)
+            else:
+                db.flush()
             return nuevo_equipo
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
     def obtener_todos():
@@ -62,29 +66,37 @@ class EquiposRepositorio:
             db.close()
 
     @staticmethod
-    def actualizar(equipo_id, **valores):
-        db = SessionLocal()
+    def actualizar(equipo_id, sesion=None, **valores):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             equipo = db.query(Equipos).filter(Equipos.id == equipo_id).first()
             if not equipo:
                 return None
             for campo, valor in valores.items():
                 setattr(equipo, campo, valor)
-            db.commit()
-            db.refresh(equipo)
+            if sesion is None:
+                db.commit()
+                db.refresh(equipo)
+            else:
+                db.flush()
             return equipo
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
-    def eliminar(equipo_id):
-        db = SessionLocal()
+    def eliminar(equipo_id, sesion=None):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             equipo = db.query(Equipos).filter(Equipos.id == equipo_id).first()
             if equipo:
                 db.delete(equipo)
-                db.commit()
+                if sesion is None:
+                    db.commit()
+                else:
+                    db.flush()
                 return True
             return False
         finally:
-            db.close()
+            if sesion is None:
+                db.close()

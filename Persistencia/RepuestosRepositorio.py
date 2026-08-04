@@ -6,16 +6,20 @@ class RepuestosRepositorio:
     """CRUD del catalogo de repuestos (nombre + precio de referencia)."""
 
     @staticmethod
-    def agregar(nombre, precio=0):
-        db = SessionLocal()
+    def agregar(nombre, precio=0, sesion=None):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             nuevo_repuesto = Repuesto(nombre=nombre, precio=precio)
             db.add(nuevo_repuesto)
-            db.commit()
-            db.refresh(nuevo_repuesto)
+            if sesion is None:
+                db.commit()
+                db.refresh(nuevo_repuesto)
+            else:
+                db.flush()
             return nuevo_repuesto
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
     def obtener_todos():
@@ -42,29 +46,37 @@ class RepuestosRepositorio:
             db.close()
 
     @staticmethod
-    def actualizar(repuesto_id, **campos):
-        db = SessionLocal()
+    def actualizar(repuesto_id, sesion=None, **campos):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             repuesto = db.query(Repuesto).filter(Repuesto.id == repuesto_id).first()
             if not repuesto:
                 return None
             for nombre_campo, valor in campos.items():
                 setattr(repuesto, nombre_campo, valor)
-            db.commit()
-            db.refresh(repuesto)
+            if sesion is None:
+                db.commit()
+                db.refresh(repuesto)
+            else:
+                db.flush()
             return repuesto
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
-    def eliminar(repuesto_id):
-        db = SessionLocal()
+    def eliminar(repuesto_id, sesion=None):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             repuesto = db.query(Repuesto).filter(Repuesto.id == repuesto_id).first()
             if repuesto:
                 db.delete(repuesto)
-                db.commit()
+                if sesion is None:
+                    db.commit()
+                else:
+                    db.flush()
                 return True
             return False
         finally:
-            db.close()
+            if sesion is None:
+                db.close()

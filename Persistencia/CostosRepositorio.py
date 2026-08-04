@@ -28,12 +28,12 @@ class CostosRepositorio:
         fecha_costo, periodo, cliente_id, contrato_id, equipo_id,
         tipo_costo, descripcion, responsable,
         cantidad=1, valor_unitario=0, valor_total=None,
-        soporte=None, observaciones=None, repuesto_id=None,
+        soporte=None, observaciones=None, repuesto_id=None, sesion=None,
     ):
         if valor_total is None:
             valor_total = cantidad * valor_unitario  # se calcula solo si no lo mandan explicito
 
-        db = SessionLocal()
+        db = sesion if sesion is not None else SessionLocal()
         try:
             nuevo_costo = Costos(
                 fecha_costo=fecha_costo, periodo=periodo, cliente_id=cliente_id,
@@ -43,11 +43,15 @@ class CostosRepositorio:
                 observaciones=observaciones, repuesto_id=repuesto_id,
             )
             db.add(nuevo_costo)
-            db.commit()
-            db.refresh(nuevo_costo)
+            if sesion is None:
+                db.commit()
+                db.refresh(nuevo_costo)
+            else:
+                db.flush()
             return nuevo_costo
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
     def obtener_todos():
@@ -140,29 +144,37 @@ class CostosRepositorio:
             db.close()
 
     @staticmethod
-    def actualizar(costo_id, **campos):
-        db = SessionLocal()
+    def actualizar(costo_id, sesion=None, **campos):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             costo = db.query(Costos).filter(Costos.id == costo_id).first()
             if not costo:
                 return None
             for nombre_campo, valor in campos.items():
                 setattr(costo, nombre_campo, valor)
-            db.commit()
-            db.refresh(costo)
+            if sesion is None:
+                db.commit()
+                db.refresh(costo)
+            else:
+                db.flush()
             return costo
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
-    def eliminar(costo_id):
-        db = SessionLocal()
+    def eliminar(costo_id, sesion=None):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             costo = db.query(Costos).filter(Costos.id == costo_id).first()
             if costo:
                 db.delete(costo)
-                db.commit()
+                if sesion is None:
+                    db.commit()
+                else:
+                    db.flush()
                 return True
             return False
         finally:
-            db.close()
+            if sesion is None:
+                db.close()

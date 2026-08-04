@@ -6,16 +6,20 @@ class CarteraRepositorio:
     """CRUD de cuentas por cobrar (cartera) por cliente."""
 
     @staticmethod
-    def agregar(cliente_id, monto, estado):
-        db = SessionLocal()
+    def agregar(cliente_id, monto, estado, sesion=None):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             nueva_cartera = Cartera(cliente_id=cliente_id, monto=monto, estado=estado)
             db.add(nueva_cartera)
-            db.commit()
-            db.refresh(nueva_cartera)
+            if sesion is None:
+                db.commit()
+                db.refresh(nueva_cartera)
+            else:
+                db.flush()
             return nueva_cartera
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
     def obtener_todos():
@@ -44,29 +48,37 @@ class CarteraRepositorio:
             db.close()
 
     @staticmethod
-    def actualizar(cartera_id, **campos):
-        db = SessionLocal()
+    def actualizar(cartera_id, sesion=None, **campos):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             cartera = db.query(Cartera).filter(Cartera.id == cartera_id).first()
             if not cartera:
                 return None
             for nombre_campo, valor in campos.items():
                 setattr(cartera, nombre_campo, valor)
-            db.commit()
-            db.refresh(cartera)
+            if sesion is None:
+                db.commit()
+                db.refresh(cartera)
+            else:
+                db.flush()
             return cartera
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
 
     @staticmethod
-    def eliminar(cartera_id):
-        db = SessionLocal()
+    def eliminar(cartera_id, sesion=None):
+        db = sesion if sesion is not None else SessionLocal()
         try:
             cartera = db.query(Cartera).filter(Cartera.id == cartera_id).first()
             if cartera:
                 db.delete(cartera)
-                db.commit()
+                if sesion is None:
+                    db.commit()
+                else:
+                    db.flush()
                 return True
             return False
         finally:
-            db.close()
+            if sesion is None:
+                db.close()
