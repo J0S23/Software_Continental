@@ -20,6 +20,7 @@ TIPOS_SOLO_ADMIN_ESCRITURA = {"usuarios"}
 # queda cerrado a cualquier no-admin: falla cerrado, no abierto.
 PERMISOS_CREAR_EDITAR = {
     "clientes": {RolUsuario.COORDINACION_RENTA, RolUsuario.EJECUTIVO_COMERCIAL},
+    "sedes": {RolUsuario.COORDINACION_RENTA, RolUsuario.EJECUTIVO_COMERCIAL},
     "equipos": {RolUsuario.COORDINACION_RENTA, RolUsuario.SERVICIO_TECNICO},
     "contrato_equipos": {RolUsuario.COORDINACION_RENTA},
     "contratos": {RolUsuario.COORDINACION_RENTA, RolUsuario.EJECUTIVO_COMERCIAL},
