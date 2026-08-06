@@ -15,6 +15,7 @@ from Persistencia.LecturasRepositorio import LecturasRepositorio
 from Persistencia.EntregasTonerRepositorio import EntregasTonerRepositorio
 from Persistencia.MantenimientosPreventivosRepositorio import MantenimientosPreventivosRepositorio
 from Persistencia.RentabilidadRepositorio import RentabilidadRepositorio
+from Persistencia.SedesRepositorio import SedesRepositorio
 from Modulos.enums import (
     EstadoCliente,
     TipoCliente,
@@ -78,6 +79,27 @@ CATALOGO_DATOS = {
             "tipo_cliente": TipoCliente,
             "estado_cliente": EstadoCliente,
         },
+    },
+    "sedes": {
+        "etiqueta": "Sedes",
+        "modelo": SedesRepositorio,
+        "campos": [
+            campo("cliente_id", "Cliente", "number"),
+            campo("codigo_sede", "Codigo de sede", requerido=False),
+            campo("nombre_sede", "Nombre de la sede"),
+            campo("ciudad", "Ciudad", requerido=False),
+            campo("departamento", "Departamento", requerido=False),
+            campo("direccion", "Direccion", requerido=False),
+            campo("piso_oficina_area", "Piso, oficina o area", requerido=False),
+            campo("persona_responsable", "Persona responsable en sitio", requerido=False),
+            campo("telefono_contacto", "Telefono de contacto", requerido=False),
+            campo("correo_contacto", "Correo de contacto", requerido=False),
+            campo("horario_atencion", "Horario de atencion", requerido=False),
+            campo("condiciones_ingreso", "Condiciones especiales de ingreso", requerido=False),
+            campo("observaciones_acceso", "Observaciones de acceso", requerido=False),
+            campo("estado_sede", "Estado de la sede", "select",
+                  ["activa", "inactiva", "cerrada"], requerido=False),
+        ],
     },
     "equipos": {
         "etiqueta": "Equipos",
