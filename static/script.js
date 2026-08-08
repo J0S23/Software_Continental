@@ -16,74 +16,32 @@ const ROLE_OPTIONS = [
     "Consulta limitada",
 ];
 
-// Los 4 grupos del catálogo de datos, cada uno con su propio item del
-// .main-nav (data-view). Comparten la misma plantilla data-workspace:
-// cambiarVista() solo pre-filtra qué tipos quedan disponibles en cada uno.
-const DATA_GROUP_VIEWS = [
-    { view: "base_comercial", title: "Base comercial", keys: ["clientes", "sedes", "contratos", "contrato_equipos", "equipos"] },
-    { view: "operacion_mensual", title: "Operación mensual", keys: ["lecturas", "facturacion", "cartera", "costos", "rentabilidad"] },
-    { view: "servicio_tecnico", title: "Servicio técnico", keys: ["servicios", "mantenimientos_preventivos", "cambios_retiros", "equipos_respaldo"] },
-    { view: "inventario", title: "Inventario", keys: ["tipos_insumo", "insumos", "entregas_toner", "repuestos"] },
+const MODULE_GROUPS = [
+    {
+        title: "Base comercial",
+        keys: ["clientes", "sedes", "contratos", "contrato_equipos", "equipos"],
+    },
+    {
+        title: "Operación mensual",
+        keys: ["lecturas", "facturacion", "cartera", "costos", "rentabilidad"],
+    },
+    {
+        title: "Servicio técnico",
+        keys: ["servicios", "mantenimientos_preventivos", "cambios_retiros", "equipos_respaldo"],
+    },
+    {
+        title: "Inventario",
+        keys: ["tipos_insumo", "insumos", "entregas_toner", "repuestos"],
+    },
 ];
 
 const VIEW_META = {
     dashboard: { title: "Visión general", eyebrow: "Administrador general" },
-    base_comercial: { title: "Base comercial", eyebrow: "Clientes y contratos" },
-    operacion_mensual: { title: "Operación mensual", eyebrow: "Lecturas y facturación" },
-    servicio_tecnico: { title: "Servicio técnico", eyebrow: "Mantenimiento y soporte" },
-    inventario: { title: "Inventario", eyebrow: "Insumos y repuestos" },
+    datos: { title: "Gestión de datos", eyebrow: "Operación integral" },
     informes: { title: "Informes", eyebrow: "Gerencia" },
     alertas: { title: "Alertas", eyebrow: "Seguimiento" },
     usuarios: { title: "Usuarios", eyebrow: "Administración" },
 };
-
-// Mapa de permisos por rol (documento de requerimientos, seccion 20.2).
-// views: vistas del .main-nav visibles para el rol.
-// modules: claves de state.tipos habilitadas dentro de los 4 grupos de datos
-//          (null = todas). readOnly: oculta crear/editar/eliminar/importar.
-const ROLE_PERMISSIONS = {
-    [ADMIN_ROLE]: { views: ["dashboard", "base_comercial", "operacion_mensual", "servicio_tecnico", "inventario", "informes", "alertas", "usuarios"], modules: null, readOnly: false },
-    "Gerencia": { views: ["dashboard", "base_comercial", "operacion_mensual", "servicio_tecnico", "inventario", "informes", "alertas"], modules: null, readOnly: true },
-    "Subgerencia financiera": { views: ["dashboard", "base_comercial", "operacion_mensual", "informes", "alertas"], modules: ["contratos", "facturacion", "cartera", "costos", "rentabilidad"], readOnly: false },
-    "Coordinación de renta": { views: ["dashboard", "base_comercial", "operacion_mensual", "informes"], modules: ["clientes", "sedes", "contratos", "contrato_equipos", "equipos", "lecturas", "facturacion"], readOnly: false },
-    "Ejecutivo comercial": { views: ["dashboard", "base_comercial", "informes"], modules: ["clientes", "sedes", "contratos", "contrato_equipos", "equipos"], readOnly: false },
-    "Servicio técnico": { views: ["dashboard", "base_comercial", "servicio_tecnico"], modules: ["servicios", "mantenimientos_preventivos", "cambios_retiros", "equipos_respaldo", "equipos"], readOnly: false },
-    "Logística / almacén": { views: ["dashboard", "inventario"], modules: ["tipos_insumo", "insumos", "entregas_toner", "repuestos"], readOnly: false },
-    "Facturación": { views: ["dashboard", "operacion_mensual", "informes"], modules: ["facturacion", "cartera"], readOnly: false },
-    "Cartera": { views: ["dashboard", "base_comercial", "operacion_mensual", "informes", "alertas"], modules: ["cartera", "clientes"], readOnly: false },
-    "Consulta limitada": { views: ["dashboard", "base_comercial", "operacion_mensual", "servicio_tecnico", "inventario", "informes", "alertas"], modules: null, readOnly: true },
-};
-
-function grupoPorVista(view) {
-    return DATA_GROUP_VIEWS.find((grupo) => grupo.view === view) || null;
-}
-
-function clavesDisponibles(grupo) {
-    return grupo.keys.filter((key) => state.tipos[key] && !HIDDEN_DATA_TYPES.has(key) && moduloPermitido(key));
-}
-
-function permisosRol() {
-    return ROLE_PERMISSIONS[state.usuario?.rol] || ROLE_PERMISSIONS[ADMIN_ROLE];
-}
-
-function vistaPermitida(view) {
-    return permisosRol().views.includes(view);
-}
-
-function moduloPermitido(key) {
-    const permisos = permisosRol();
-    return !permisos.modules || permisos.modules.includes(key);
-}
-
-function esSoloLectura() {
-    return Boolean(permisosRol().readOnly);
-}
-
-function aplicarPermisosRol() {
-    document.querySelectorAll(".nav-item").forEach((button) => {
-        button.hidden = !vistaPermitida(button.dataset.view);
-    });
-}
 
 const state = {
     tipos: {},
@@ -97,7 +55,6 @@ const state = {
     currentView: "dashboard",
     currentAdjuntoTarget: null,
     lastFacturaPreview: null,
-    charts: { financial: null, costs: null, cartera: null },
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -192,10 +149,19 @@ async function apiJson(url, options = {}) {
 async function verificarSesion() {
     try {
         const data = await apiJson("/auth/me");
+        if (!esAdministrador(data.usuario)) {
+            await cerrarSesion(false);
+            mostrarAuth("Esta consola está habilitada solo para Administrador general.");
+            return;
+        }
         await mostrarApp(data.usuario);
     } catch (error) {
         mostrarAuth();
     }
+}
+
+function esAdministrador(usuario) {
+    return usuario && usuario.rol === ADMIN_ROLE;
 }
 
 async function iniciarSesion(event) {
@@ -211,11 +177,26 @@ async function iniciarSesion(event) {
             body: JSON.stringify({ email, contrasena }),
         });
 
-        await mostrarApp({ email: data.email, rol: data.rol });
+        const usuario = { email: data.email, rol: data.rol };
+        if (!esAdministrador(usuario)) {
+            await apiJson("/auth/logout", { method: "POST" }).catch(() => null);
+            mostrarAuth("Esta consola está habilitada solo para Administrador general.");
+            return;
+        }
+
+        await mostrarApp(usuario);
         mostrarToast("Sesión iniciada", "success");
     } catch (error) {
         setAuthMessage(error.message);
     }
+    state.usuario = null;
+    mostrarAuth();
+}
+
+function mostrarAuth(message = "") {
+    $("authScreen").hidden = false;
+    $("appShell").hidden = true;
+    setAuthMessage(message);
 }
 
 async function cerrarSesion(callApi = true) {
@@ -239,10 +220,8 @@ async function mostrarApp(usuario) {
     $("userRoleLabel").textContent = usuario.rol || ADMIN_ROLE;
     $("userEmailLabel").textContent = usuario.email || "";
 
-    aplicarPermisosRol();
     await cargarConfiguracionInicial();
-    const vistaInicial = vistaPermitida(state.currentView) ? state.currentView : permisosRol().views[0];
-    cambiarVista(vistaInicial || "dashboard");
+    cambiarVista(state.currentView || "dashboard");
 }
 
 function setAuthMessage(message) {
@@ -262,33 +241,62 @@ async function cargarConfiguracionInicial() {
         ]);
         state.tipos = tipos;
         state.configuracion = configuracion;
+        renderTipos();
+        await seleccionarTipo(tipos.clientes ? "clientes" : Object.keys(tipos).find((key) => !HIDDEN_DATA_TYPES.has(key)) || "");
     } catch (error) {
         mostrarToast(`No se pudo cargar la configuración: ${error.message}`, "error");
     }
 }
 
-function renderTipos(grupo) {
+function renderTipos() {
     const selector = $("tipoSelector");
     const groupsContainer = $("tipoGroups");
     selector.replaceChildren(new Option("Selecciona módulo", ""));
     groupsContainer.replaceChildren();
 
-    if (!grupo) return;
-    const keys = clavesDisponibles(grupo);
-    if (!keys.length) return;
+    const renderedKeys = new Set();
+    MODULE_GROUPS.forEach((group) => {
+        const keys = group.keys.filter((key) => state.tipos[key] && !HIDDEN_DATA_TYPES.has(key));
+        if (!keys.length) return;
 
-    const section = document.createElement("section");
-    section.className = "module-group";
-    const title = document.createElement("h3");
-    title.textContent = grupo.title;
-    section.appendChild(title);
+        const optgroup = document.createElement("optgroup");
+        optgroup.label = group.title;
 
-    keys.forEach((key) => {
-        selector.appendChild(new Option(state.tipos[key], key));
-        section.appendChild(crearModuloButton(key));
+        const section = document.createElement("section");
+        section.className = "module-group";
+        const title = document.createElement("h3");
+        title.textContent = group.title;
+        section.appendChild(title);
+
+        keys.forEach((key) => {
+            renderedKeys.add(key);
+            optgroup.appendChild(new Option(state.tipos[key], key));
+            section.appendChild(crearModuloButton(key));
+        });
+
+        selector.appendChild(optgroup);
+        groupsContainer.appendChild(section);
     });
 
-    groupsContainer.appendChild(section);
+    const extras = Object.keys(state.tipos).filter((key) => !renderedKeys.has(key) && !HIDDEN_DATA_TYPES.has(key));
+    if (extras.length) {
+        const section = document.createElement("section");
+        section.className = "module-group";
+        const title = document.createElement("h3");
+        title.textContent = "Otros";
+        section.appendChild(title);
+
+        const optgroup = document.createElement("optgroup");
+        optgroup.label = "Otros";
+
+        extras.forEach((key) => {
+            optgroup.appendChild(new Option(state.tipos[key], key));
+            section.appendChild(crearModuloButton(key));
+        });
+
+        selector.appendChild(optgroup);
+        groupsContainer.appendChild(section);
+    }
 }
 
 function crearModuloButton(key) {
@@ -332,11 +340,6 @@ function renderFormulario() {
     fields.replaceChildren();
     $("formTitle").textContent = state.tipoActual ? state.tipos[state.tipoActual] : "Selecciona un tipo";
     $("formModeLabel").textContent = state.editingId ? `Editando #${state.editingId}` : "Nuevo registro";
-
-    const soloLectura = esSoloLectura();
-    document.querySelector(".editor-panel")?.toggleAttribute("hidden", soloLectura);
-    if (soloLectura) return;
-
     $("saveRecordBtn").disabled = !state.tipoActual;
     $("cancelEditBtn").hidden = !state.editingId;
 
@@ -488,15 +491,12 @@ function renderTabla() {
 
         const actions = document.createElement("td");
         actions.className = "table-actions";
-        const botones = [
+        actions.append(
+            actionButton("Editar", () => editarRegistro(item)),
             actionButton("Historial", () => abrirHistorial(item)),
             actionButton("Adjuntos", () => abrirAdjuntos(item)),
-        ];
-        if (!esSoloLectura()) {
-            botones.unshift(actionButton("Editar", () => editarRegistro(item)));
-            botones.push(actionButton("Eliminar", () => eliminarRegistro(item.id), "danger"));
-        }
-        actions.append(...botones);
+            actionButton("Eliminar", () => eliminarRegistro(item.id), "danger")
+        );
         tr.appendChild(actions);
         body.appendChild(tr);
     });
@@ -610,10 +610,6 @@ async function irPaginaSiguiente() {
 
 function actualizarControlesImportacion() {
     const tipo = state.tipoActual;
-    const soloLectura = esSoloLectura();
-    document.querySelector(".import-box")?.toggleAttribute("hidden", soloLectura);
-    if (soloLectura) return;
-
     const enabled = IMPORTABLE_TYPES.has(tipo);
     $("downloadTemplateBtn").disabled = !enabled;
     $("importBtn").disabled = !enabled;
@@ -662,7 +658,7 @@ async function importarExcel() {
 function syncAutomationPanel() {
     const panel = $("billingAutomationPanel");
     if (!panel) return;
-    panel.hidden = state.tipoActual !== "facturacion" || esSoloLectura();
+    panel.hidden = state.tipoActual !== "facturacion";
     syncAutomationPeriod();
 }
 
@@ -759,31 +755,18 @@ function fechaToIso(fecha) {
 }
 
 function cambiarVista(view) {
-    if (!VIEW_META[view] || !vistaPermitida(view)) return;
+    if (!VIEW_META[view]) return;
     state.currentView = view;
-
-    const grupo = grupoPorVista(view);
-    const sectionId = grupo ? "datos" : view;
 
     document.querySelectorAll(".nav-item").forEach((button) => {
         button.classList.toggle("active", button.dataset.view === view);
     });
     document.querySelectorAll(".app-view").forEach((section) => {
-        section.classList.toggle("active", section.id === `view-${sectionId}`);
+        section.classList.toggle("active", section.id === `view-${view}`);
     });
 
     $("activeViewTitle").textContent = VIEW_META[view].title;
     $("activeViewEyebrow").textContent = VIEW_META[view].eyebrow;
-
-    if (grupo) {
-        renderTipos(grupo);
-        const keys = clavesDisponibles(grupo);
-        if (!keys.includes(state.tipoActual)) {
-            seleccionarTipo(keys[0] || "");
-            return;
-        }
-    }
-
     refrescarVistaActual();
 }
 
@@ -792,10 +775,7 @@ function refrescarVistaActual() {
 
     const loaders = {
         dashboard: cargarDashboard,
-        base_comercial: obtenerDatos,
-        operacion_mensual: obtenerDatos,
-        servicio_tecnico: obtenerDatos,
-        inventario: obtenerDatos,
+        datos: obtenerDatos,
         informes: cargarInformes,
         alertas: cargarAlertas,
         usuarios: cargarUsuarios,
@@ -814,8 +794,6 @@ async function cargarDashboard() {
         apiJson("/api/alertas"),
     ]);
 
-    mostrarErrorDashboard([snapshotResult, financieraResult, costosResult, carteraResult, informeResult, alertasResult]);
-
     const snapshot = settledValue(snapshotResult)?.dashboard || {};
     const financiera = settledValue(financieraResult)?.serie || [];
     const costos = ultimaSerieConDatos(settledValue(costosResult)?.serie, "costos_por_tipo");
@@ -825,25 +803,10 @@ async function cargarDashboard() {
 
     renderKpis(snapshot);
     renderFinancialChart(financiera);
-    renderRankChart("costs", "costsChart", costos?.costos_por_tipo || {}, moneda, "accent");
-    renderRankChart("cartera", "carteraChart", cartera?.cartera_por_edad || {}, moneda, "danger");
+    renderRankList("costsChart", costos?.costos_por_tipo || {}, moneda);
+    renderRankList("carteraChart", cartera?.cartera_por_edad || {}, moneda);
     renderRecommendations(informe.recomendaciones || generarRecomendaciones(snapshot));
     renderAlertPreview(alertas);
-}
-
-function mostrarErrorDashboard(resultados) {
-    const box = $("dashboardError");
-    if (!box) return;
-
-    const fallidos = resultados.filter((resultado) => resultado.status === "rejected");
-    if (!fallidos.length) {
-        box.hidden = true;
-        box.textContent = "";
-        return;
-    }
-
-    box.hidden = false;
-    box.textContent = `No se pudo cargar parte del dashboard (${fallidos.length} de ${resultados.length} secciones): ${fallidos[0].reason.message}`;
 }
 
 function renderKpis(data) {
@@ -876,90 +839,73 @@ function renderKpis(data) {
     });
 }
 
-function chartColor(token) {
-    const value = getComputedStyle(document.documentElement).getPropertyValue(`--${token}`).trim();
-    return value || "#1B3A6B";
-}
-
-function destruirChart(key) {
-    if (state.charts[key]) {
-        state.charts[key].destroy();
-        state.charts[key] = null;
-    }
-}
-
-function crearCanvas(container, alturaPx) {
-    const canvas = document.createElement("canvas");
-    canvas.style.width = "100%";
-    canvas.style.height = `${alturaPx}px`;
-    container.appendChild(canvas);
-    return canvas;
-}
-
 function renderFinancialChart(serie) {
     const container = $("financialChart");
     container.replaceChildren();
-    destruirChart("financial");
     if (!serie.length) {
         empty(container, "Sin datos financieros para el periodo.");
         return;
     }
 
-    const canvas = crearCanvas(container, 300);
-    state.charts.financial = new Chart(canvas.getContext("2d"), {
-        type: "bar",
-        data: {
-            labels: serie.map((item) => item.periodo),
-            datasets: [
-                { label: "Facturado", data: serie.map((item) => item.facturado || 0), backgroundColor: chartColor("accent") },
-                { label: "Recaudado", data: serie.map((item) => item.recaudado || 0), backgroundColor: chartColor("brand") },
-                { label: "Utilidad", data: serie.map((item) => item.utilidad || 0), backgroundColor: chartColor("ok") },
-            ],
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { position: "bottom" },
-                tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${moneda(ctx.raw)}` } },
-            },
-            scales: {
-                y: { ticks: { callback: (value) => moneda(value) } },
-            },
-        },
+    const max = Math.max(
+        1,
+        ...serie.flatMap((item) => [item.facturado || 0, item.recaudado || 0, Math.abs(item.utilidad || 0)])
+    );
+
+    const legend = document.createElement("div");
+    legend.className = "chart-legend";
+    ["Facturado", "Recaudado", "Utilidad"].forEach((label) => {
+        const item = document.createElement("span");
+        item.textContent = label;
+        legend.appendChild(item);
+    });
+    container.appendChild(legend);
+
+    serie.forEach((item) => {
+        const row = document.createElement("div");
+        row.className = "chart-row";
+        const label = document.createElement("span");
+        label.textContent = item.periodo;
+        const bars = document.createElement("div");
+        bars.className = "bar-stack";
+        [
+            ["facturado", item.facturado],
+            ["recaudado", item.recaudado],
+            ["utilidad", item.utilidad],
+        ].forEach(([key, value]) => {
+            const bar = document.createElement("i");
+            bar.className = `bar ${key}`;
+            bar.style.width = `${Math.max(3, Math.abs(value || 0) / max * 100)}%`;
+            bar.title = `${key}: ${moneda(value)}`;
+            bars.appendChild(bar);
+        });
+        row.append(label, bars);
+        container.appendChild(row);
     });
 }
 
-function renderRankChart(chartKey, containerId, data, formatter = entero, colorToken = "brand") {
+function renderRankList(containerId, data, formatter = entero) {
     const container = $(containerId);
     container.replaceChildren();
-    destruirChart(chartKey);
-
-    const entries = Object.entries(data || {}).sort((a, b) => (b[1] || 0) - (a[1] || 0)).slice(0, 8);
+    const entries = Object.entries(data || {}).sort((a, b) => (b[1] || 0) - (a[1] || 0));
     if (!entries.length) {
         empty(container, "Sin datos para mostrar.");
         return;
     }
 
-    const canvas = crearCanvas(container, 260);
-    state.charts[chartKey] = new Chart(canvas.getContext("2d"), {
-        type: "bar",
-        data: {
-            labels: entries.map(([label]) => labelize(label)),
-            datasets: [{ data: entries.map(([, value]) => value || 0), backgroundColor: chartColor(colorToken) }],
-        },
-        options: {
-            indexAxis: "y",
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: { callbacks: { label: (ctx) => formatter(ctx.raw) } },
-            },
-            scales: {
-                x: { ticks: { callback: (value) => formatter(value) } },
-            },
-        },
+    const max = Math.max(1, ...entries.map(([, value]) => value || 0));
+    entries.slice(0, 8).forEach(([label, value]) => {
+        const row = document.createElement("div");
+        row.className = "rank-row";
+        const top = document.createElement("div");
+        top.append(textSpan(labelize(label)), textStrong(formatter(value)));
+        const track = document.createElement("div");
+        track.className = "rank-track";
+        const fill = document.createElement("span");
+        fill.style.width = `${Math.max(4, (value || 0) / max * 100)}%`;
+        track.appendChild(fill);
+        row.append(top, track);
+        container.appendChild(row);
     });
 }
 
