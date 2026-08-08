@@ -189,6 +189,14 @@ async function iniciarSesion(event) {
     } catch (error) {
         setAuthMessage(error.message);
     }
+    state.usuario = null;
+    mostrarAuth();
+}
+
+function mostrarAuth(message = "") {
+    $("authScreen").hidden = false;
+    $("appShell").hidden = true;
+    setAuthMessage(message);
 }
 
 async function cerrarSesion(callApi = true) {
