@@ -60,7 +60,10 @@
 
             <nav class="main-nav" aria-label="Navegación principal">
                 <button type="button" class="nav-item active" data-view="dashboard">Visión general</button>
-                <button type="button" class="nav-item" data-view="datos">Gestión de datos</button>
+                <button type="button" class="nav-item" data-view="base_comercial">Base comercial</button>
+                <button type="button" class="nav-item" data-view="operacion_mensual">Operación mensual</button>
+                <button type="button" class="nav-item" data-view="servicio_tecnico">Servicio técnico</button>
+                <button type="button" class="nav-item" data-view="inventario">Inventario</button>
                 <button type="button" class="nav-item" data-view="informes">Informes</button>
                 <button type="button" class="nav-item" data-view="alertas">Alertas</button>
                 <button type="button" class="nav-item" data-view="usuarios">Usuarios</button>
@@ -90,6 +93,7 @@
 
             <main class="view-stack">
                 <section class="app-view active" id="view-dashboard">
+                    <div class="inline-message error" id="dashboardError" hidden></div>
                     <div class="dashboard-grid" id="kpiGrid"></div>
 
                     <div class="content-grid two-columns">
@@ -450,6 +454,7 @@
         <div class="adjuntos-list" id="adjuntosList"></div>
     </dialog>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
     <script src="/static/script.js"></script>
 </body>
 </html>
