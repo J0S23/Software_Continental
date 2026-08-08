@@ -6,6 +6,7 @@
 from fastapi import HTTPException
 
 from Persistencia.ClientesRepositorio import ClientesRepositorio
+from Persistencia.CarteraRepositorio import CarteraRepositorio
 from Persistencia.ContratosRepositorio import ContratosRepositorio
 from Persistencia.ContratoEquipoRepositorio import ContratoEquipoRepositorio
 from Persistencia.CambiosRetiroRepositorio import CambiosRetiroRepositorio
@@ -265,6 +266,29 @@ CATALOGO_DATOS = {
         "enumeraciones": {
             "tipo_costo": TipoCosto,
         },
+    },
+    "cartera": {
+        "etiqueta": "Cartera",
+        "modelo": CarteraRepositorio,
+        "campos": [
+            campo("cliente_id", "Cliente", "number"),
+            campo("monto", "Saldo pendiente", "number"),
+            campo(
+                "estado",
+                "Estado de cartera",
+                "select",
+                [
+                    "al dia",
+                    "vencida 1-30 dias",
+                    "vencida 31-60 dias",
+                    "vencida 61-90 dias",
+                    "mayor a 90 dias",
+                    "acuerdo de pago",
+                    "cobro juridico",
+                    "pagada",
+                ],
+            ),
+        ],
     },
     "entregas_toner": {
         "etiqueta": "Entregas de Toner",

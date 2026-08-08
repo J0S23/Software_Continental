@@ -18,7 +18,6 @@ load_dotenv(BASE_DIR / ".env")
 
 RUTA_STATIC = BASE_DIR / "static"
 RUTA_TEMPLATES = BASE_DIR / "templates"
-RUTA_VISTA = BASE_DIR / "vista"
 RUTA_ADJUNTOS = BASE_DIR / "adjuntos"
 RUTA_ADJUNTOS.mkdir(exist_ok=True)
 

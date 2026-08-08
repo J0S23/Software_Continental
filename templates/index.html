@@ -3,131 +3,452 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor de Datos Continental</title>
+    <title>Continental | Renta de equipos</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Gestor de Datos Continental</h1>
-            <p class="subtitle">Gestion de maquinas, clientes y datos operacionales</p>
-            <div class="sesion-info" id="sesionInfo" hidden>
-                Sesión: <span id="sesionEmailLabel"></span>
-            </div>
-        </header>
+    <div class="toast-stack" id="toastStack" aria-live="polite"></div>
 
-        <section class="auth-section" id="authSection">
-            <div class="auth-card" id="loginCard">
-                <h2>Iniciar sesión</h2>
-                <form id="loginForm">
-                    <div class="form-group">
-                        <label for="loginEmail">Correo</label>
-                        <input type="email" id="loginEmail" name="email" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="loginPassword">Contraseña</label>
-                        <input type="password" id="loginPassword" name="contrasena" required>
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-success">Ingresar</button>
-                    </div>
-                </form>
-                <p class="auth-switch">
-                    ¿No tienes cuenta?
-                    <button type="button" class="link-btn" id="mostrarRegistroBtn">Regístrate</button>
-                </p>
+    <section class="auth-screen" id="authScreen">
+        <div class="auth-brand">
+            <p class="eyebrow">Grupo Continental</p>
+            <h1>Control de renta de equipos</h1>
+            <p>Consola administrativa para la operación, la cartera y la rentabilidad mensual.</p>
+            <div class="auth-metrics">
+                <div>
+                    <span>Operación</span>
+                    <strong>Contratos y equipos</strong>
+                </div>
+                <div>
+                    <span>Finanzas</span>
+                    <strong>Facturación y cartera</strong>
+                </div>
+                <div>
+                    <span>Gerencia</span>
+                    <strong>Informes y alertas</strong>
+                </div>
             </div>
+        </div>
 
-            <div class="auth-card" id="registroCard" hidden>
-                <h2>Crear cuenta</h2>
-                <form id="registroForm">
-                    <div class="form-group">
-                        <label for="registroEmail">Correo</label>
-                        <input type="email" id="registroEmail" name="email" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="registroPassword">Contraseña</label>
-                        <input type="password" id="registroPassword" name="contrasena" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="registroRol">Rol solicitado</label>
-                        <select id="registroRol" name="rol" required>
-                            <option value="">Selecciona</option>
-                            <option value="Administrador general">Administrador general</option>
-                            <option value="Gerencia">Gerencia</option>
-                            <option value="Subgerencia financiera">Subgerencia financiera</option>
-                            <option value="Coordinación de renta">Coordinación de renta</option>
-                            <option value="Ejecutivo comercial">Ejecutivo comercial</option>
-                            <option value="Servicio técnico">Servicio técnico</option>
-                            <option value="Logística / almacén">Logística / almacén</option>
-                            <option value="Facturación">Facturación</option>
-                            <option value="Cartera">Cartera</option>
-                            <option value="Consulta limitada">Consulta limitada</option>
-                        </select>
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-success">Registrarme</button>
-                    </div>
-                </form>
-                <p class="auth-switch">
-                    ¿Ya tienes cuenta?
-                    <button type="button" class="link-btn" id="mostrarLoginBtn">Inicia sesión</button>
-                </p>
+        <div class="auth-panel">
+            <p class="eyebrow">Acceso seguro</p>
+            <h2>Administrador general</h2>
+            <form id="loginForm" class="stacked-form">
+                <label>
+                    Correo
+                    <input type="email" id="loginEmail" name="email" autocomplete="email" required>
+                </label>
+                <label>
+                    Contraseña
+                    <input type="password" id="loginPassword" name="contrasena" autocomplete="current-password" required>
+                </label>
+                <button type="submit" class="button button-primary">Ingresar</button>
+            </form>
+            <div id="authMessage" class="inline-message" hidden></div>
+        </div>
+    </section>
+
+    <div class="app-shell" id="appShell" hidden>
+        <aside class="app-sidebar">
+            <div class="brand-block">
+                <span class="brand-mark">C</span>
+                <div>
+                    <strong>Continental</strong>
+                    <span>Renta de equipos</span>
+                </div>
             </div>
 
-            <div id="authMessageArea" aria-live="polite"></div>
-        </section>
+            <nav class="main-nav" aria-label="Navegación principal">
+                <button type="button" class="nav-item active" data-view="dashboard">Visión general</button>
+                <button type="button" class="nav-item" data-view="datos">Gestión de datos</button>
+                <button type="button" class="nav-item" data-view="informes">Informes</button>
+                <button type="button" class="nav-item" data-view="alertas">Alertas</button>
+                <button type="button" class="nav-item" data-view="usuarios">Usuarios</button>
+            </nav>
 
-        <main hidden id="appMain">
-            <div class="content-wrapper">
-                <aside class="sidebar">
-                    <h2>Tipos de Datos</h2>
-                    <div class="tipo-list" id="tipoList"></div>
-                </aside>
+            <div class="sidebar-session">
+                <span id="userRoleLabel">Administrador general</span>
+                <strong id="userEmailLabel"></strong>
+            </div>
+        </aside>
 
-                <section class="main-panel">
-                    <div class="selector-section">
-                        <label for="tipoSelector">Tipo de dato</label>
-                        <select id="tipoSelector">
-                            <option value="">Selecciona</option>
-                        </select>
-                    </div>
+        <div class="app-main">
+            <header class="topbar">
+                <div>
+                    <p class="eyebrow" id="activeViewEyebrow">Administrador general</p>
+                    <h1 id="activeViewTitle">Visión general</h1>
+                </div>
+                <div class="topbar-actions">
+                    <label class="period-control">
+                        Periodo
+                        <input type="text" id="periodInput" inputmode="numeric" placeholder="MM-AAAA">
+                    </label>
+                    <button type="button" class="button button-secondary" id="refreshBtn">Actualizar</button>
+                    <button type="button" class="button button-ghost" id="logoutBtn">Salir</button>
+                </div>
+            </header>
 
-                    <div class="form-section" id="formSection" hidden>
-                        <h3>Agregar Registro</h3>
-                        <form id="formDatos">
-                            <div id="formFields"></div>
-                            <div class="form-actions">
-                                <button type="submit" class="btn btn-success">Agregar</button>
-                                <button type="button" class="btn btn-secondary" id="limpiarBtn">Limpiar</button>
+            <main class="view-stack">
+                <section class="app-view active" id="view-dashboard">
+                    <div class="dashboard-grid" id="kpiGrid"></div>
+
+                    <div class="content-grid two-columns">
+                        <section class="panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">Mes a mes</p>
+                                    <h2>Facturación, recaudo y utilidad</h2>
+                                </div>
                             </div>
-                        </form>
+                            <div class="chart-area" id="financialChart"></div>
+                        </section>
+
+                        <section class="panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">Riesgo operativo</p>
+                                    <h2>Alertas activas</h2>
+                                </div>
+                                <span class="status-pill" id="alertSummary">0 alertas</span>
+                            </div>
+                            <div class="alert-preview" id="alertPreviewList"></div>
+                        </section>
                     </div>
 
-                    <div class="data-table-section" id="dataTableSection" hidden>
-                        <h3>Registros</h3>
-                        <div class="table-responsive">
-                            <table id="datosTable">
-                                <thead id="tableHead"></thead>
-                                <tbody id="tableBody"></tbody>
-                            </table>
-                        </div>
-                        <div class="pagination-controls" id="paginationControls" hidden>
-                            <button type="button" class="btn btn-secondary btn-small" id="paginaAnteriorBtn">« Anterior</button>
-                            <span id="paginacionInfo"></span>
-                            <button type="button" class="btn btn-secondary btn-small" id="paginaSiguienteBtn">Siguiente »</button>
-                        </div>
-                    </div>
+                    <div class="content-grid three-columns">
+                        <section class="panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">Costos</p>
+                                    <h2>Distribución por tipo</h2>
+                                </div>
+                            </div>
+                            <div class="rank-list" id="costsChart"></div>
+                        </section>
 
-                    <div id="messageArea" aria-live="polite"></div>
+                        <section class="panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">Cartera</p>
+                                    <h2>Edad de saldos</h2>
+                                </div>
+                            </div>
+                            <div class="rank-list" id="carteraChart"></div>
+                        </section>
+
+                        <section class="panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">Sistema</p>
+                                    <h2>Recomendaciones</h2>
+                                </div>
+                            </div>
+                            <div class="recommendation-list" id="recommendationList"></div>
+                        </section>
+                    </div>
                 </section>
-            </div>
-        </main>
 
-        <footer>
-            <p>&copy; 2026 Continental - Sistema de Gestion de Datos</p>
-        </footer>
+                <section class="app-view" id="view-datos">
+                    <div class="section-bar">
+                        <div>
+                            <p class="eyebrow">Operación</p>
+                            <h2>Datos maestros y transacciones</h2>
+                        </div>
+                        <div class="section-actions">
+                            <select id="tipoSelector" aria-label="Tipo de dato"></select>
+                            <button type="button" class="button button-secondary" id="exportCurrentBtn">Exportar Excel</button>
+                        </div>
+                    </div>
+
+                    <section class="automation-panel" id="billingAutomationPanel" hidden>
+                        <div class="panel-heading">
+                            <div>
+                                <p class="eyebrow">Facturación automática</p>
+                                <h2>Generar desde lecturas del contrato</h2>
+                            </div>
+                            <button type="button" class="button button-secondary" id="previewFacturaBtn">Previsualizar</button>
+                        </div>
+                        <div class="automation-grid">
+                            <label>
+                                Contrato
+                                <input type="number" id="autoContratoId" placeholder="ID">
+                            </label>
+                            <label>
+                                Periodo
+                                <input type="text" id="autoPeriodo" inputmode="numeric" placeholder="MM-AAAA">
+                            </label>
+                            <label>
+                                Número de factura
+                                <input type="text" id="autoNumeroFactura">
+                            </label>
+                            <label>
+                                Fecha de factura
+                                <input type="date" id="autoFechaFactura">
+                            </label>
+                            <label>
+                                Fecha de vencimiento
+                                <input type="date" id="autoFechaVencimiento">
+                            </label>
+                            <label>
+                                Empresa
+                                <select id="autoEmpresaFactura">
+                                    <option value="">Sin definir</option>
+                                    <option value="Continental Ltda.">Continental Ltda.</option>
+                                    <option value="Otra">Otra</option>
+                                </select>
+                            </label>
+                            <label>
+                                Estado
+                                <select id="autoEstadoFactura">
+                                    <option value="pendiente">Pendiente</option>
+                                    <option value="enviada">Enviada</option>
+                                    <option value="pagada">Pagada</option>
+                                    <option value="vencida">Vencida</option>
+                                    <option value="anulada">Anulada</option>
+                                    <option value="en_reclamacion">En reclamación</option>
+                                </select>
+                            </label>
+                            <label class="check-field">
+                                <input type="checkbox" id="autoForzarFactura">
+                                Forzar generación
+                            </label>
+                        </div>
+                        <div class="automation-actions">
+                            <button type="button" class="button button-primary" id="generarFacturaBtn">Generar factura</button>
+                        </div>
+                        <div class="report-detail" id="autoFacturaPreview"></div>
+                    </section>
+
+                    <div class="data-workspace">
+                        <aside class="module-panel" id="tipoGroups"></aside>
+
+                        <section class="records-panel">
+                            <div class="record-toolbar">
+                                <label class="search-field">
+                                    Buscar
+                                    <input type="search" id="recordSearch" placeholder="Cliente, serial, contrato...">
+                                </label>
+                                <span class="status-pill" id="recordTotalLabel">0 registros</span>
+                            </div>
+
+                            <div class="table-shell">
+                                <table id="datosTable">
+                                    <thead id="tableHead"></thead>
+                                    <tbody id="tableBody"></tbody>
+                                </table>
+                            </div>
+
+                            <div class="pagination-controls" id="paginationControls" hidden>
+                                <button type="button" class="button button-ghost button-small" id="paginaAnteriorBtn">Anterior</button>
+                                <span id="paginacionInfo"></span>
+                                <button type="button" class="button button-ghost button-small" id="paginaSiguienteBtn">Siguiente</button>
+                            </div>
+
+                            <div class="import-box">
+                                <div>
+                                    <p class="eyebrow">Carga masiva</p>
+                                    <strong id="importTypeLabel">Selecciona clientes, equipos o lecturas</strong>
+                                </div>
+                                <div class="import-actions">
+                                    <button type="button" class="button button-secondary" id="downloadTemplateBtn">Plantilla</button>
+                                    <input type="file" id="importFile" accept=".xlsx,.xls">
+                                    <button type="button" class="button button-primary" id="importBtn">Importar</button>
+                                </div>
+                            </div>
+                        </section>
+
+                        <aside class="editor-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow" id="formModeLabel">Nuevo registro</p>
+                                    <h2 id="formTitle">Selecciona un tipo</h2>
+                                </div>
+                            </div>
+                            <form id="formDatos" class="dynamic-form">
+                                <div id="formFields" class="form-grid"></div>
+                                <div class="form-actions">
+                                    <button type="submit" class="button button-primary" id="saveRecordBtn">Guardar</button>
+                                    <button type="button" class="button button-secondary" id="resetFormBtn">Limpiar</button>
+                                    <button type="button" class="button button-ghost" id="cancelEditBtn" hidden>Cancelar edición</button>
+                                </div>
+                            </form>
+                        </aside>
+                    </div>
+                </section>
+
+                <section class="app-view" id="view-informes">
+                    <div class="section-bar">
+                        <div>
+                            <p class="eyebrow">Gerencia</p>
+                            <h2>Informes mensuales</h2>
+                        </div>
+                        <div class="section-actions">
+                            <button type="button" class="button button-secondary" id="loadReportsBtn">Actualizar informe</button>
+                            <a class="button button-primary" id="generalPdfLink" href="#">PDF general</a>
+                            <a class="button button-primary" id="generalExcelLink" href="#">Excel general</a>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-grid compact" id="reportGeneralGrid"></div>
+
+                    <div class="content-grid two-columns">
+                        <section class="panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">Cartera</p>
+                                    <h2>Informe de cartera</h2>
+                                </div>
+                                <div class="inline-actions">
+                                    <a class="text-action" id="carteraPdfLink" href="#">PDF</a>
+                                    <a class="text-action" id="carteraExcelLink" href="#">Excel</a>
+                                </div>
+                            </div>
+                            <div class="table-shell mini">
+                                <table>
+                                    <thead id="carteraReportHead"></thead>
+                                    <tbody id="carteraReportBody"></tbody>
+                                </table>
+                            </div>
+                        </section>
+
+                        <section class="panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">Servicio</p>
+                                    <h2>Informe técnico</h2>
+                                </div>
+                                <div class="inline-actions">
+                                    <a class="text-action" id="tecnicoPdfLink" href="#">PDF</a>
+                                    <a class="text-action" id="tecnicoExcelLink" href="#">Excel</a>
+                                </div>
+                            </div>
+                            <div class="report-detail" id="technicalReport"></div>
+                        </section>
+                    </div>
+
+                    <div class="content-grid two-columns">
+                        <section class="panel lookup-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">Detalle</p>
+                                    <h2>Cliente</h2>
+                                </div>
+                            </div>
+                            <div class="lookup-row">
+                                <input type="number" id="reportClientId" placeholder="ID de cliente">
+                                <button type="button" class="button button-secondary" id="loadClientReportBtn">Consultar</button>
+                            </div>
+                            <div class="report-detail" id="clientReportDetail"></div>
+                        </section>
+
+                        <section class="panel lookup-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">Detalle</p>
+                                    <h2>Equipo</h2>
+                                </div>
+                            </div>
+                            <div class="lookup-row">
+                                <input type="number" id="reportEquipoId" placeholder="ID de equipo">
+                                <button type="button" class="button button-secondary" id="loadEquipoReportBtn">Consultar</button>
+                            </div>
+                            <div class="report-detail" id="equipoReportDetail"></div>
+                        </section>
+                    </div>
+                </section>
+
+                <section class="app-view" id="view-alertas">
+                    <div class="section-bar">
+                        <div>
+                            <p class="eyebrow">Seguimiento</p>
+                            <h2>Alertas automáticas</h2>
+                        </div>
+                        <div class="section-actions">
+                            <select id="alertLevelFilter" aria-label="Filtro de nivel">
+                                <option value="">Todos los niveles</option>
+                                <option value="critico">Críticas</option>
+                                <option value="advertencia">Advertencias</option>
+                                <option value="info">Informativas</option>
+                            </select>
+                            <button type="button" class="button button-secondary" id="loadAlertsBtn">Actualizar alertas</button>
+                        </div>
+                    </div>
+
+                    <div class="content-grid two-columns">
+                        <section class="panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">Activas</p>
+                                    <h2 id="alertsTitle">Alertas</h2>
+                                </div>
+                            </div>
+                            <div class="alert-list" id="alertsList"></div>
+                        </section>
+
+                        <section class="panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">Guardadas</p>
+                                    <h2>Seguimiento</h2>
+                                </div>
+                            </div>
+                            <div class="alert-list" id="savedAlertsList"></div>
+                        </section>
+                    </div>
+                </section>
+
+                <section class="app-view" id="view-usuarios">
+                    <div class="section-bar">
+                        <div>
+                            <p class="eyebrow">Administración</p>
+                            <h2>Usuarios pendientes</h2>
+                        </div>
+                        <button type="button" class="button button-secondary" id="loadUsersBtn">Actualizar usuarios</button>
+                    </div>
+                    <div class="user-list" id="pendingUsersList"></div>
+                </section>
+            </main>
+        </div>
     </div>
+
+    <dialog class="dialog" id="historyDialog">
+        <div class="dialog-header">
+            <div>
+                <p class="eyebrow">Trazabilidad</p>
+                <h2 id="historyTitle">Historial</h2>
+            </div>
+            <button type="button" class="icon-button" id="closeHistoryBtn" aria-label="Cerrar">×</button>
+        </div>
+        <p class="muted" id="historyContext"></p>
+        <div class="history-list" id="historyList"></div>
+    </dialog>
+
+    <dialog class="dialog" id="adjuntosDialog">
+        <div class="dialog-header">
+            <div>
+                <p class="eyebrow">Evidencias</p>
+                <h2 id="adjuntosTitle">Adjuntos</h2>
+            </div>
+            <button type="button" class="icon-button" id="closeAdjuntosBtn" aria-label="Cerrar">×</button>
+        </div>
+        <p class="muted" id="adjuntosContext"></p>
+        <form id="adjuntosForm" class="stacked-form">
+            <label>
+                Tipo de documento
+                <input type="text" id="adjuntoTipoDocumento" placeholder="Acta, factura, evidencia...">
+            </label>
+            <label>
+                Observaciones
+                <input type="text" id="adjuntoObservaciones" placeholder="Referencia interna">
+            </label>
+            <label>
+                Archivo
+                <input type="file" id="adjuntoArchivo" accept=".pdf,.jpg,.jpeg,.png,.xls,.xlsx,.doc,.docx" required>
+            </label>
+            <button type="submit" class="button button-primary">Subir adjunto</button>
+        </form>
+        <div class="adjuntos-list" id="adjuntosList"></div>
+    </dialog>
 
     <script src="/static/script.js"></script>
 </body>
