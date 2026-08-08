@@ -18,7 +18,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from base_de_datos import crear_tablas, logger
-from configuracion import ORIGENES_PERMITIDOS, RUTA_STATIC, RUTA_VISTA, limiter
+from configuracion import ORIGENES_PERMITIDOS, RUTA_STATIC, limiter
 from routers import datos, paginas
 from routers.exportacion import router as exportacion_router
 from routers.informes import router as informes_router
@@ -114,8 +114,6 @@ app.add_middleware(
 )
 
 app.mount("/static", StaticFiles(directory=RUTA_STATIC), name="static")
-# html=True permite servir index.html de una carpeta al pedir su ruta directorio.
-app.mount("/vista", StaticFiles(directory=RUTA_VISTA, html=True), name="vista")
 app.include_router(paginas.router)
 # exportacion/informes/dashboard/importacion/alertas/facturacion_automatica van
 # antes que datos.router porque datos.router define un catch-all GET /api/{tipo}:

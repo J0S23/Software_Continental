@@ -209,6 +209,17 @@ def _serializar_usuario(usuario):
     }
 
 
+@router.get("/me")
+async def obtener_sesion(usuario=Depends(get_current_user)):
+    return {"success": True, "usuario": _serializar_usuario(usuario)}
+
+
+@router.post("/logout")
+async def logout(response: Response):
+    response.delete_cookie(key=NOMBRE_COOKIE_SESION, samesite="lax")
+    return {"success": True, "message": "Sesion cerrada"}
+
+
 class AprobarRequest(BaseModel):
     rol: RolUsuario
 
