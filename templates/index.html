@@ -150,6 +150,48 @@
                             <div class="recommendation-list" id="recommendationList"></div>
                         </section>
                     </div>
+
+                    <div class="content-grid four-columns">
+                        <section class="panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">Clientes</p>
+                                    <h2>Ingresos por cliente</h2>
+                                </div>
+                            </div>
+                            <div class="rank-list" id="ingresosClienteChart"></div>
+                        </section>
+
+                        <section class="panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">Clientes</p>
+                                    <h2>Rentabilidad por cliente</h2>
+                                </div>
+                            </div>
+                            <div class="rank-list" id="rentabilidadClienteChart"></div>
+                        </section>
+
+                        <section class="panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">Servicio técnico</p>
+                                    <h2>Correctivos por equipo</h2>
+                                </div>
+                            </div>
+                            <div class="rank-list" id="correctivosEquipoChart"></div>
+                        </section>
+
+                        <section class="panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">Insumos</p>
+                                    <h2>Tóneres por cliente</h2>
+                                </div>
+                            </div>
+                            <div class="rank-list" id="toneresClienteChart"></div>
+                        </section>
+                    </div>
                 </section>
 
                 <section class="app-view" id="view-datos">
@@ -212,13 +254,14 @@
                                     <option value="en_reclamacion">En reclamación</option>
                                 </select>
                             </label>
-                            <label class="check-field">
+                            <label class="check-field" id="forzarFacturaField">
                                 <input type="checkbox" id="autoForzarFactura">
                                 Forzar generación
                             </label>
                         </div>
                         <div class="automation-actions">
-                            <button type="button" class="button button-primary" id="generarFacturaBtn">Generar factura</button>
+                            <button type="button" class="button button-primary" id="generarFacturaBtn" disabled>Generar factura</button>
+                            <span class="muted" id="facturaConfirmHint">Previsualiza el cálculo antes de generar.</span>
                         </div>
                         <div class="report-detail" id="autoFacturaPreview"></div>
                     </section>
@@ -368,6 +411,10 @@
                             <h2>Alertas automáticas</h2>
                         </div>
                         <div class="section-actions">
+                            <label class="inline-check">
+                                <input type="checkbox" id="includeDiscardedFilter">
+                                Incluir descartadas
+                            </label>
                             <select id="alertLevelFilter" aria-label="Filtro de nivel">
                                 <option value="">Todos los niveles</option>
                                 <option value="critico">Críticas</option>
@@ -385,6 +432,7 @@
                                     <p class="eyebrow">Activas</p>
                                     <h2 id="alertsTitle">Alertas</h2>
                                 </div>
+                                <span class="status-pill" id="alertsMeta"></span>
                             </div>
                             <div class="alert-list" id="alertsList"></div>
                         </section>

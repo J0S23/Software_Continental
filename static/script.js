@@ -97,7 +97,11 @@ const state = {
     currentView: "dashboard",
     currentAdjuntoTarget: null,
     lastFacturaPreview: null,
-    charts: { financial: null, costs: null, cartera: null },
+    facturaPreviewKey: null,
+    charts: {
+        financial: null, costs: null, cartera: null,
+        ingresosCliente: null, rentabilidadCliente: null, correctivosEquipo: null, toneresCliente: null,
+    },
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -145,6 +149,7 @@ function bindStaticEvents() {
     bind("loadClientReportBtn", "click", cargarInformeCliente);
     bind("loadEquipoReportBtn", "click", cargarInformeEquipo);
     bind("loadAlertsBtn", "click", cargarAlertas);
+    bind("includeDiscardedFilter", "change", cargarAlertas);
     bind("alertLevelFilter", "change", renderAlertasActivas);
     bind("loadUsersBtn", "click", cargarUsuarios);
 
@@ -154,6 +159,8 @@ function bindStaticEvents() {
 
     bind("previewFacturaBtn", "click", previsualizarFacturacion);
     bind("generarFacturaBtn", "click", generarFacturacionAutomatica);
+    bind("autoContratoId", "input", resetFacturaPreview);
+    bind("autoPeriodo", "input", resetFacturaPreview);
 }
 
 function setDefaultPeriod() {
@@ -663,7 +670,22 @@ function syncAutomationPanel() {
     const panel = $("billingAutomationPanel");
     if (!panel) return;
     panel.hidden = state.tipoActual !== "facturacion" || esSoloLectura();
+    resetFacturaPreview();
     syncAutomationPeriod();
+}
+
+function resetFacturaPreview() {
+    state.lastFacturaPreview = null;
+    state.facturaPreviewKey = null;
+    const boton = $("generarFacturaBtn");
+    if (boton) boton.disabled = true;
+    const hint = $("facturaConfirmHint");
+    if (hint) {
+        hint.hidden = false;
+        hint.textContent = "Previsualiza el cálculo antes de generar.";
+    }
+    $("autoFacturaPreview")?.replaceChildren();
+    $("forzarFacturaField")?.classList.remove("attention");
 }
 
 function syncAutomationPeriod() {
@@ -682,8 +704,10 @@ async function previsualizarFacturacion() {
     try {
         const calculo = await apiJson(`/api/facturacion-automatica/${contratoId}/${periodo}`);
         state.lastFacturaPreview = calculo;
+        state.facturaPreviewKey = `${contratoId}|${periodo}`;
         renderFacturaPreview(calculo);
     } catch (error) {
+        resetFacturaPreview();
         mostrarToast(error.message, "error");
     }
 }
@@ -700,11 +724,26 @@ async function generarFacturacionAutomatica() {
         return;
     }
 
+    if (state.facturaPreviewKey !== `${contratoId}|${periodo}`) {
+        mostrarToast("Previsualiza el cálculo para este contrato y periodo antes de generar.", "error");
+        return;
+    }
+
+    const tieneAdvertencias = Boolean(
+        state.lastFacturaPreview?.equipos_sin_lectura?.length || state.lastFacturaPreview?.inconsistencias?.length
+    );
+    const forzar = $("autoForzarFactura").checked;
+    if (tieneAdvertencias && !forzar) {
+        mostrarToast("El preview tiene inconsistencias o equipos sin lectura. Marca 'Forzar generación' para continuar.", "error");
+        $("forzarFacturaField")?.classList.add("attention");
+        return;
+    }
+
     const payload = {
         numero_factura: numeroFactura,
         fecha_factura: fechaToIso(fechaFactura),
         estado_factura: estadoFactura,
-        forzar: $("autoForzarFactura").checked,
+        forzar,
     };
 
     if ($("autoEmpresaFactura").value) {
@@ -720,6 +759,8 @@ async function generarFacturacionAutomatica() {
             body: JSON.stringify(payload),
         });
         mostrarToast(`${data.message}. Total: ${moneda(data.total_facturado)}`, "success");
+        $("autoForzarFactura").checked = false;
+        resetFacturaPreview();
         await seleccionarTipo("facturacion");
     } catch (error) {
         mostrarToast(error.message, "error");
@@ -730,6 +771,17 @@ function renderFacturaPreview(calculo) {
     const container = $("autoFacturaPreview");
     if (!container) return;
     container.replaceChildren();
+
+    const tieneAdvertencias = Boolean(calculo.equipos_sin_lectura?.length || calculo.inconsistencias?.length);
+    const boton = $("generarFacturaBtn");
+    if (boton) boton.disabled = false;
+    const hint = $("facturaConfirmHint");
+    if (hint) {
+        hint.textContent = tieneAdvertencias
+            ? "Hay advertencias: revisa el detalle antes de confirmar."
+            : "Cálculo listo. Revisa los datos y confirma para generar la factura.";
+    }
+    $("forzarFacturaField")?.classList.toggle("attention", tieneAdvertencias);
 
     const summary = document.createElement("div");
     summary.className = "preview-grid";
@@ -743,12 +795,13 @@ function renderFacturaPreview(calculo) {
     ].forEach(([label, value]) => summary.appendChild(keyValue(label, value)));
     container.appendChild(summary);
 
-    if (calculo.equipos_sin_lectura?.length || calculo.inconsistencias?.length) {
+    if (tieneAdvertencias) {
         const warning = document.createElement("div");
         warning.className = "inline-message warning";
         warning.textContent = [
             calculo.equipos_sin_lectura?.length ? `Equipos sin lectura: ${calculo.equipos_sin_lectura.join(", ")}` : "",
             ...(calculo.inconsistencias || []),
+            "Marca 'Forzar generación' para continuar de todas formas.",
         ].filter(Boolean).join(" | ");
         container.appendChild(warning);
     }
@@ -805,21 +858,37 @@ function refrescarVistaActual() {
 
 async function cargarDashboard() {
     const periodo = periodoActual();
-    const [snapshotResult, financieraResult, costosResult, carteraResult, informeResult, alertasResult] = await Promise.allSettled([
+    const [
+        snapshotResult, financieraResult, costosResult, carteraResult,
+        ingresosClienteResult, rentabilidadClienteResult, correctivosEquipoResult, toneresClienteResult,
+        informeResult, alertasResult,
+    ] = await Promise.allSettled([
         apiJson(`/api/dashboard/${periodo}`),
         apiJson(`/api/dashboard/${periodo}/serie-financiera?meses=6`),
         apiJson(`/api/dashboard/${periodo}/costos-por-tipo?meses=6`),
         apiJson(`/api/dashboard/${periodo}/cartera-por-edad?meses=6`),
+        apiJson(`/api/dashboard/${periodo}/ingresos-por-cliente?meses=6`),
+        apiJson(`/api/dashboard/${periodo}/rentabilidad-por-cliente?meses=6`),
+        apiJson(`/api/dashboard/${periodo}/correctivos-por-equipo?meses=6`),
+        apiJson(`/api/dashboard/${periodo}/toneres-por-cliente?meses=6`),
         apiJson(`/api/informes/${periodo}`),
         apiJson("/api/alertas"),
     ]);
 
-    mostrarErrorDashboard([snapshotResult, financieraResult, costosResult, carteraResult, informeResult, alertasResult]);
+    mostrarErrorDashboard([
+        snapshotResult, financieraResult, costosResult, carteraResult,
+        ingresosClienteResult, rentabilidadClienteResult, correctivosEquipoResult, toneresClienteResult,
+        informeResult, alertasResult,
+    ]);
 
     const snapshot = settledValue(snapshotResult)?.dashboard || {};
     const financiera = settledValue(financieraResult)?.serie || [];
     const costos = ultimaSerieConDatos(settledValue(costosResult)?.serie, "costos_por_tipo");
     const cartera = ultimaSerieConDatos(settledValue(carteraResult)?.serie, "cartera_por_edad");
+    const ingresosCliente = ultimaSerieConDatos(settledValue(ingresosClienteResult)?.serie, "valores_por_cliente");
+    const rentabilidadCliente = ultimaSerieConDatos(settledValue(rentabilidadClienteResult)?.serie, "valores_por_cliente");
+    const correctivosEquipo = ultimaSerieConDatos(settledValue(correctivosEquipoResult)?.serie, "correctivos_por_equipo");
+    const toneresCliente = ultimaSerieConDatos(settledValue(toneresClienteResult)?.serie, "toneres_por_cliente");
     const informe = settledValue(informeResult)?.informe || {};
     const alertas = settledValue(alertasResult) || { total: 0, alertas: [] };
 
@@ -827,6 +896,10 @@ async function cargarDashboard() {
     renderFinancialChart(financiera);
     renderRankChart("costs", "costsChart", costos?.costos_por_tipo || {}, moneda, "accent");
     renderRankChart("cartera", "carteraChart", cartera?.cartera_por_edad || {}, moneda, "danger");
+    renderRankChart("ingresosCliente", "ingresosClienteChart", ingresosCliente?.valores_por_cliente || {}, moneda, "accent");
+    renderRankChart("rentabilidadCliente", "rentabilidadClienteChart", rentabilidadCliente?.valores_por_cliente || {}, porcentaje, "ok");
+    renderRankChart("correctivosEquipo", "correctivosEquipoChart", correctivosEquipo?.correctivos_por_equipo || {}, entero, "danger");
+    renderRankChart("toneresCliente", "toneresClienteChart", toneresCliente?.toneres_por_cliente || {}, entero, "brand");
     renderRecommendations(informe.recomendaciones || generarRecomendaciones(snapshot));
     renderAlertPreview(alertas);
 }
@@ -1158,12 +1231,14 @@ function renderDetalleInforme(containerId, data, links) {
 }
 
 async function cargarAlertas() {
+    const incluirDescartadas = $("includeDiscardedFilter")?.checked || false;
     try {
         const [activas, guardadas] = await Promise.all([
-            apiJson("/api/alertas"),
+            apiJson(`/api/alertas?incluir_descartadas=${incluirDescartadas}`),
             apiJson("/api/alertas/guardadas"),
         ]);
         state.alertas = activas.alertas || [];
+        state.alertasMeta = { criticas: activas.criticas || 0, generadoEn: activas.generado_en };
         renderAlertasActivas();
         renderAlertasGuardadas(guardadas.alertas || []);
     } catch (error) {
@@ -1175,6 +1250,14 @@ function renderAlertasActivas() {
     const filtro = $("alertLevelFilter").value;
     const alertas = (state.alertas || []).filter((alerta) => !filtro || alerta.nivel === filtro);
     $("alertsTitle").textContent = `${alertas.length} alerta${alertas.length === 1 ? "" : "s"}`;
+
+    const meta = $("alertsMeta");
+    if (meta) {
+        meta.textContent = state.alertasMeta
+            ? `${state.alertasMeta.criticas} críticas · ${fechaCorta(state.alertasMeta.generadoEn)}`
+            : "";
+    }
+
     const container = $("alertsList");
     container.replaceChildren();
     if (!alertas.length) {
@@ -1191,15 +1274,21 @@ function renderAlertasGuardadas(alertas) {
         empty(container, "Sin alertas guardadas.");
         return;
     }
-    alertas.forEach((alerta) => container.appendChild(alertElement(alerta, true, true)));
+    alertas.forEach((alerta) => container.appendChild(alertElement(alerta, true)));
 }
 
-function alertElement(alerta, withActions, saved = false) {
+function alertElement(alerta, withActions) {
     const item = document.createElement("article");
     item.className = `alert-item ${alerta.nivel || "info"}`;
+    if (alerta.leida) item.classList.add("leida");
+
     const header = document.createElement("div");
     header.className = "alert-item-header";
-    header.append(statusPill(labelize(alerta.nivel || "info")), textSpan(labelize(alerta.tipo || "alerta")));
+    const tipo = textSpan(labelize(alerta.tipo || "alerta"));
+    tipo.className = "alert-item-tipo";
+    header.append(statusPill(labelize(alerta.nivel || "info")), tipo);
+    if (alerta.descartada) header.appendChild(statusPill("Descartada"));
+
     const message = document.createElement("p");
     message.textContent = alerta.mensaje || "Alerta sin mensaje";
     item.append(header, message);
@@ -1207,15 +1296,11 @@ function alertElement(alerta, withActions, saved = false) {
     if (withActions) {
         const actions = document.createElement("div");
         actions.className = "inline-actions";
-        if (!saved) {
-            actions.append(
-                actionButton(alerta.guardada ? "Guardada" : "Guardar", () => actualizarEstadoAlerta(alerta, { guardada: true }), "secondary"),
-                actionButton("Leída", () => actualizarEstadoAlerta(alerta, { leida: true }), "ghost"),
-                actionButton("Descartar", () => actualizarEstadoAlerta(alerta, { descartada: true }), "ghost")
-            );
-        } else {
-            actions.append(actionButton("Quitar guardado", () => actualizarEstadoAlerta(alerta, { guardada: false }), "ghost"));
-        }
+        actions.append(
+            actionButton(alerta.leida ? "Marcar no leída" : "Marcar leída", () => actualizarEstadoAlerta(alerta, { leida: !alerta.leida }), "ghost"),
+            actionButton(alerta.guardada ? "Quitar guardado" : "Guardar", () => actualizarEstadoAlerta(alerta, { guardada: !alerta.guardada }), "secondary"),
+            actionButton(alerta.descartada ? "Restaurar" : "Descartar", () => actualizarEstadoAlerta(alerta, { descartada: !alerta.descartada }), alerta.descartada ? "secondary" : "ghost")
+        );
         item.appendChild(actions);
     }
 
