@@ -5,6 +5,8 @@ document.addEventListener("DOMContentLoaded", () => {
     setDefaultPeriod();
     initAuthTabs();
     bindStaticEvents();
+    initSidebarToggle();
+    initNavGroups();
     verificarSesion();
 });
 
