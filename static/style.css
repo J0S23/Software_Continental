@@ -388,8 +388,9 @@ img, svg { display: block; max-width: 100%; }
     min-height: 100vh;
 }
 
-.sidebar {
+.app-sidebar {
     position: sticky;
+    top: 0;
     top: 0;
     display: flex;
     flex-direction: column;
