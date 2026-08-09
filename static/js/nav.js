@@ -88,3 +88,24 @@ function crearModuloButton(key) {
     button.addEventListener("click", () => seleccionarTipo(key));
     return button;
 }
+
+function initSidebarToggle() {
+    const shell = $("appShell");
+    const btn = $("sidebarCollapseBtn");
+    if (!btn || !shell) return;
+
+    btn.addEventListener("click", () => {
+        const collapsed = shell.classList.toggle("is-sidebar-collapsed");
+        btn.setAttribute("aria-expanded", String(!collapsed));
+    });
+}
+
+function initNavGroups() {
+    document.querySelectorAll(".nav-group__toggle").forEach((toggle) => {
+        toggle.addEventListener("click", () => {
+            const group = toggle.closest(".nav-group");
+            const collapsed = group.classList.toggle("is-collapsed");
+            toggle.setAttribute("aria-expanded", String(!collapsed));
+        });
+    });
+}
