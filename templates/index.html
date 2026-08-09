@@ -4,17 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Continental | Renta de equipos</title>
+    <title>Continental | Renta de equipos</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <div class="toast-stack" id="toastStack" aria-live="polite"></div>
 
-    <section class="auth-screen" id="authScreen">
-        <div class="auth-brand">
-            <p class="eyebrow">Grupo Continental</p>
-            <h1>Control de renta de equipos</h1>
-            <p>Consola administrativa para la operación, la cartera y la rentabilidad mensual.</p>
-            <div class="auth-metrics">
+    <!-- ===================== Acceso ===================== -->
+    <section class="auth" id="authScreen">
+        <div class="auth-hero">
+            <div>
+                <p class="eyebrow">Grupo Continental</p>
+                <h1>Control de renta de equipos</h1>
+                <p class="lede">Consola administrativa para la operación, la cartera y la rentabilidad mensual.</p>
+            </div>
+            <div class="auth-hero__stats">
                 <div>
                     <span>Operación</span>
                     <strong>Contratos y equipos</strong>
@@ -30,27 +34,53 @@
             </div>
         </div>
 
-        <div class="auth-panel">
-            <p class="eyebrow">Acceso seguro</p>
-            <h2>Administrador general</h2>
-            <form id="loginForm" class="stacked-form">
-                <label>
-                    Correo
-                    <input type="email" id="loginEmail" name="email" autocomplete="email" required>
-                </label>
-                <label>
-                    Contraseña
-                    <input type="password" id="loginPassword" name="contrasena" autocomplete="current-password" required>
-                </label>
-                <button type="submit" class="button button-primary">Ingresar</button>
-            </form>
-            <div id="authMessage" class="inline-message" hidden></div>
+        <div class="auth-panel-wrap">
+            <div class="auth-card">
+                <div class="auth-tabs">
+                    <span class="auth-tab is-active" id="tabLogin" data-tab="login">Ingresar</span>
+                    <span class="auth-tab" id="tabRegistro" data-tab="registro">Crear cuenta</span>
+                </div>
+
+                <form id="loginForm" class="form-stack">
+                    <h2>Iniciar sesión</h2>
+                    <label class="field">
+                        Correo
+                        <input class="input" type="email" id="loginEmail" name="email" autocomplete="email" required>
+                    </label>
+                    <label class="field">
+                        Contraseña
+                        <input class="input" type="password" id="loginPassword" name="contrasena" autocomplete="current-password" required>
+                    </label>
+                    <button type="submit" class="btn btn--primary">Ingresar</button>
+                </form>
+
+                <form id="registroForm" class="form-stack" hidden>
+                    <h2>Solicitar acceso</h2>
+                    <label class="field">
+                        Correo
+                        <input class="input" type="email" id="registroEmail" name="email" autocomplete="email" required>
+                    </label>
+                    <label class="field">
+                        Contraseña
+                        <input class="input" type="password" id="registroPassword" name="contrasena" autocomplete="new-password" required>
+                    </label>
+                    <label class="field">
+                        Rol solicitado
+                        <select class="select" id="registroRol" name="rol" required></select>
+                    </label>
+                    <button type="submit" class="btn btn--primary">Solicitar acceso</button>
+                    <p class="auth-hint">Tu cuenta queda pendiente hasta que un administrador la apruebe.</p>
+                </form>
+
+                <div id="authMessage" class="auth-message" hidden></div>
+            </div>
         </div>
     </section>
 
-    <div class="app-shell" id="appShell" hidden>
-        <aside class="app-sidebar">
-            <div class="brand-block">
+    <!-- ===================== Aplicación ===================== -->
+    <div class="shell" id="appShell" hidden>
+        <aside class="sidebar">
+            <div class="sidebar__brand">
                 <span class="brand-mark">C</span>
                 <div>
                     <strong>Continental</strong>
@@ -58,148 +88,173 @@
                 </div>
             </div>
 
-            <nav class="main-nav" aria-label="Navegación principal">
-                <button type="button" class="nav-item active" data-view="dashboard">Visión general</button>
-                <button type="button" class="nav-item" data-view="datos">Gestión de datos</button>
-                <button type="button" class="nav-item" data-view="informes">Informes</button>
-                <button type="button" class="nav-item" data-view="alertas">Alertas</button>
-                <button type="button" class="nav-item" data-view="usuarios">Usuarios</button>
+            <nav class="sidebar__nav" aria-label="Navegación principal" id="mainNav">
+                <p class="nav-section-label">Principal</p>
+                <button type="button" class="nav-link is-active" data-view="dashboard"><span class="dot"></span>Visión general</button>
+
+                <p class="nav-section-label">Datos</p>
+                <button type="button" class="nav-link" data-view="base_comercial"><span class="dot"></span>Base comercial</button>
+                <button type="button" class="nav-link" data-view="operacion_mensual"><span class="dot"></span>Operación mensual</button>
+                <button type="button" class="nav-link" data-view="servicio_tecnico"><span class="dot"></span>Servicio técnico</button>
+                <button type="button" class="nav-link" data-view="inventario"><span class="dot"></span>Inventario</button>
+
+                <p class="nav-section-label">Gestión</p>
+                <button type="button" class="nav-link" data-view="informes"><span class="dot"></span>Informes</button>
+                <button type="button" class="nav-link" data-view="alertas"><span class="dot"></span>Alertas</button>
+                <button type="button" class="nav-link" data-view="usuarios"><span class="dot"></span>Usuarios</button>
             </nav>
 
-            <div class="sidebar-session">
-                <span id="userRoleLabel">Administrador general</span>
-                <strong id="userEmailLabel"></strong>
+            <div class="sidebar__footer">
+                <div class="session-card">
+                    <span id="userRoleLabel">Rol</span>
+                    <strong id="userEmailLabel"></strong>
+                </div>
+                <button type="button" class="btn btn--ghost" id="logoutBtn">Cerrar sesión</button>
             </div>
         </aside>
 
-        <div class="app-main">
+        <div class="main">
             <header class="topbar">
                 <div>
-                    <p class="eyebrow" id="activeViewEyebrow">Administrador general</p>
+                    <p class="eyebrow" id="activeViewEyebrow">Principal</p>
                     <h1 id="activeViewTitle">Visión general</h1>
                 </div>
-                <div class="topbar-actions">
-                    <label class="period-control">
+                <div class="topbar__actions">
+                    <label class="field period-field">
                         Periodo
-                        <input type="text" id="periodInput" inputmode="numeric" placeholder="MM-AAAA">
+                        <input class="input" type="text" id="periodInput" inputmode="numeric" placeholder="MM-AAAA">
                     </label>
-                    <button type="button" class="button button-secondary" id="refreshBtn">Actualizar</button>
-                    <button type="button" class="button button-ghost" id="logoutBtn">Salir</button>
+                    <button type="button" class="btn btn--secondary" id="refreshBtn">Actualizar</button>
                 </div>
             </header>
 
             <main class="view-stack">
-                <section class="app-view active" id="view-dashboard">
-                    <div class="dashboard-grid" id="kpiGrid"></div>
+                <!-- ===== Dashboard ===== -->
+                <section class="view is-active" id="view-dashboard">
+                    <div class="inline-note is-danger" id="dashboardError" hidden></div>
 
-                    <div class="content-grid two-columns">
+                    <div class="kpis" id="kpiGrid"></div>
+
+                    <div class="grid grid-2">
                         <section class="panel">
-                            <div class="panel-heading">
+                            <div class="panel__head">
                                 <div>
                                     <p class="eyebrow">Mes a mes</p>
                                     <h2>Facturación, recaudo y utilidad</h2>
                                 </div>
                             </div>
-                            <div class="chart-area" id="financialChart"></div>
+                            <div class="chart-box" id="financialChart"></div>
                         </section>
 
                         <section class="panel">
-                            <div class="panel-heading">
+                            <div class="panel__head">
                                 <div>
                                     <p class="eyebrow">Riesgo operativo</p>
                                     <h2>Alertas activas</h2>
                                 </div>
-                                <span class="status-pill" id="alertSummary">0 alertas</span>
+                                <span class="pill" id="alertSummary">0 alertas</span>
                             </div>
-                            <div class="alert-preview" id="alertPreviewList"></div>
+                            <div class="stack" id="alertPreviewList"></div>
                         </section>
                     </div>
 
-                    <div class="content-grid three-columns">
-                        <section class="panel">
-                            <div class="panel-heading">
-                                <div>
-                                    <p class="eyebrow">Costos</p>
-                                    <h2>Distribución por tipo</h2>
-                                </div>
-                            </div>
-                            <div class="rank-list" id="costsChart"></div>
-                        </section>
+                    <details class="collapse">
+                        <summary class="collapse__summary">
+                            <span>Indicadores operativos y desglose por cliente</span>
+                            <span class="collapse__chevron" aria-hidden="true">▾</span>
+                        </summary>
+                        <div class="collapse__body">
+                            <div class="kpis is-compact" id="kpiGridSecundario"></div>
 
-                        <section class="panel">
-                            <div class="panel-heading">
-                                <div>
-                                    <p class="eyebrow">Cartera</p>
-                                    <h2>Edad de saldos</h2>
-                                </div>
+                            <div class="grid grid-3">
+                                <section class="panel">
+                                    <div class="panel__head">
+                                        <div><p class="eyebrow">Costos</p><h2>Distribución por tipo</h2></div>
+                                    </div>
+                                    <div class="rank-box" id="costsChart"></div>
+                                </section>
+                                <section class="panel">
+                                    <div class="panel__head">
+                                        <div><p class="eyebrow">Cartera</p><h2>Edad de saldos</h2></div>
+                                    </div>
+                                    <div class="rank-box" id="carteraChart"></div>
+                                </section>
+                                <section class="panel">
+                                    <div class="panel__head">
+                                        <div><p class="eyebrow">Sistema</p><h2>Recomendaciones</h2></div>
+                                    </div>
+                                    <div class="stack" id="recommendationList"></div>
+                                </section>
                             </div>
-                            <div class="rank-list" id="carteraChart"></div>
-                        </section>
 
-                        <section class="panel">
-                            <div class="panel-heading">
-                                <div>
-                                    <p class="eyebrow">Sistema</p>
-                                    <h2>Recomendaciones</h2>
-                                </div>
+                            <div class="grid grid-4">
+                                <section class="panel">
+                                    <div class="panel__head">
+                                        <div><p class="eyebrow">Clientes</p><h2>Ingresos por cliente</h2></div>
+                                    </div>
+                                    <div class="rank-box" id="ingresosClienteChart"></div>
+                                </section>
+                                <section class="panel">
+                                    <div class="panel__head">
+                                        <div><p class="eyebrow">Clientes</p><h2>Rentabilidad por cliente</h2></div>
+                                    </div>
+                                    <div class="rank-box" id="rentabilidadClienteChart"></div>
+                                </section>
+                                <section class="panel">
+                                    <div class="panel__head">
+                                        <div><p class="eyebrow">Servicio técnico</p><h2>Correctivos por equipo</h2></div>
+                                    </div>
+                                    <div class="rank-box" id="correctivosEquipoChart"></div>
+                                </section>
+                                <section class="panel">
+                                    <div class="panel__head">
+                                        <div><p class="eyebrow">Insumos</p><h2>Tóneres por cliente</h2></div>
+                                    </div>
+                                    <div class="rank-box" id="toneresClienteChart"></div>
+                                </section>
                             </div>
-                            <div class="recommendation-list" id="recommendationList"></div>
-                        </section>
-                    </div>
+                        </div>
+                    </details>
                 </section>
 
-                <section class="app-view" id="view-datos">
-                    <div class="section-bar">
+                <!-- ===== Datos (compartida por los 4 grupos) ===== -->
+                <section class="view" id="view-datos">
+                    <div class="section-head">
                         <div>
-                            <p class="eyebrow">Operación</p>
-                            <h2>Datos maestros y transacciones</h2>
+                            <p class="eyebrow" id="datosEyebrow">Operación</p>
+                            <h2 id="datosTitle">Datos maestros y transacciones</h2>
                         </div>
                         <div class="section-actions">
-                            <select id="tipoSelector" aria-label="Tipo de dato"></select>
-                            <button type="button" class="button button-secondary" id="exportCurrentBtn">Exportar Excel</button>
+                            <select class="select" id="tipoSelector" aria-label="Tipo de dato"></select>
+                            <button type="button" class="btn btn--secondary" id="exportCurrentBtn">Exportar Excel</button>
                         </div>
                     </div>
 
-                    <section class="automation-panel" id="billingAutomationPanel" hidden>
-                        <div class="panel-heading">
+                    <section class="panel" id="billingAutomationPanel" hidden>
+                        <div class="panel__head">
                             <div>
                                 <p class="eyebrow">Facturación automática</p>
                                 <h2>Generar desde lecturas del contrato</h2>
                             </div>
-                            <button type="button" class="button button-secondary" id="previewFacturaBtn">Previsualizar</button>
+                            <button type="button" class="btn btn--secondary" id="previewFacturaBtn">Previsualizar</button>
                         </div>
                         <div class="automation-grid">
-                            <label>
-                                Contrato
-                                <input type="number" id="autoContratoId" placeholder="ID">
-                            </label>
-                            <label>
-                                Periodo
-                                <input type="text" id="autoPeriodo" inputmode="numeric" placeholder="MM-AAAA">
-                            </label>
-                            <label>
-                                Número de factura
-                                <input type="text" id="autoNumeroFactura">
-                            </label>
-                            <label>
-                                Fecha de factura
-                                <input type="date" id="autoFechaFactura">
-                            </label>
-                            <label>
-                                Fecha de vencimiento
-                                <input type="date" id="autoFechaVencimiento">
-                            </label>
-                            <label>
+                            <label class="field">Contrato<input class="input" type="number" id="autoContratoId" placeholder="ID"></label>
+                            <label class="field">Periodo<input class="input" type="text" id="autoPeriodo" inputmode="numeric" placeholder="MM-AAAA"></label>
+                            <label class="field">Número de factura<input class="input" type="text" id="autoNumeroFactura"></label>
+                            <label class="field">Fecha de factura<input class="input" type="date" id="autoFechaFactura"></label>
+                            <label class="field">Fecha de vencimiento<input class="input" type="date" id="autoFechaVencimiento"></label>
+                            <label class="field">
                                 Empresa
-                                <select id="autoEmpresaFactura">
+                                <select class="select" id="autoEmpresaFactura">
                                     <option value="">Sin definir</option>
                                     <option value="Continental Ltda.">Continental Ltda.</option>
                                     <option value="Otra">Otra</option>
                                 </select>
                             </label>
-                            <label>
+                            <label class="field">
                                 Estado
-                                <select id="autoEstadoFactura">
+                                <select class="select" id="autoEstadoFactura">
                                     <option value="pendiente">Pendiente</option>
                                     <option value="enviada">Enviada</option>
                                     <option value="pagada">Pagada</option>
@@ -208,102 +263,136 @@
                                     <option value="en_reclamacion">En reclamación</option>
                                 </select>
                             </label>
-                            <label class="check-field">
+                            <label class="checkbox-row" id="forzarFacturaField">
                                 <input type="checkbox" id="autoForzarFactura">
                                 Forzar generación
                             </label>
                         </div>
                         <div class="automation-actions">
-                            <button type="button" class="button button-primary" id="generarFacturaBtn">Generar factura</button>
+                            <button type="button" class="btn btn--primary" id="generarFacturaBtn" disabled>Generar factura</button>
+                            <span class="muted" id="facturaConfirmHint">Previsualiza el cálculo antes de generar.</span>
                         </div>
-                        <div class="report-detail" id="autoFacturaPreview"></div>
+                        <div id="autoFacturaPreview"></div>
                     </section>
 
-                    <div class="data-workspace">
-                        <aside class="module-panel" id="tipoGroups"></aside>
+                    <div class="workspace">
+                        <aside class="module-nav" id="tipoGroups"></aside>
 
-                        <section class="records-panel">
-                            <div class="record-toolbar">
-                                <label class="search-field">
+                        <section class="panel">
+                            <div class="table-toolbar">
+                                <label class="field search-field">
                                     Buscar
-                                    <input type="search" id="recordSearch" placeholder="Cliente, serial, contrato...">
+                                    <input class="input" type="search" id="recordSearch" placeholder="Cliente, serial, contrato...">
                                 </label>
-                                <span class="status-pill" id="recordTotalLabel">0 registros</span>
+                                <span class="pill" id="recordTotalLabel">0 registros</span>
                             </div>
 
-                            <div class="table-shell">
+                            <div class="table-wrap">
                                 <table id="datosTable">
                                     <thead id="tableHead"></thead>
                                     <tbody id="tableBody"></tbody>
                                 </table>
                             </div>
 
-                            <div class="pagination-controls" id="paginationControls" hidden>
-                                <button type="button" class="button button-ghost button-small" id="paginaAnteriorBtn">Anterior</button>
+                            <div class="pagination" id="paginationControls" hidden>
+                                <button type="button" class="btn btn--ghost btn--sm" id="paginaAnteriorBtn">Anterior</button>
                                 <span id="paginacionInfo"></span>
-                                <button type="button" class="button button-ghost button-small" id="paginaSiguienteBtn">Siguiente</button>
+                                <button type="button" class="btn btn--ghost btn--sm" id="paginaSiguienteBtn">Siguiente</button>
                             </div>
 
-                            <div class="import-box">
+                            <div class="import-box" id="importBox">
                                 <div>
                                     <p class="eyebrow">Carga masiva</p>
                                     <strong id="importTypeLabel">Selecciona clientes, equipos o lecturas</strong>
                                 </div>
-                                <div class="import-actions">
-                                    <button type="button" class="button button-secondary" id="downloadTemplateBtn">Plantilla</button>
+                                <div class="section-actions">
+                                    <button type="button" class="btn btn--secondary" id="downloadTemplateBtn">Plantilla</button>
                                     <input type="file" id="importFile" accept=".xlsx,.xls">
-                                    <button type="button" class="button button-primary" id="importBtn">Importar</button>
+                                    <button type="button" class="btn btn--primary" id="importBtn">Importar</button>
                                 </div>
                             </div>
                         </section>
 
-                        <aside class="editor-panel">
-                            <div class="panel-heading">
+                        <aside class="panel editor-col">
+                            <div class="panel__head">
                                 <div>
                                     <p class="eyebrow" id="formModeLabel">Nuevo registro</p>
                                     <h2 id="formTitle">Selecciona un tipo</h2>
                                 </div>
                             </div>
-                            <form id="formDatos" class="dynamic-form">
+                            <div class="permission-note" id="noWriteNote" hidden>Tu rol no tiene permiso para crear o editar este tipo de dato.</div>
+                            <form id="formDatos" class="form-stack">
                                 <div id="formFields" class="form-grid"></div>
-                                <div class="form-actions">
-                                    <button type="submit" class="button button-primary" id="saveRecordBtn">Guardar</button>
-                                    <button type="button" class="button button-secondary" id="resetFormBtn">Limpiar</button>
-                                    <button type="button" class="button button-ghost" id="cancelEditBtn" hidden>Cancelar edición</button>
+                                <div class="section-actions">
+                                    <button type="submit" class="btn btn--primary" id="saveRecordBtn">Guardar</button>
+                                    <button type="button" class="btn btn--secondary" id="resetFormBtn">Limpiar</button>
+                                    <button type="button" class="btn btn--ghost" id="cancelEditBtn" hidden>Cancelar edición</button>
                                 </div>
                             </form>
                         </aside>
                     </div>
                 </section>
 
-                <section class="app-view" id="view-informes">
-                    <div class="section-bar">
+                <!-- ===== Informes ===== -->
+                <section class="view" id="view-informes">
+                    <div class="section-head">
                         <div>
                             <p class="eyebrow">Gerencia</p>
                             <h2>Informes mensuales</h2>
                         </div>
                         <div class="section-actions">
-                            <button type="button" class="button button-secondary" id="loadReportsBtn">Actualizar informe</button>
-                            <a class="button button-primary" id="generalPdfLink" href="#">PDF general</a>
-                            <a class="button button-primary" id="generalExcelLink" href="#">Excel general</a>
+                            <button type="button" class="btn btn--secondary" id="loadReportsBtn">Actualizar informe</button>
+                            <a class="btn btn--primary" id="generalPdfLink" href="#">PDF general</a>
+                            <a class="btn btn--primary" id="generalExcelLink" href="#">Excel general</a>
                         </div>
                     </div>
 
-                    <div class="dashboard-grid compact" id="reportGeneralGrid"></div>
+                    <div>
+                        <p class="eyebrow">Resumen ejecutivo</p>
+                        <div class="hero-stats" id="heroStats"></div>
+                    </div>
 
-                    <div class="content-grid two-columns">
+                    <div class="grid grid-2-even">
                         <section class="panel">
-                            <div class="panel-heading">
-                                <div>
-                                    <p class="eyebrow">Cartera</p>
-                                    <h2>Informe de cartera</h2>
-                                </div>
-                                <div class="inline-actions">
-                                    <a class="text-action" id="carteraPdfLink" href="#">PDF</a>
-                                    <a class="text-action" id="carteraExcelLink" href="#">Excel</a>
+                            <div class="panel__head">
+                                <div><p class="eyebrow">Comparativo</p><h2>Facturado, recaudado, costos y utilidad</h2></div>
+                            </div>
+                            <div class="chart-box" id="informeComposicionChart"></div>
+                        </section>
+
+                        <section class="panel">
+                            <div class="panel__head">
+                                <div><p class="eyebrow">Tendencia</p><h2>Margen — últimos 6 meses</h2></div>
+                            </div>
+                            <div class="chart-box" id="margenTendenciaChart"></div>
+                        </section>
+                    </div>
+
+                    <section class="panel">
+                        <div class="panel__head">
+                            <div><p class="eyebrow">Operación</p><h2>Indicadores del mes</h2></div>
+                        </div>
+                        <div class="kpis is-compact" id="informeOperacionGrid"></div>
+                    </section>
+
+                    <section class="panel">
+                        <div class="panel__head">
+                            <div><p class="eyebrow">Sistema</p><h2>Recomendaciones</h2></div>
+                        </div>
+                        <div class="stack" id="informeRecomendaciones"></div>
+                    </section>
+
+                    <div class="grid grid-2-even">
+                        <section class="panel">
+                            <div class="panel__head">
+                                <div><p class="eyebrow">Cartera</p><h2>Informe de cartera</h2></div>
+                                <div class="section-actions">
+                                    <a class="link-btn" id="carteraPdfLink" href="#">PDF</a>
+                                    <a class="link-btn" id="carteraExcelLink" href="#">Excel</a>
                                 </div>
                             </div>
-                            <div class="table-shell mini">
+                            <div class="rank-box" id="carteraPorEstadoChart"></div>
+                            <div class="table-wrap is-compact">
                                 <table>
                                     <thead id="carteraReportHead"></thead>
                                     <tbody id="carteraReportBody"></tbody>
@@ -312,144 +401,137 @@
                         </section>
 
                         <section class="panel">
-                            <div class="panel-heading">
-                                <div>
-                                    <p class="eyebrow">Servicio</p>
-                                    <h2>Informe técnico</h2>
-                                </div>
-                                <div class="inline-actions">
-                                    <a class="text-action" id="tecnicoPdfLink" href="#">PDF</a>
-                                    <a class="text-action" id="tecnicoExcelLink" href="#">Excel</a>
+                            <div class="panel__head">
+                                <div><p class="eyebrow">Servicio</p><h2>Informe técnico</h2></div>
+                                <div class="section-actions">
+                                    <a class="link-btn" id="tecnicoPdfLink" href="#">PDF</a>
+                                    <a class="link-btn" id="tecnicoExcelLink" href="#">Excel</a>
                                 </div>
                             </div>
-                            <div class="report-detail" id="technicalReport"></div>
+                            <div class="stack" id="technicalReport"></div>
                         </section>
                     </div>
 
-                    <div class="content-grid two-columns">
-                        <section class="panel lookup-panel">
-                            <div class="panel-heading">
-                                <div>
-                                    <p class="eyebrow">Detalle</p>
-                                    <h2>Cliente</h2>
-                                </div>
+                    <div class="grid grid-2-even">
+                        <section class="panel">
+                            <div class="panel__head"><div><p class="eyebrow">Detalle</p><h2>Cliente</h2></div></div>
+                            <div class="section-actions">
+                                <input class="input" type="number" id="reportClientId" placeholder="ID de cliente">
+                                <button type="button" class="btn btn--secondary" id="loadClientReportBtn">Consultar</button>
                             </div>
-                            <div class="lookup-row">
-                                <input type="number" id="reportClientId" placeholder="ID de cliente">
-                                <button type="button" class="button button-secondary" id="loadClientReportBtn">Consultar</button>
-                            </div>
-                            <div class="report-detail" id="clientReportDetail"></div>
+                            <div class="stack" id="clientReportDetail"></div>
                         </section>
 
-                        <section class="panel lookup-panel">
-                            <div class="panel-heading">
-                                <div>
-                                    <p class="eyebrow">Detalle</p>
-                                    <h2>Equipo</h2>
-                                </div>
+                        <section class="panel">
+                            <div class="panel__head"><div><p class="eyebrow">Detalle</p><h2>Equipo</h2></div></div>
+                            <div class="section-actions">
+                                <input class="input" type="number" id="reportEquipoId" placeholder="ID de equipo">
+                                <button type="button" class="btn btn--secondary" id="loadEquipoReportBtn">Consultar</button>
                             </div>
-                            <div class="lookup-row">
-                                <input type="number" id="reportEquipoId" placeholder="ID de equipo">
-                                <button type="button" class="button button-secondary" id="loadEquipoReportBtn">Consultar</button>
-                            </div>
-                            <div class="report-detail" id="equipoReportDetail"></div>
+                            <div class="stack" id="equipoReportDetail"></div>
                         </section>
                     </div>
                 </section>
 
-                <section class="app-view" id="view-alertas">
-                    <div class="section-bar">
+                <!-- ===== Alertas ===== -->
+                <section class="view" id="view-alertas">
+                    <div class="section-head">
                         <div>
                             <p class="eyebrow">Seguimiento</p>
                             <h2>Alertas automáticas</h2>
                         </div>
                         <div class="section-actions">
-                            <select id="alertLevelFilter" aria-label="Filtro de nivel">
+                            <label class="checkbox-row">
+                                <input type="checkbox" id="includeDiscardedFilter">
+                                Incluir descartadas
+                            </label>
+                            <select class="select" id="alertLevelFilter" aria-label="Filtro de nivel">
                                 <option value="">Todos los niveles</option>
                                 <option value="critico">Críticas</option>
                                 <option value="advertencia">Advertencias</option>
                                 <option value="info">Informativas</option>
                             </select>
-                            <button type="button" class="button button-secondary" id="loadAlertsBtn">Actualizar alertas</button>
+                            <button type="button" class="btn btn--secondary" id="loadAlertsBtn">Actualizar alertas</button>
                         </div>
                     </div>
 
-                    <div class="content-grid two-columns">
+                    <div class="grid grid-2-even">
                         <section class="panel">
-                            <div class="panel-heading">
-                                <div>
-                                    <p class="eyebrow">Activas</p>
-                                    <h2 id="alertsTitle">Alertas</h2>
-                                </div>
+                            <div class="panel__head">
+                                <div><p class="eyebrow">Activas</p><h2 id="alertsTitle">Alertas</h2></div>
+                                <span class="pill" id="alertsMeta"></span>
                             </div>
-                            <div class="alert-list" id="alertsList"></div>
+                            <div class="stack" id="alertsList"></div>
                         </section>
-
                         <section class="panel">
-                            <div class="panel-heading">
-                                <div>
-                                    <p class="eyebrow">Guardadas</p>
-                                    <h2>Seguimiento</h2>
-                                </div>
-                            </div>
-                            <div class="alert-list" id="savedAlertsList"></div>
+                            <div class="panel__head"><div><p class="eyebrow">Guardadas</p><h2>Seguimiento</h2></div></div>
+                            <div class="stack" id="savedAlertsList"></div>
                         </section>
                     </div>
                 </section>
 
-                <section class="app-view" id="view-usuarios">
-                    <div class="section-bar">
+                <!-- ===== Usuarios ===== -->
+                <section class="view" id="view-usuarios">
+                    <div class="section-head">
                         <div>
                             <p class="eyebrow">Administración</p>
                             <h2>Usuarios pendientes</h2>
                         </div>
-                        <button type="button" class="button button-secondary" id="loadUsersBtn">Actualizar usuarios</button>
+                        <button type="button" class="btn btn--secondary" id="loadUsersBtn">Actualizar usuarios</button>
                     </div>
-                    <div class="user-list" id="pendingUsersList"></div>
+                    <div class="stack" id="pendingUsersList"></div>
                 </section>
             </main>
         </div>
     </div>
 
+    <!-- ===================== Diálogos ===================== -->
     <dialog class="dialog" id="historyDialog">
-        <div class="dialog-header">
+        <div class="dialog__head">
             <div>
                 <p class="eyebrow">Trazabilidad</p>
                 <h2 id="historyTitle">Historial</h2>
             </div>
-            <button type="button" class="icon-button" id="closeHistoryBtn" aria-label="Cerrar">×</button>
+            <button type="button" class="icon-btn" id="closeHistoryBtn" aria-label="Cerrar">×</button>
         </div>
-        <p class="muted" id="historyContext"></p>
-        <div class="history-list" id="historyList"></div>
+        <div class="dialog__body">
+            <p class="muted" id="historyContext"></p>
+            <div class="stack" id="historyList"></div>
+        </div>
     </dialog>
 
     <dialog class="dialog" id="adjuntosDialog">
-        <div class="dialog-header">
+        <div class="dialog__head">
             <div>
                 <p class="eyebrow">Evidencias</p>
                 <h2 id="adjuntosTitle">Adjuntos</h2>
             </div>
-            <button type="button" class="icon-button" id="closeAdjuntosBtn" aria-label="Cerrar">×</button>
+            <button type="button" class="icon-btn" id="closeAdjuntosBtn" aria-label="Cerrar">×</button>
         </div>
-        <p class="muted" id="adjuntosContext"></p>
-        <form id="adjuntosForm" class="stacked-form">
-            <label>
-                Tipo de documento
-                <input type="text" id="adjuntoTipoDocumento" placeholder="Acta, factura, evidencia...">
-            </label>
-            <label>
-                Observaciones
-                <input type="text" id="adjuntoObservaciones" placeholder="Referencia interna">
-            </label>
-            <label>
-                Archivo
-                <input type="file" id="adjuntoArchivo" accept=".pdf,.jpg,.jpeg,.png,.xls,.xlsx,.doc,.docx" required>
-            </label>
-            <button type="submit" class="button button-primary">Subir adjunto</button>
-        </form>
-        <div class="adjuntos-list" id="adjuntosList"></div>
+        <div class="dialog__body">
+            <p class="muted" id="adjuntosContext"></p>
+            <form id="adjuntosForm" class="form-stack">
+                <label class="field">Tipo de documento<input class="input" type="text" id="adjuntoTipoDocumento" placeholder="Acta, factura, evidencia..."></label>
+                <label class="field">Observaciones<input class="input" type="text" id="adjuntoObservaciones" placeholder="Referencia interna"></label>
+                <label class="field">Archivo<input class="input" type="file" id="adjuntoArchivo" accept=".pdf,.jpg,.jpeg,.png,.xls,.xlsx,.doc,.docx" required></label>
+                <button type="submit" class="btn btn--primary">Subir adjunto</button>
+            </form>
+            <div class="stack" id="adjuntosList"></div>
+        </div>
     </dialog>
 
-    <script src="/static/script.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
+    <script src="/static/js/util.js"></script>
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/state.js"></script>
+    <script src="/static/js/charts.js"></script>
+    <script src="/static/js/auth.js"></script>
+    <script src="/static/js/nav.js"></script>
+    <script src="/static/js/datos.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+    <script src="/static/js/informes.js"></script>
+    <script src="/static/js/alertas.js"></script>
+    <script src="/static/js/usuarios.js"></script>
+    <script src="/static/js/app.js"></script>
 </body>
 </html>
