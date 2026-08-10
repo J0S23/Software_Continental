@@ -195,14 +195,30 @@ function renderTabla() {
         columnas.forEach((campo) => appendCell(tr, item[campo.nombre], campo));
 
         const actions = document.createElement("td");
-        actions.className = "row-actions";
+        actions.className = "row-actions-cell";
         const botones = [
             actionButton("Historial", () => abrirHistorial(item)),
             actionButton("Adjuntos", () => abrirAdjuntos(item)),
         ];
         if (puedeEscribirTipo) botones.unshift(actionButton("Editar", () => editarRegistro(item)));
         if (puedeBorrar) botones.push(actionButton("Eliminar", () => eliminarRegistro(item.id), "danger"));
-        actions.append(...botones);
+
+        const menu = document.createElement("div");
+        menu.className = "row-actions";
+        menu.hidden = true;
+        menu.append(...botones);
+
+        const toggle = document.createElement("button");
+        toggle.type = "button";
+        toggle.className = "row-actions-toggle";
+        toggle.textContent = "⋯";
+        toggle.setAttribute("aria-label", "Mostrar acciones");
+        toggle.addEventListener("click", () => {
+            menu.hidden = !menu.hidden;
+            toggle.classList.toggle("is-open", !menu.hidden);
+        });
+
+        actions.append(toggle, menu);
         tr.appendChild(actions);
         body.appendChild(tr);
     });

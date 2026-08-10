@@ -921,7 +921,27 @@ td { max-width: 260px; overflow-wrap: anywhere; }
 tbody tr:hover { background: var(--blue-100); }
 td.empty-state-cell { text-align: center; color: var(--text-muted); }
 
-.row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.row-actions-cell { white-space: nowrap; }
+
+.row-actions-toggle {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface-muted);
+    color: var(--text);
+    font-weight: 800;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.row-actions-toggle:hover, .row-actions-toggle.is-open {
+    border-color: var(--accent);
+    background: var(--blue-100);
+}
+
+.row-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
 
 .pagination {
     display: flex;
@@ -939,14 +959,17 @@ td.empty-state-cell { text-align: center; color: var(--text-muted); }
 
 .workspace {
     display: grid;
-    grid-template-columns: 224px minmax(0, 1fr) minmax(320px, 380px);
+    grid-template-columns: 224px minmax(0, 1fr);
     align-items: start;
     gap: var(--sp-4);
 }
 
+.workspace > .editor-col {
+    grid-column: 1 / -1;
+}
+
 .module-nav {
-    position: sticky;
-    top: 98px;
+    position: static;
     display: grid;
     gap: 6px;
 }
@@ -989,7 +1012,7 @@ td.empty-state-cell { text-align: center; color: var(--text-muted); }
 
 .form-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: var(--sp-3);
 }
 
@@ -1188,8 +1211,6 @@ dialog.dialog::backdrop { background: rgba(12, 20, 38, 0.45); }
     .kpis { grid-template-columns: repeat(3, minmax(150px, 1fr)); }
     .grid-3, .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .workspace { grid-template-columns: 200px minmax(0, 1fr); }
-    .workspace > .editor-col { grid-column: 1 / -1; }
-    .module-nav { position: static; }
     .automation-grid { grid-template-columns: repeat(3, minmax(150px, 1fr)); }
 }
 
