@@ -26,11 +26,15 @@ from servicios_datos import crear_registro, obtener_campos, obtener_enumeracione
 
 router = APIRouter()
 
-# Restringido a los 3 tipos que pide la seccion 23 del documento (los que mas
-# volumen de carga manual tienen). No se generaliza a "cualquier tipo del
-# catalogo" a proposito: entidades como usuarios o facturacion no deberian
-# poblarse por lote sin mas control.
-TIPOS_IMPORTABLES = {"lecturas", "clientes", "equipos"}
+# Base comercial/operacion/servicio tecnico/inventario (los tipos con mas
+# volumen de carga manual). No se generaliza a "cualquier tipo del catalogo"
+# a proposito: entidades como usuarios no deberian poblarse por lote sin mas
+# control.
+TIPOS_IMPORTABLES = {
+    "lecturas", "clientes", "equipos", "contratos", "facturacion", "costos",
+    "mantenimientos_preventivos", "servicios",
+    "tipos_insumo", "insumos", "entregas_toner", "repuestos",
+}
 
 # Restringido a los 3 tipos que mas volumen de carga manual tienen. No se generaliza a "cualquier tipo del
 # catalogo" a proposito: entidades como usuarios o facturacion no deberian poblarse por lote sin mas control.
