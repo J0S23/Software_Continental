@@ -1189,6 +1189,7 @@ dialog.dialog::backdrop { background: rgba(12, 20, 38, 0.45); }
     .grid-3, .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .workspace { grid-template-columns: 200px minmax(0, 1fr); }
     .workspace > .editor-col { grid-column: 1 / -1; }
+    .module-nav { position: static; }
     .automation-grid { grid-template-columns: repeat(3, minmax(150px, 1fr)); }
 }
 
@@ -1211,7 +1212,6 @@ dialog.dialog::backdrop { background: rgba(12, 20, 38, 0.45); }
     .nav-group__toggle { display: none; }
     .nav-group__body, .nav-group__body-inner { display: contents; }
     .nav-link { flex: 0 0 auto; }
-    .module-nav { position: static; }
     .topbar, .section-head, .import-box, .user-card, .list-row {
         align-items: stretch;
         flex-direction: column;
