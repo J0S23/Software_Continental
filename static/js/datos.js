@@ -504,7 +504,7 @@ async function abrirHistorial(item) {
             const title = document.createElement("strong");
             title.textContent = `${labelize(entry.accion)}${entry.campo ? ` · ${labelize(entry.campo)}` : ""}`;
             const meta = document.createElement("span");
-            meta.textContent = `${entry.fecha ? fechaCorta(entry.fecha) : "Sin fecha"} · Usuario ${entry.usuario_id || "N/D"}`;
+            meta.textContent = `${entry.fecha ? fechaCorta(entry.fecha) : "Sin fecha"} · ${entry.usuario || "Usuario N/D"}`;
             const values = document.createElement("p");
             values.textContent = entry.campo ? `${entry.valor_anterior ?? "N/D"} → ${entry.valor_nuevo ?? "N/D"}` : "Registro creado o eliminado";
             row.append(title, meta, values);

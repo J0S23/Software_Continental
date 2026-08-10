@@ -39,12 +39,16 @@ class HistorialRepositorio:
 
     @staticmethod
     def obtener_por_entidad(tipo_entidad, entidad_id):
+        # Mas reciente primero: es lo que se quiere ver de inmediato al abrir
+        # el dialogo de Historial (el cuadro tiene scroll interno y no baja
+        # solo, asi que con orden ascendente el cambio mas reciente quedaba
+        # fuera de la vista inicial).
         db = SessionLocal()
         try:
             return (
                 db.query(Historial)
                 .filter(Historial.tipo_entidad == tipo_entidad, Historial.entidad_id == entidad_id)
-                .order_by(Historial.fecha)
+                .order_by(Historial.fecha.desc())
                 .all()
             )
         finally:

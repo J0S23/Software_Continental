@@ -4,6 +4,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from Persistencia.HistorialRepositorio import HistorialRepositorio
+from Persistencia.UsuariosRepositorio import UsuariosRepositorio
 from catalogo_modelos import (
     obtener_configuracion_tipo,
     obtener_configuracion_frontend,
@@ -102,13 +103,20 @@ async def eliminar_registro(tipo: str, registro_id: int, usuario=Depends(get_cur
 @router.get("/api/historial/{tipo}/{entidad_id}")
 async def obtener_historial(tipo: str, entidad_id: int, usuario=Depends(get_current_user)):
     registros = HistorialRepositorio.obtener_por_entidad(tipo, entidad_id)
+    # Una sola consulta para todos los usuarios (en vez de una por entrada de
+    # historial) y se arma el nombre para mostrar en vez del id crudo.
+    nombres_por_usuario_id = {
+        u.id: u.nombre_usuario or u.email for u in UsuariosRepositorio.obtener_todos()
+    }
     return {
         "success": True,
         "historial": [
             {
                 "id": r.id, "accion": r.accion, "campo": r.campo,
                 "valor_anterior": r.valor_anterior, "valor_nuevo": r.valor_nuevo,
-                "usuario_id": r.usuario_id, "fecha": r.fecha.isoformat() if r.fecha else None,
+                "usuario_id": r.usuario_id,
+                "usuario": nombres_por_usuario_id.get(r.usuario_id, f"Usuario #{r.usuario_id}"),
+                "fecha": r.fecha.isoformat() if r.fecha else None,
             }
             for r in registros
         ],
