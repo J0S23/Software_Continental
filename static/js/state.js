@@ -28,8 +28,9 @@ const ROLE_OPTIONS = [
 
 const HIDDEN_DATA_TYPES = new Set(["usuarios"]);
 const IMPORTABLE_TYPES = new Set([
-    "clientes", "equipos", "lecturas", "contratos", "facturacion", "costos",
-    "mantenimientos_preventivos", "servicios",
+    "clientes", "sedes", "equipos", "contrato_equipos", "lecturas", "contratos",
+    "facturacion", "costos", "cartera", "rentabilidad",
+    "mantenimientos_preventivos", "servicios", "cambios_retiros", "equipos_respaldo",
     "tipos_insumo", "insumos", "entregas_toner", "repuestos",
 ]);
 

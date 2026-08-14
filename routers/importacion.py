@@ -26,13 +26,14 @@ from servicios_datos import crear_registro, obtener_campos, obtener_enumeracione
 
 router = APIRouter()
 
-# Base comercial/operacion/servicio tecnico/inventario (los tipos con mas
-# volumen de carga manual). No se generaliza a "cualquier tipo del catalogo"
-# a proposito: entidades como usuarios no deberian poblarse por lote sin mas
-# control.
+# Todos los tipos de los 4 grupos de la seccion "datos" (base comercial,
+# operacion mensual, servicio tecnico, inventario). No se generaliza a
+# "cualquier tipo del catalogo" a proposito: entidades como usuarios no
+# deberian poblarse por lote sin mas control.
 TIPOS_IMPORTABLES = {
-    "lecturas", "clientes", "equipos", "contratos", "facturacion", "costos",
-    "mantenimientos_preventivos", "servicios",
+    "clientes", "sedes", "equipos", "contrato_equipos", "lecturas", "contratos",
+    "facturacion", "costos", "cartera", "rentabilidad",
+    "mantenimientos_preventivos", "servicios", "cambios_retiros", "equipos_respaldo",
     "tipos_insumo", "insumos", "entregas_toner", "repuestos",
 }
 
