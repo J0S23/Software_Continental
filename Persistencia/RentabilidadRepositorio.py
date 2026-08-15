@@ -7,7 +7,7 @@ class RentabilidadRepositorio:
     Servicio/RentabilidadAutomatica.py (no calcula nada aqui, solo persiste)."""
 
     @staticmethod
-    def agregar(periodo, ingresos=0, costos=0, ganancia=0, porcentaje_rentabilidad=0,
+    def agregar(periodo=None, ingresos=0, costos=0, ganancia=0, porcentaje_rentabilidad=0,
                 contrato_id=None, cliente_id=None, sesion=None):
         db = sesion if sesion is not None else SessionLocal()
         try:

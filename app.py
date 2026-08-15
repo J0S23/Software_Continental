@@ -12,7 +12,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 # --- Rate limiting (slowapi) ---
 # _rate_limit_exceeded_handler: convierte la excepcion RateLimitExceeded (la que lanza el decorador @limiter.limit(...) 
 # en routers/auth.py cuando se excede el limite) en una respuesta HTTP 429 limpia. Sin registrarlo, esa excepcion no tiene 
-# quien la atrape y FastAPI la deja subir como un 500.
+# quien la atrape y Fa  stAPI la deja subir como un 500.
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware

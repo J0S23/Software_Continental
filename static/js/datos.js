@@ -195,14 +195,30 @@ function renderTabla() {
         columnas.forEach((campo) => appendCell(tr, item[campo.nombre], campo));
 
         const actions = document.createElement("td");
-        actions.className = "row-actions";
+        actions.className = "row-actions-cell";
         const botones = [
             actionButton("Historial", () => abrirHistorial(item)),
             actionButton("Adjuntos", () => abrirAdjuntos(item)),
         ];
         if (puedeEscribirTipo) botones.unshift(actionButton("Editar", () => editarRegistro(item)));
         if (puedeBorrar) botones.push(actionButton("Eliminar", () => eliminarRegistro(item.id), "danger"));
-        actions.append(...botones);
+
+        const menu = document.createElement("div");
+        menu.className = "row-actions";
+        menu.hidden = true;
+        menu.append(...botones);
+
+        const toggle = document.createElement("button");
+        toggle.type = "button";
+        toggle.className = "row-actions-toggle";
+        toggle.textContent = "⋯";
+        toggle.setAttribute("aria-label", "Mostrar acciones");
+        toggle.addEventListener("click", () => {
+            menu.hidden = !menu.hidden;
+            toggle.classList.toggle("is-open", !menu.hidden);
+        });
+
+        actions.append(toggle, menu);
         tr.appendChild(actions);
         body.appendChild(tr);
     });
@@ -488,7 +504,7 @@ async function abrirHistorial(item) {
             const title = document.createElement("strong");
             title.textContent = `${labelize(entry.accion)}${entry.campo ? ` · ${labelize(entry.campo)}` : ""}`;
             const meta = document.createElement("span");
-            meta.textContent = `${entry.fecha ? fechaCorta(entry.fecha) : "Sin fecha"} · Usuario ${entry.usuario_id || "N/D"}`;
+            meta.textContent = `${entry.fecha ? fechaCorta(entry.fecha) : "Sin fecha"} · ${entry.usuario || "Usuario N/D"}`;
             const values = document.createElement("p");
             values.textContent = entry.campo ? `${entry.valor_anterior ?? "N/D"} → ${entry.valor_nuevo ?? "N/D"}` : "Registro creado o eliminado";
             row.append(title, meta, values);
