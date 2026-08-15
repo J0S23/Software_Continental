@@ -65,7 +65,7 @@ class ContratoEquipoRepositorio:
                 db.close()
 
         if actualizar_estado_equipo:
-            EquiposRepositorio.actualizar(equipo_id, contrato_id=contrato_id, estado_equipo="instalado")
+            EquiposRepositorio.actualizar(equipo_id, contrato_id=contrato_id, estado_equipo="instalado", sesion=sesion)
 
         return nueva_asignacion
 

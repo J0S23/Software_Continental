@@ -74,8 +74,8 @@ class EquiposRespaldoRepositorio:
                 db.close()
 
         if actualizar_estado_equipo:
-            EquiposRepositorio.actualizar(equipo_respaldo_id, estado_equipo="instalado")
-            EquiposRepositorio.actualizar(equipo_principal_id, estado_equipo="en_reparacion")
+            EquiposRepositorio.actualizar(equipo_respaldo_id, estado_equipo="instalado", sesion=sesion)
+            EquiposRepositorio.actualizar(equipo_principal_id, estado_equipo="en_reparacion", sesion=sesion)
 
         return nueva_asignacion
 

@@ -54,9 +54,9 @@ class CambiosRetiroRepositorio:
             # "retiro" da de baja el equipo; "cambio" lo manda a mantenimiento
             # y deja el equipo de reemplazo (si hay) como instalado.
             nuevo_estado = "retirado" if tipo_evento == "retiro" else "en_mantenimiento"
-            EquiposRepositorio.actualizar(equipo_id, estado_equipo=nuevo_estado)
+            EquiposRepositorio.actualizar(equipo_id, estado_equipo=nuevo_estado, sesion=sesion)
             if tipo_evento == "cambio" and equipo_reemplazo_id:
-                EquiposRepositorio.actualizar(equipo_reemplazo_id, estado_equipo="instalado")
+                EquiposRepositorio.actualizar(equipo_reemplazo_id, estado_equipo="instalado", sesion=sesion)
 
         return nuevo_evento
 
