@@ -6,9 +6,13 @@ class ServicioRepositorio:
     """CRUD de servicios (mantenimientos/prestaciones) ofrecidos a un cliente/equipo."""
 
     @staticmethod
-    def agregar(cliente_id, equipo_id, nombre_servicio, descripcion="", precio=0,
+    def agregar(cliente_id, nombre_servicio, equipo_id=None, descripcion="", precio=0,
                 descripcion_mantenimiento="", repuestos_incluidos="No", toner_incluido="No",
-                toner_respaldo_sitio="No", equipo_respaldo_incluido="No", estado="Activo", sesion=None):
+                toner_respaldo_sitio="No", equipo_respaldo_incluido="No", estado="Activo",
+                contrato_id=None, fecha_solicitud=None, falla_reportada=None, prioridad=None,
+                fecha_atencion=None, fecha_solucion=None, diagnostico=None,
+                costo_repuestos=0, costo_mano_obra=0, costo_desplazamiento=0,
+                requiere_respaldo="No", estado_caso=None, sesion=None):
         db = sesion if sesion is not None else SessionLocal()
         try:
             nuevo_servicio = Servicio(
@@ -23,6 +27,18 @@ class ServicioRepositorio:
                 toner_respaldo_sitio=toner_respaldo_sitio,
                 equipo_respaldo_incluido=equipo_respaldo_incluido,
                 estado=estado,
+                contrato_id=contrato_id,
+                fecha_solicitud=fecha_solicitud,
+                falla_reportada=falla_reportada,
+                prioridad=prioridad,
+                fecha_atencion=fecha_atencion,
+                fecha_solucion=fecha_solucion,
+                diagnostico=diagnostico,
+                costo_repuestos=costo_repuestos,
+                costo_mano_obra=costo_mano_obra,
+                costo_desplazamiento=costo_desplazamiento,
+                requiere_respaldo=requiere_respaldo,
+                estado_caso=estado_caso,
             )
             db.add(nuevo_servicio)
             if sesion is None:
